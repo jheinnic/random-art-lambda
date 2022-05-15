@@ -1,3 +1,4 @@
+.aws-sam/
 .idea
 node_modules
 .*.swp
