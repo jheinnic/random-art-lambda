@@ -1,0 +1,202 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: 'AWS::Serverless-2016-10-31'
+Description: An Amazon REST API gateway with request validator to validate querystring, header, and body, and integrated with a AWS Lambda function.
+
+# Global values that are applied to all applicable resources in this template
+Globals:
+  Function:
+    CodeUri: ./function
+    Runtime: nodejs14.x
+    MemorySize: 128
+    Timeout: 15
+
+# Parameter values that should be given as input while stack creation
+Parameters:
+  AppName:
+    Description: Name of the API Gateway
+    Type: String
+    Default: random-art
+
+Resources:
+  CanvasLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Sub "${AppName}-canvas-nodejs"
+      Description: canvas@2.9.1
+      ContentUri: layers/canvas
+      CompatibleRuntimes:
+        - nodejs14.x
+    Metadata:
+      BuildMethod: makefile
+      BuildArchitecture: x86_64
+
+  # Lambda Function - uses Globals to define additional configuration values
+  LambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AppName}-function'
+      Handler: app.handler
+      Environment:
+        Variables:
+          LD_PRELOAD: /opt/lib/libz.so.1
+      Layers: 
+         - !Ref CanvasLayer
+
+  # API Gateway REST API
+  RestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Ref AppName
+      Description: An Amazon API Gateway HTTP API with mutual TLS and an AWS Lambda function.
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  # Request Validator for the REST API
+  RestApiRequestValidator:
+      Type: AWS::ApiGateway::RequestValidator
+      Properties:
+        Name: MyAPIRequestValidator
+        RestApiId: !Ref RestApi
+        ValidateRequestBody: true
+        ValidateRequestParameters: true
+
+  # Request model for the REST API
+  RestApiRequestModel:
+    Type: AWS::ApiGateway::Model
+    Properties:
+      Name: PlotRequest
+      ContentType: 'application/json'
+      RestApiId: !Ref RestApi
+      Schema: {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "PlotRequest",
+          "type": "object",
+          "required": [ "req_uri", "prefix", "suffix", "plot_spec_uri", "output_url" ],
+          "properties": {
+            "ulid": {
+              "type": "string",
+              "description": "uri assigned to as identifier for this request"
+            },
+            "prefix": {
+              "type": "string",
+              "description": "The person's first name."
+            },
+            "suffix": {
+              "type": "string",
+              "description": "The person's last name."
+            },
+            "plot_spec_uri": {
+              "type": "string",
+              "description": "uri representing a specific mapping of points from a cartesian
+                planar region onto a canvas of pixels with known height, width, and pixel size"
+            },
+            "output_url": {
+              "type": "string",
+              "description": "url where the resulting PNG image data is to be uploaded by suitable
+                multipart HTTP encoding"
+            },
+            "output_token": {
+              "type": "string",
+              "description": "An optional value to be presented as bearer token when POSTing to output_url"
+            }
+          }
+        }
+
+  # Response model for the REST API
+  RestApiResponseModel:
+    Type: AWS::ApiGateway::Model
+    Properties:
+      Name: PlotReport
+      ContentType: 'application/json'
+      RestApiId: !Ref RestApi
+      Schema: {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "PlotReport",
+          "type": "object",
+          "required": [ "request_uri", "seed_model_step", "init_canvas_step", "render_image_step", "upload_file_step" ],
+          "properties": {
+            "request_uri": {
+              "type": "string",
+              "description": "uri assigned to as identifier for this request"
+            },
+            "seed_model_step": {
+              "type": "string",
+              "description": "Confirmation message or error code from seeding plot model with prefix/suffix",
+            },
+            "init_canvas_step": {
+              "type": "string",
+              "description": "Confirmation message or error code from locating plot spec and allocating a suitable canvas",
+            },
+            "render_image_step": {
+              "type": "string",
+              "description": "Confirmation message or error code from rendering canvas content using spec and seed",
+            },
+            "upload_file_step": {
+              "type": "string",
+              "description": "Confirmation message or error code from uploading PNG extracted from canvas after rendering",
+            },
+            "content_length": {
+              "type": "number",
+              "description": "Optional unless process ended with successful upload, otherwise number of bytes uploaded
+                during upload_step (e.g. file size)."
+            }
+          }
+        }
+
+  # POST method for the REST API
+  RestApiMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      RequestModels:
+        $default: !Ref RestApiRequestModel
+      # QueryString and Header for the REST Api
+      RequestParameters:
+        method.request.queryString: false
+        method.header.myHeader: false
+      RequestValidatorId: !GetAtt RestApiRequestValidator.RequestValidatorId
+      MethodResponses:
+        - ResponseModels:
+            application/json : !Ref RestApiResponseModel
+          StatusCode: 200
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub
+          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations'
+          - lambdaArn: !GetAtt LambdaFunction.Arn
+      ResourceId: !GetAtt RestApi.RootResourceId
+      RestApiId: !Ref RestApi
+
+  # REST API Deployment
+  RestApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: RestApiMethod
+    Properties:
+      Description: Lambda Rest API Deployment
+      RestApiId: !Ref RestApi
+
+  # Stage for REST API Deployment
+  RestApiStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      DeploymentId: !Ref RestApiDeployment
+      Description: Lambda API Stage
+      RestApiId: !Ref RestApi
+      StageName: prod
+
+  # Function permissions grant an AWS service
+  FunctionResourcePermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      Principal: apigateway.amazonaws.com
+      FunctionName: !Ref LambdaFunction
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestApi}/*'
+
+Outputs:
+  RestApiEndpoint:
+    Description: The endpoint for the REST API Gateway.
+    Value: !Sub "https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/"
