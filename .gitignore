@@ -4,7 +4,9 @@ node_modules
 .*.swp
 *.pyc
 
-bazel-bin/
-bazel-out/
-bazel-random-art-lambda/
-basel-testlogs/
+bazel-bin
+bazel-out
+bazel-random-art-lambda
+bazel-testlogs
+junk/
+.history/
