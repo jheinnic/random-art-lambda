@@ -1,0 +1,17 @@
+export const RANDOM_ART_REPOSITORY: unique symbol = Symbol("IRandomArtTaskRepository")
+export const FS_BLOCKSTORE: unique symbol = Symbol("FsBlockstore")
+export const LRU_CACHE_FACTORY: unique symbol = Symbol("LruCacheFactory")
+export const LRU_CACHE: unique symbol = Symbol("LRU")
+export const FS_BLOCKSTORE_CONFIG: unique symbol = Symbol("FsBlockstoreConfig")
+export const FS_BLOCKSTORE_ROOT_PATH: unique symbol = Symbol(
+  "FsBlockstoreRootPath"
+)
+
+export const IpfsModuleTypes = {
+  AbstractBlockstore: ABSTRACT_BLOCKSTORE,
+  FilesystemBlockstore: FS_BLOCKSTORE,
+  LruCacheFactory: LRU_CACHE_FACTORY,
+  LruCache: LRU_CACHE,
+  FsBlockstoreConfig: FS_BLOCKSTORE_CONFIG,
+  FsBlockstoreRootPath: FS_BLOCKSTORE_ROOT_PATH
+}
