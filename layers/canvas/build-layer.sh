@@ -31,9 +31,9 @@ rm -rf node_modules package*.json ../package-lock.json
 
 # export LD_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu:${BUILD_DIR}/lib:${LD_LIBRARY_PATH}"
 npm init -y
-npm install "canvas@${LAYER_VERSION}" --build-from-source
-npm install fabric
-npm install konva-node
+npm install "canvas@${LAYER_VERSION}" --build-from-source --save
+npm install fabric --save
+npm install konva --save
 npm install mocha --save-dev
 jq --arg LAYER_NAME "$LAYER_NAME" --arg LAYER_DESCRIPTION "$LAYER_DESCRIPTION" --arg LAYER_VERSION "$LAYER_VERSION" --arg LAYER_AUTHOR "$LAYER_AUTHOR" '.name = $LAYER_NAME | .description = $LAYER_DESCRIPTION | .version = $LAYER_VERSION | .license = "MIT" | .author = $LAYER_AUTHOR | .scripts.test = "mocha"' package.json > package-tmp.json
 mv -f package-tmp.json package.json
