@@ -1,0 +1,14 @@
+load("@rules_proto_grpc//js:defs.bzl", "js_proto_compile")
+
+js_proto_compile(
+    name = "plot_mapping_js_proto",
+    protos = ["//protobuf:plot_mapping_proto"],
+)
+
+load("@rules_typescript_proto//:index.bzl", "typescript_proto_library")
+
+typescript_proto_library(
+    name = "plot_mapping_ts_proto",
+    proto = "//protobuf:plot_mapping_proto",
+)
+

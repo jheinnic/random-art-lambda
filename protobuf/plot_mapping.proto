@@ -1,0 +1,372 @@
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package plot_mapping.v1;
+
+option java_package = "name.jchein.events.grpc.plot_mapping.v1";
+
+message RegionBoundary {
+    //
+    double top = 1;
+    //
+    double left = 2;
+    //
+    double bottom = 3;
+    //
+    double right = 4;
+}
+
+message ImageSize {
+    //
+    uint32 pixelHeight = 7;
+    //
+    uint32 pixelWidth = 8;
+}
+
+
+enum RefPoint {
+    TOP_LEFT = 0;
+    CENTER = 1;
+}
+
+message PointPlotData {
+    //
+    RefPoint pixelRef = 1;
+    //
+    ImageSize resolution = 2;
+    //
+    RegionBoundary mapped_region = 3;
+    //
+    bool uniform = 4;
+    //
+    repeated double rows = 5;
+    //
+    repeated double columns = 6;
+}
+
+message PointPlotMeta {
+    //
+    string ulid = 1;
+    //
+    string path = 2;
+    //
+    uint64 createTime = 3;
+    //
+    BuildId origin = 4;
+}
+
+
+message BuildId {
+    //
+    string sourceName = 1;
+    //
+    string sourceUrl = 2;
+    //
+    string sourceRef = 3;
+    //
+    string version = 4;
+    //
+    string build = 5;
+}
+
+
+message PointPlotDocument {
+    PointPlotMeta meta = 1;
+    //
+    PointPlotData data = 2;
+}
+
+// message Lifecycle {
+//     //
+//     // Available means the software producer published the artifact, making 
+//     // it available for installation.
+//     uint64 releasedAt = 1;
+//     //
+//     // Deprecated means the software publisher is preparing to remove the
+//     // artifact and it should no longer be offered for use, but must be
+//     // tracked for the sake of pre-existing usage.
+//     uint64 deprecatedAt = 2;
+//     //
+//     // Removed means the software publisher has removed the implementation
+//     // artifacts.  This record only exists to track prior use occurence.
+//     uint64 removedAt = 3;
+// }
+// 
+// message LineageChain {
+//     string predecesor = 1;
+// 
+//     string successor = 2;
+// }
+// 
+// message Hotfix {
+//     string patchFor = 1;
+// }
+// 
+// enum ExtensionKind {
+//     NATIVE_FEATURE = 0;
+//     EMBEDDED_SDK = 1;
+//     CONTAINER_IMAGE = 2;
+// }
+// 
+// enum PixelReference {
+//     PIXEL_CENTER = 0;
+//     PIXEL_EDGE = 1;
+//     REGION_SWEEP = 2;
+// }
+// 
+// message PlotStrategy {
+//     //
+//     string name = 1;
+//     //
+//     string displayName = 2;
+//     //
+//     PixelReference pixelReference = 3;
+// }
+// 
+// message PlotStrategyVersion {
+//     //
+//     string name = 1;
+//     //
+//     VersionId version = 3;
+//     //
+//     BuildId buildId = 4;
+//     //
+//     ExtensionKind extensionKind = 5;
+//     //
+//     string codeIdentifier = 6;
+//     //
+//     string description = 7;
+//     //
+//     Lifecycle lifecycle = 8;
+//     //
+//     oneof relatedTo {
+//         LineageChain lineageChain = 9;
+//         //
+//         Hotfix hotfix = 10;
+//     }
+// }
+// 
+// message ServiceVersion {
+//     //
+//     string name = 1;
+//     //
+//     int32 majorVersion = 3;
+//     //
+//     int32 minorVerion = 4;
+//     //
+//     int32 patchVersion = 5;
+//     //
+//     string commitTag = 6;
+//     //
+//     string buildTag = 7;
+//     //
+//     string sourceLocation = 8;
+//     //
+//     string precededBy = 9;
+//     //
+//     uint64 firstActive = 10;
+//     //
+//     string succeededBy = 11;
+//     //
+//     uint64 lastActive = 12;
+// }
+// 
+// message RegionOfInterest {
+//     string name = 1;
+//     string displayName = 2;
+//     float topBorder = 3;
+//     float leftBorder = 4;
+//     float bottomBorder = 5;
+//     float rightBorder = 6;
+//     uint64 createdAt = 7;
+//     uint64 deprecatedAt = 8;
+// }
+// 
+// message CanvasSize {
+//     string name = 1;
+//     string displayName = 2;
+//     uint32 pixelHeight = 3;
+//     uint32 pixelWidth = 4;
+//     uint32 pixelUnit = 5;
+//     string serviceRelease = 6;
+//     uint64 createdAt = 7;
+//     uint64 deprecatedAt = 8;
+// }
+// 
+// message CreatePlotMap {
+//     string displayName = 1;
+//     //
+//     string computeStrategy = 2;
+//     //
+//     float topBoundary = 3;
+//     //
+//     float leftBoundary = 4;
+//     //
+//     float bottomBoundary = 5;
+//     //
+//     float rightBoundary = 6;
+//     //
+//     uint32 pixelHeight = 7;
+//     //
+//     uint32 pixelWidth = 8;
+//     //
+//     uint32 pixelScale = 9;
+// }
+// 
+// enum Repeatability {
+//    UNIQUE = 0;
+//    INVARIANT = 1;
+//    SEEDED_PNR = 2;
+//    CRYPTO_PNR = 3;
+//    RANDOM = 4;
+//    EXPERIMENT = 5;
+//    CONTROLLED = 6;
+//    PROCEDURAL = 7;
+//    SAMPLED = 8;
+// }
+// 
+// message TermSelectionTechnique {
+//     //
+//     string name = 1;
+//     //
+//     string displayName = 2;
+//     //
+//     uint32 maxExpected = 3;
+//     //
+//     uint32 minExpected = 4;
+//     //
+//     Repeatability repeatability = 5;
+//     //
+//     repeated string automation = 6;
+//     //
+//     repeated string accessProtocols = 7;
+//     //
+//     repeated string selectionCriteria = 8;
+// }
+// 
+// enum FeatureKind {
+//     CLUSTER_DISCOVERY = 0;
+//     CLASS_PREDICTION = 1;
+//     QUANTITATIVE = 2;
+//     QUALITATIVE = 3;
+//     RANKING = 4;
+//     BINARY_TEST = 5;
+//     TRAINING = 6;
+//     TESTING = 7;
+//     ANNOTATION = 8;
+//     RANDOM_ART = 9;
+// }
+//     
+// message FeatureExtractionLine {
+//     string name = 1;
+//     //
+//     string displayName = 2;
+//     //
+//     string featureData = 3;
+// }
+// 
+// message FeatureExtractionVersion {
+//     string name = 1;
+//     //
+//     string lineName = 2;
+//     //
+//     //
+//     string commitTag = 6;
+//     //
+//     string buildTag = 7;
+//     //
+//     string sourceLocation = 8;
+//     //
+//     repeated string automation = 9;
+//     //
+//     repeated string accessProtocols = 10;
+// }
+// 
+// message InvestigationProtocol {
+//     string name = 1;
+//     //
+//     string description = 2;
+// }
+// 
+// message InvestigationProtcolVersion {
+//     string name = 1;
+//     //
+//     string investigationLineName = 2;
+//     //
+//     VersionId versionId = 3;
+//     //
+//     string termSelectionProtocol = 6;
+//     //
+//     string plotMappingProtocol = 7;
+//     //
+//     string acceptanceCriteria = 8;
+//     //
+//     string randomArtAlgorithm = 9;
+//     //
+//     string accessProtocols = 10;
+//     //
+//     string dataHandling = 11;
+//     //
+//     string automation = 12;
+//     //
+//     string objectiveGoal = 13;
+//     //
+//     Repeatability reapeatability = 14;
+// }
+// 
+// message AccessProtocol {
+//     string name = 1;
+//     //
+//     string displayName = 2;
+//     //
+//     string description = 3;
+// }
+// 
+// message ObjectiveGoal {
+//     string name = 1;
+//     //
+//     string displayName = 2;
+//     //
+//     string description = 3;
+// }
+// 
+// message AutomationHook {
+//     string name = 1;
+//     //
+//     string displayName = 2;
+//     //
+//     string description = 3;
+// }
+// 
+// message DataHandling {
+//     string name = 1;
+//     //
+//     string displayName = 2;
+//     //
+//     string description = 3;
+// }
+// 
+// message AcceptanceCriteria {
+//     string name = 1;
+//     //
+//     string displayName = 2;
+//     //
+//     string description = 3;
+// }
+// 
+// message ResearchSchedule {
+//     string name = 1;
+// }

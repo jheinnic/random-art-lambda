@@ -1,0 +1,306 @@
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package paint_plot_point_map;
+
+option java_package = "jchein.name.grpc.paint_plot_point_map.events.v1";
+
+message PlotPointMapCalculation {
+    //
+    string name = 1;
+    //
+    string displayName = 2;
+    //
+    sint16 topBoundary = 3;
+    //
+    sint16 leftBoundary = 4;
+    //
+    sint16 bottomBoundary = 5;
+    //
+    sint16 rightBoundary = 6;
+    //
+    int16 pixelHeight = 7;
+    //
+    int16 pixelWidth = 8;
+    //
+    int8 pixelScale = 9;
+    //
+    repeated double horizontalSeries = 10;
+    //
+    repeated double verticalSeries = 11;
+    //
+    datetime calculationDate = 12;
+    //
+    string computeStrategy = 13;
+    //
+    string serviceRelease = 14;
+}
+
+
+enum IntegrationKind {
+    NATIVE_FEATURE = "native";
+    EMBEDDED_SDK = "sdk";
+    CONTAINER_IMAGE = "docker";
+}
+
+enum SolutionClass {
+    FIXED_MID_PIXEL = "centers";
+    FIXED_PIXEL_EDGE = "edge";
+    FULL_RANGE_SWEEP = "sweep";
+}
+
+message PlotMapAlgorithmLine {
+    //
+    string name = 1;
+    //
+    string displayName = 2;
+    //
+    IntegrationKind integrationKind = 7;
+    //
+    SolutionClass solutionClass = 8;
+    //
+    string introduction = 9;
+    //
+    repeated string currentReleases = 10;
+    //
+    repeated string deprecatedReleases = 11;
+    //
+    repeated string sunsetReleases = 12;
+    //
+    repeated string flaggedReleases = 13;
+}
+
+message PlotMapAlgorithmVersion {
+    //
+    string name = 1;
+    //
+    string algorithmLineName = 2;
+    //
+    int16 majorVersion = 3;
+    //
+    int16 minorVerion = 4;
+    //
+    int16 patchVersion = 5;
+    //
+    string commitTag = 6;
+    //
+    string buildTag = 7;
+    //
+    string sourceLocation = 8;
+    //
+    datetime releaseTimestamp = 9;
+    //
+    string releaseNotes = 10;
+    //
+    string exampleDirections = 11;
+}
+
+message ServiceVersion {
+    //
+    string name = 1;
+    //
+    int16 majorVersion = 3;
+    //
+    int16 minorVerion = 4;
+    //
+    int16 patchVersion = 5;
+    //
+    string commitTag = 6;
+    //
+    string buildTag = 7;
+    //
+    string sourceLocation = 8;
+    //
+    string precededBy = 9;
+    //
+    datetime firstActive = 10;
+    //
+    string succeededBy = 11;
+    //
+    datetime lastActive = 12;
+}    
+
+message CreatePlotMap {
+    string displayName = 1;
+    //
+    string computeStrategy = 2;
+    //
+    sint16 topBoundary = 3;
+    //
+    sint16 leftBoundary = 4;
+    //
+    sint16 bottomBoundary = 5;
+    //
+    sint16 rightBoundary = 6;
+    //
+    int16 pixelHeight = 7;
+    //
+    int16 pixelWidth = 8;
+    //
+    int8 pixelScale = 9;
+}
+
+enum Repeatability {
+   UNIQUE = "unique"
+   INVARIANT = "invariant"
+   SEEDED_PNR = "seeded_pnr"
+   CRYPTO_PNR = "crypto_pnr"
+   RANDOM = "random"
+   EXPERIMENT = "experiment"
+   CONTROLLED = "controlled"
+   PROCEDURAL = "procedural"
+   SAMPLED = "sampled"
+}
+
+message TermSelectionTechnique {
+    //
+    string name = 1;
+    //
+    string displayName = 2;
+    //
+    int maxExpected = 3;
+    //
+    int minExpected = 4;
+    //
+    Repeatability repeatability = 5;
+    //
+    repeated string automation = 6;
+    //
+    repeated string accessProtocols = 7;
+    //
+    repeated string selectionCriteria = 8;
+}
+
+enum FeatureKind {
+    CLUSTER_DISCOVERY = "cluster_discovery";
+    CLASS_PREDICTION = "class_prediction";
+    QUANTITATIVE = "quantitative";
+    QUALITATIVE = "qualitative";
+    RANKING = "ranking";
+    BINARY_TEST = "pass_fail";
+    TRAINING = "training";
+    TESTING = "testing";
+    ANNOTATION = "annotation";
+    RANDOM_ART = "randomArt";
+}
+    
+message FeatureExtractionLine {
+    string name = 1;
+    //
+    string displayName = 2;
+    //
+    string featureData = 3;
+
+
+message FeatureExtractionVersion {
+    string name = 1;
+    //
+    string lineName = 2;
+    //
+    int16 majorVersion = 3;
+    //
+    int16 minorVerion = 4;
+    //
+    int16 patchVersion = 5;
+    //
+    string commitTag = 6;
+    //
+    string buildTag = 7;
+    //
+    string sourceLocation = 8;
+    //
+    repeated string automation = 9;
+    //
+    repeated string accessProtocols = 10;
+
+message InvestigationProtocol {
+    string name = 1;
+    //
+    string description = 2;
+}
+
+message InvestigationProtcolVersion {
+    string name = 1;
+    //
+    string investigationLineName = 2;
+    //
+    int majorVersion = 3;
+    //
+    int minorVersion = 4;
+    //
+    string termSelectionProtocol = 6;
+    //
+    string plotMappingProtocol = 7;
+    //
+    string acceptanceCriteria = 8;
+    //
+    string randomArtAlgorithm = 9;
+    //
+    string accessProtocols = 10;
+    //
+    string dataHandling = 11;
+    //
+    string automation = 12;
+    //
+    string objectiveGoal = 13;
+    //
+    Repeatability reapeatability = 14;
+}
+
+message AccessProtocol {
+    string name = 1;
+    //
+    string displayName = 2;
+    //
+    string description = 3;
+}
+
+message ObjectiveGoal {
+    string name = 1;
+    //
+    string displayName = 2;
+    //
+    string description = 3;
+}
+
+message AutomationHook {
+    string name = 1;
+    //
+    string displayName = 2;
+    //
+    string description = 3;
+}
+
+message DataHandling {
+    string name = 1;
+    //
+    string displayName = 2;
+    //
+    string description = 3;
+}
+
+message AcceptanceCriteria {
+    string name = 1;
+    //
+    string displayName = 2;
+    //
+    string description = 3;
+}
+
+message ResearchSchedule {
+    string name = 1;
+    //
+}
