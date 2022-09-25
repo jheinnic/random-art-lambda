@@ -11,7 +11,7 @@ BUILD_DIR="${1}"
 
 LAYER_NAME=canvas-nodejs
 LAYER_DESCRIPTION="AWS Lambda Layer with node-canvas and its dependencies packaged, provides a Cairo backed Mozilla Web Canvas API implementation with additional features."
-LAYER_VERSION=2.9.1
+LAYER_VERSION=2.10.1
 LAYER_AUTHOR="Charoite Lee"
 
 cd "${BUILD_DIR}"
@@ -29,9 +29,9 @@ cd nodejs
 
 rm -rf node_modules package*.json ../package-lock.json
 
-export LD_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}"
+# export LD_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu:${BUILD_DIR}/lib:${LD_LIBRARY_PATH}"
 npm init -y
-npm install canvas --build-from-source
+npm install "canvas@${LAYER_VERSION}" --build-from-source
 npm install fabric
 npm install konva-node
 npm install mocha --save-dev

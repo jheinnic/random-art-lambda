@@ -6,9 +6,11 @@ Resources:
         Properties:
             LayerName: canvas-nodejs
             Description: canvas@2.9.1
-            ContentUri: ./canvas-nodejs_v2.9.1.zip
+            ContentUri: .
             CompatibleRuntimes:
                 - nodejs14.x
             RetentionPolicy: Retain
             LicenseInfo: MIT
+        Metadata:
+            BuildMethod: makefile
           
