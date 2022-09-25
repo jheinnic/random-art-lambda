@@ -1,0 +1,248 @@
+import { CID } from "multiformats"
+import { BaseBlockstore } from "blockstore-core"
+import { importer, UserImporterOptions } from "ipfs-unixfs-importer"
+import {
+  exporter,
+  UnixFSFile,
+  UnixFSEntry,
+  UnixFSDirectory,
+  UnixFSFile
+} from "ipfs-unixfs-exporter"
+import { ReadStream, writeFileSync } from "fs"
+import * as fs from "fs"
+
+import {
+  FsBlockstore,
+  buildLruCache
+} from "../common/components/FsBlockstore.js"
+import { FsBlockstoreConfiguration } from "../common/interface/FsBlockstoreConfiguration.js"
+import { seedToString } from "../util/NameUtils.js"
+
+export type Input =
+  | { path: string, content: ReadStream }
+  | { path: string, content: Buffer }
+  | { path: string, content: Uint8Array }
+
+let offset: number = 1
+
+async function wireBlockstore (): Promise<FsBlockstore> {
+  const config: FsBlockstoreConfiguration = new FsBlockstoreConfiguration(
+    `/home/ionadmin/Git/lambdas/random-art-lambda/function/repository_${offset++}`,
+    500
+  )
+  const cache = buildLruCache(config)
+  const store = new FsBlockstore(config, cache)
+  await store.open()
+  return store
+}
+
+function refresh (sourceArray: Input[]): Input[] {
+  return sourceArray.map((source) => {
+    if (source.path === undefined) {
+      // Cannot re-open a source File if we have not retained its path
+      return source
+    }
+    let path: string = source.path
+    if (!path.startsWith("/")) {
+      if (
+        path.startsWith("artwork") ||
+        path.startsWith("portMap") ||
+        path.startsWith("term")
+      ) {
+        path = "/" + path
+        source.path = path
+      }
+    }
+
+    try {
+      if (source.path.includes("port")) {
+        source.content = fs.createReadStream("./fdoc.proto")
+      }
+    } catch (err) {
+      console.trace()
+    }
+    return source
+  })
+}
+
+// Where the blocks will be stored
+const prefixPath = "/artwork/prefix"
+const suffixPath = "/artwork/suffix"
+const plotMapPath = "/artwork/portMap"
+const protoPath = "/portMap"
+const termPath = "/term"
+
+// Suffix
+const bufOne = Uint8Array.of(
+  109,
+  116,
+  103,
+  64,
+  72,
+  112,
+  115,
+  108,
+  109,
+  101,
+  66,
+  126,
+  62
+)
+
+// Prefix
+const bufTwo = Uint8Array.of(
+  107,
+  98,
+  102,
+  119,
+  97,
+  32,
+  32,
+  101,
+  109,
+  97,
+  118,
+  109,
+  118,
+  98,
+  122
+)
+
+console.log("seedPrefix: " + seedToString(bufOne))
+console.log("seedSuffix: " + seedToString(bufTwo))
+fs.createWriteStream("bufOne").write(Buffer.from(bufOne))
+fs.createWriteStream("bufTwo").write(Buffer.from(bufTwo))
+
+// Import path /tmp/foo/bar
+const prefixTwo = {
+  path: prefixPath,
+  content: bufTwo
+}
+
+const prefixOne = {
+  path: prefixPath,
+  content: bufOne
+}
+
+const suffixTwo = {
+  path: suffixPath,
+  content: bufTwo
+}
+
+const suffixOne = {
+  path: suffixPath,
+  content: bufOne
+}
+
+const termTwo = {
+  path: termPath,
+  content: bufTwo
+}
+
+const termOne = {
+  path: termPath,
+  content: bufOne
+}
+
+const plotMapProto = {
+  path: plotMapPath,
+  content: fs.createReadStream("./fdoc.proto")
+}
+
+const proto = {
+  path: protoPath,
+  content: fs.createReadStream("./fdoc.proto")
+}
+
+const options: UserImporterOptions = {
+  strategy: "flat",
+  reduceSingleLeafToSelf: true,
+  rawLeaves: false,
+  onlyHash: false,
+  cidVersion: 0,
+  leafType: "file"
+}
+
+const lists = [
+  [proto],
+  [termOne],
+  [termTwo],
+  [suffixOne],
+  [prefixTwo],
+  [suffixOne, prefixTwo],
+  [prefixTwo, suffixOne],
+  [suffixOne, prefixTwo, plotMapProto],
+  [suffixTwo, prefixOne, plotMapProto],
+  [prefixTwo, plotMapProto, suffixOne],
+  [suffixOne, plotMapProto, prefixTwo],
+  [plotMapProto, suffixTwo, prefixOne]
+]
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+async function doRun (): Promise<void> {
+  // Where the blocks will be stored
+  const blockstore = await wireBlockstore()
+  const results = lists.map(async (list) => {
+    const retval = []
+    list = refresh(list)
+    // console.info(`Running ${JSON.stringify(list)}`)
+    for await (const entry of importer(list, blockstore, options)) {
+      // console.info(entry, entry.cid.toString())
+      retval.push(entry)
+    }
+    return { list, retval }
+  })
+
+  const source = await results
+  for await (const { list, retval } of source) {
+    console.info(`\n\nRunning ${JSON.stringify(list)}`)
+    for (let ii = 0; ii < retval.length; ii++) {
+      console.info(retval[ii], retval[ii].cid.toString())
+    }
+  }
+  // const newList = [
+  //   (await source[0])[0],
+  //   (await source[1])[0],
+  //   (await source[2])[0]
+  // ]
+  // newList[0].path = plotMapPath
+  // newList[1].path = prefixPath
+  // newList[2].path = suffixPath
+  // for await (const entry of importer(newList, blockstore, options)) {
+  //   console.info(entry)
+  // }
+}
+
+async function doRun2 (): Promise<void> {
+  const source = refresh([proto])
+  const blockstore = await wireBlockstore()
+  const cid: CID[] = new Array<CID>(1)
+  for await (const entry of importer(source, blockstore, options)) {
+    cid[0] = entry.cid
+  }
+  // const expo = await exporter
+  const entry = (await exporter(cid[0], blockstore)) as UnixFSFile
+  console.info(entry.cid) // Qmqux
+  console.info(entry.path) // Qmbaz/foo/bar.txt
+  console.info(entry.name) // bar.txt
+
+  // stream content from unixfs node
+  const size = entry.unixfs.fileSize()
+  console.info(size)
+  const bytes = new Uint8Array(size)
+  let offset = 0
+  let buf: Uint8Array
+  for await (buf of entry.content()) {
+    bytes.set(buf, offset)
+    offset += buf.length
+  }
+  writeFileSync("copy.out", bytes)
+}
+
+doRun2()
+  .then(() => {
+    console.log("Main returned through success state!")
+  })
+  .catch((err) => {
+    console.error(`main() returned in error state: `, err)
+    console.trace()
+  })

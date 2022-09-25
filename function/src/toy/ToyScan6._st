@@ -1,0 +1,106 @@
+import { interval, ReplaySubject, queueScheduler, tap, map, asyncScheduler, range, mergeAll, switchMap, share, take, fromEvent, Observable, delay, partition, groupBy, switchAll, delayWhen, timer, observeOn } from "rxjs";
+
+function makeTerminal(terminalIndex: number) {
+    console.warn(`!!! Called for index ${terminalIndex}`)
+    if (terminalIndex == 3) {
+        return (source: Observable<any>) => { 
+            console.log("Time to end it!");
+            return source.pipe(take(0));
+        }
+    }
+    function pipelineOne(source: Observable<any>) {
+        const tracker = {
+            arrivals: 0,
+            departures: 0,
+            inFlight: 0,
+            phantoms: 0,
+            manifest: new Set()
+        };
+    
+        const passengerRegistry = new FinalizationRegistry(({tracker, ticket}) => {
+            if (ticket in tracker.manifest) {
+                tracker.departures += 1;
+                tracker.inFlight -= 1;
+                tracker.phantoms += 1;
+                tracker.manifest.remove(ticket);
+                console.info(`Passenger with ticket ${ticket.value} (group=${ticket.group}; order=${ticket.order}) has been removed as a phantom!  Manifest shows ${tracker.inFlight} of ${tracker.arrivals} arrivals are in flight, and ${tracker.departures} have deboarded.`);
+            }
+        });
+        
+        function addWeakPassenger(tracker, ticket, passenger) {
+            const weakRef = new WeakRef(passenger);
+            ticket["passenger"] = weakRef;    
+            passengerRegistry.register(passenger, { tracker, ticket })
+        }
+        
+        function deboardPassenger(ticket) {
+            if (tracker.manifest.has(ticket)) {
+                tracker.manifest.delete(ticket);
+                tracker.inFlight -= 1;
+                tracker.departures += 1;
+                ticket["passenger"].deref()?.onExit.next(ticket.value);
+                console.info(`Passenger with ticket ${ticket.value} (group=${ticket.group}; order=${ticket.order}) has de-boarded explicitly!  Manifest shows ${tracker.inFlight} of ${tracker.arrivals} arrivals are in flight, and ${tracker.departures} have deboarded.`);
+            }
+        }
+        let nextTrigger = new ReplaySubject();
+        nextTrigger.next(0);
+        
+        return source.pipe(
+            observeOn(queueScheduler),
+            map (
+                (ii) => {
+                let myWhen = nextTrigger;
+                let myNext = new ReplaySubject();
+                nextTrigger = myNext;
+                return[ii, myWhen, myNext]
+                }
+            ),
+            delayWhen( (x) => {
+                return x[1].asObservable();
+            }),
+            map((ii) => {
+                tracker.arrivals++;
+                tracker.inFlight++;
+                const ticket = { "value": ii[0], "order": -1, "group": -1, "passenger": undefined};
+                tracker.manifest.add(ticket);
+                const passenger = { onExit: ii[2]};
+                addWeakPassenger(tracker, ticket, passenger)
+                console.log(`Passenger ${ii[0]} arriving at terminal ${terminalIndex}!  Manifest shows ${tracker.inFlight} of ${tracker.arrivals} arrivals are in flight, and ${tracker.departures} have deboarded.`);
+                return ticket;
+            }),
+            delayWhen((ticket) => {
+                return timer(Math.random() * 12, queueScheduler);
+            }),
+            observeOn(queueScheduler),
+            map((ticket, idx) => { ticket.order = idx; ticket.group = (idx % 3); return ticket; }),
+            groupBy((tick) => tick.group),
+            mergeAll(),
+            tap({ next: deboardPassenger, complete: () => { console.log(JSON.stringify(tracker)); }})
+        );
+    }
+
+    return pipelineOne;
+}
+
+const source = interval(2, queueScheduler).pipe(
+    share({
+        resetOnError: false,
+        resetOnComplete: false,
+        resetOnRefCountZero: false,
+    }),
+    observeOn(queueScheduler)
+)
+
+const trials = interval(4000).pipe(
+     take(4),
+     switchMap((value, index) => { 
+        console.warn(`!! Time for terminal ${value}`);
+        return source.pipe(
+            makeTerminal(value));
+     })
+).subscribe((results) => { return {
+    "next": (results) => {
+        console.log(results);
+    }, 
+    "error": (err) => { console.error(err); }
+}});
