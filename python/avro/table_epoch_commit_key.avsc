@@ -1,0 +1,9 @@
+{ "type": "record", "name": "TableEpochCommitKey", "namespace": "info.jchein.datalake.models", 
+  "doc": "Key referring to an indexed segment of epoch commit history, qualified by a specific member table.  This is not the same as the local table's date-stamped commit ID, but it is related to same.",
+  "fields": [
+    {"name": "data_collection", "type": "string", "doc": "Source table this instance's counters relate to" },
+    {"name": "epoch_at", "type": "string", "doc": "Snapshot to CDC transition time stamp retained for a continuous archive of a single snapshot followed by all subsequent change"},
+    {"name": "incremental_from_at", "type": "string", "doc": "Inclusive earlier time stamp bounding the slice of events found in the identified commit range"},
+    {"name": "incremental_until_at", "type": "string", "doc": "Exclusive later time stamp bounding the slice of events found in the identified commit range"}
+  ]
+}

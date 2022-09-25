@@ -1,0 +1,84 @@
+{
+   "type":"record",
+   "name":"WindowContent",
+   "namespace":"info.jchein.datalake.models",
+   "doc":"Identifier for one table's contribution to a timeline commit change set",
+   "fields":[
+      {
+         "name":"earliest_tx_id",
+         "type":"long",
+         "doc":"Lowest tx_id across all topic partitions, may overlap with highest of previous range"
+      },
+      {
+         "name":"latest_tx_id",
+         "type":"long",
+         "doc":"Highest tx_id across all topic partitions, may overlap with lowest of subsequent range"
+      },
+      {
+         "name":"earliest_at",
+         "type":"long",
+         "logicalType":"timestamp-micros",
+         "doc":"Earliest commit time recorded across all topic partitions"
+      },
+      {
+         "name":"latest_at",
+         "type":"long",
+         "logicalType":"timestamp-micros",
+         "doc":"Latest commit time recorded across all topic partitions"
+      },
+      {
+         "name":"topic_regions",
+         "type":{
+            "type":"map",
+            "values":{
+               "type":"array",
+               "items":{
+                  "type":"record",
+                  "name":"PartitionRegion",
+                  "namespace":"info.jchein.datalake.models",
+                  "doc":"Identifier for one table's contribution to a timeline commit change set",
+                  "fields":[
+                     {
+                        "name":"partition",
+                        "type":"int",
+                        "doc":"Partition index where this region is found"
+                     },
+                     {
+                        "name":"earliest_offset",
+                        "type":"long",
+                        "doc":"First offset of the designated region, inclusive"
+                     },
+                     {
+                        "name":"latest_offset",
+                        "type":"long",
+                        "doc":"Last offset of the designated region, inclusive"
+                     },
+                     {
+                        "name":"earliest_tx_id",
+                        "type":"long",
+                        "doc":"Lowest tx_id in the designated region, may overlap with highest of previous range"
+                     },
+                     {
+                        "name":"latest_tx_id",
+                        "type":"long",
+                        "doc":"Highest tx_id in the designated region, may overlap with lowest of subsequent range"
+                     },
+                     {
+                        "name":"earliest_at",
+                        "type":"long",
+                        "logicalType":"timestamp-micros",
+                        "doc":"Earliest commit time recorded in designated region"
+                     },
+                     {
+                        "name":"latest_at",
+                        "type":"long",
+                        "logicalType":"timestamp-micros",
+                        "doc":"Latest commit time recorded in designated region"
+                     }
+                  ]
+               }
+            }
+         }
+      }
+   ]
+}

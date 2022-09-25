@@ -1,0 +1,18 @@
+{
+  "type" : "record",
+  "name" : "WindowKey",
+  "namespace" : "info.jchein.datalake.models",
+  "fields" : [ {
+    "name" : "start",
+    "type" : [ {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }, "null" ]
+  }, {
+    "name" : "end",
+    "type" : [ {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }, "null" ]
+  } ]
+}
