@@ -1,0 +1,202 @@
+import { IEvent, ICommand } from '@nestjs/cqrs';
+import {concatMap, delayWhen, tap, EMPTY, filter, finalize, from, interval, map, mergeMap, mergeScan, of, range, share, Subject, switchAll, switchScan, take, timer, windowCount, OperatorFunction, switchMap, Observable, first, connect, withLatestFrom, expand, observeOn, queueScheduler} from 'rxjs';
+
+class FakeEvent implements IEvent {
+    constructor( private readonly tick: number ) { }
+}
+
+let multi = 1;
+
+class FakeCommand implements ICommand {
+    constructor( private readonly multi: number ) { }
+
+    public run(): void {
+        multi = this.multi;
+    }
+}
+
+let timeSrc = interval(5).pipe(
+    map<number, IEvent>( (x) => new FakeEvent(x * multi) ),
+    share({
+      resetOnError: false,
+      resetOnComplete: false,
+      resetOnRefCountZero: false,
+    })
+  );
+
+const actorBehavior = new Subject<ActorBehavior<MyActorState, IEvent, ICommand>>();
+const actorState = new Subject<MyActorState>();
+const actorCommands = new Subject<ICommand>();
+
+const queue = [];
+const EMPTY_QUEUE_DELAY = of(0);
+const myTimeSrc = timeSrc.pipe(
+    delayWhen( (x) => {
+        const queueSize = queue.length;
+        queue.push(
+            new Subject()
+        )
+        return (queueSize == 0) ? EMPTY_QUEUE_DELAY : queue[queueSize - 1].asObservable()
+    }),
+    withLatestFrom(actorState.asObservable()),
+    // windowCount(1),
+);
+
+function openGate() {
+    const size = queue.length;
+    const nextInQueue = queue.shift();
+    setTimeout( () => {
+        nextInQueue.next(size)
+        nextInQueue.complete();
+    }, 0);
+}
+
+interface ActorBehavior<State, Event extends IEvent = IEvent, Command extends ICommand = ICommand>  {
+    readonly nextState: State
+    readonly executions: Observable<Command>
+    readonly eventHandler: OperatorFunction<[Event, State], ActorBehavior<State, Event, Command>>
+}
+
+type AB<S, E, C> = OperatorFunction<[E, S], [S, C[], AB<S, E, C>]>;
+
+class PreserveBehavior<State, Event extends IEvent = IEvent, Command extends ICommand = ICommand> implements ActorBehavior<State, Event, Command> {
+    readonly eventHandler: OperatorFunction<[Event, State], ActorBehavior<State, Event, Command>>
+    constructor(
+        lastBehavior: ActorBehavior<State, Event, Command>,
+        readonly nextState: State = lastBehavior.nextState,
+        readonly executions: Observable<Command> = EMPTY
+    ) {
+       this.eventHandler = lastBehavior.eventHandler;
+    }
+}
+
+type MyActorState = {
+    x: number; y: number;
+};
+const delays=[5, 20, 10, 1, 12, 0, 18, 52];
+
+class InitalActorBehavior implements ActorBehavior<MyActorState, IEvent, ICommand> {
+    nextState: MyActorState = { x: 0, y: 0 };
+    commandTarget: Subject<ICommand> = new Subject<ICommand>();
+    executions: Observable<ICommand> = this.commandTarget.asObservable();
+    eventHandler: OperatorFunction<[Observable<IEvent>, MyActorState], ActorBehavior<MyActorState, IEvent, ICommand>> = 
+        (input: Observable<[Observable<IEvent>, MyActorState]>): Observable<ActorBehavior<MyActorState, IEvent, ICommand>> => {
+            input.pipe(
+                observeOn(queueScheduler),
+                switchMap(),
+            )
+        }
+}
+        if (value < 3) {
+            return myTimeSrc.pipe(
+                map((tick) => { return ((value + 1) * 10000) +tick; }),
+                tap({ next: () => {if (queue.length > 0) { openGate();} } }),
+            );
+        } else if (value < 7) {
+            return myTimeSrc.pipe(
+                delayWhen( (tick) => timer(delays[tick % 7]) ),
+                map((tick) => { return ((value + 1) * 10000) +tick; }),
+                tap({ next: () => {if (queue.length > 0) { openGate();} } }),
+            );
+        } else {
+            return myTimeSrc.pipe(
+                filter( (tick) => {
+                    if ((tick % 5) >= 3) {
+                        return true;
+                    } else {
+                        openGate();
+                        return false;
+                    }
+                }),
+                delayWhen( (tick) => timer(3 * (tick % 20)) ),
+                map((tick) => { return ((value + 1) * 10000) +tick; }),
+                tap({ next: () => {if (queue.length > 0) { openGate();} } }),
+            )
+        }
+
+function expandNextBehavior(nextBehavior: ActorBehavior<MyActorState, IEvent, ICommand>, index: number): Observable<ActorBehavior<MyActorState>> { 
+    return myTimeSrc.pipe(
+        connect(nextBehavior.eventHandler),
+        tap({
+            next: (nextBehavior: ActorBehavior<MyActorState>) => { 
+                if (nextBehavior instanceof PreserveBehavior) {
+                    // TODO Is this idempotent if state is identical??
+                    actorState.next(nextBehavior.nextState);
+                    nextBehavior.executions.subscribe(actorCommands);
+                    // Anticipate upcoming filter since we won't
+                    // trigger another
+                    openGate()
+                }
+            }
+        }),
+        filter((nextBehavior) => ! (nextBehavior instanceof PreserveBehavior)),
+        first()
+    )
+}
+actorBehavior.pipe(
+    expand<ActorBehavior<MyActorState, IEvent, ICommand>,Observable<ActorBehavior<MyActorState, IEvent, ICommand>>>(expandNextBehavior),
+    concatMap( (behave) => behave.executions )
+).subscribe({
+    next: (next) => { console.log(next); if (next instanceof FakeCommand) { next.run(); } },
+    error: (err) => { console.error(err); },
+    complete: () => { console.log("Done"); }
+});
+
+/* const bar = expandNextBehavior({
+    nextState: { x: 3, y: 6 },
+    executions: EMPTY,
+    eventHandler: (event, state) => { }
+}, 0) */
+
+
+   /* expand( (nextBehavior: ActorBehavior<MyActorState, IEvent, ICommand>, index: number) => { 
+        return myTimeSrc.pipe(
+            withLatestFrom(actorState.asObservable()),
+            connect(nextBehavior.eventHandler),
+            tap({
+                next: (nextBehavior: ActorBehavior<MyActorState>) => { 
+                    if (nextBehavior instanceof PreserveBehavior) {
+                        // TODO Is this idempotent if state is identical??
+                        actorState.next(nextBehavior.nextState);
+                        nextBehavior.executions.subscribe(actorCommands);
+                        // Anticipate upcoming filter since we won't
+                        // trigger another
+                        openGate()
+                    }
+                }
+            }),
+            filter((nextBehavior) => ! (nextBehavior instanceof PreserveBehavior)),
+            first()
+        )
+    })*/
+
+/*
+    switchMap((acc, value, index) => {
+        // console.log(`<${acc}>; <${value}>`);
+        if (value < 3) {
+            return myTimeSrc.pipe(
+                map((tick) => { return ((value + 1) * 10000) +tick; }),
+                tap({ next: () => {if (queue.length > 0) { openGate();} } }),
+            );
+        } else if (value < 7) {
+            return myTimeSrc.pipe(
+                delayWhen( (tick) => timer(delays[tick % 7]) ),
+                map((tick) => { return ((value + 1) * 10000) +tick; }),
+                tap({ next: () => {if (queue.length > 0) { openGate();} } }),
+            );
+        } else {
+            return myTimeSrc.pipe(
+                filter( (tick) => {
+                    if ((tick % 5) >= 3) {
+                        return true;
+                    } else {
+                        openGate();
+                        return false;
+                    }
+                }),
+                delayWhen( (tick) => timer(3 * (tick % 20)) ),
+                map((tick) => { return ((value + 1) * 10000) +tick; }),
+                tap({ next: () => {if (queue.length > 0) { openGate();} } }),
+            )
+        }
+    }, 0),*/

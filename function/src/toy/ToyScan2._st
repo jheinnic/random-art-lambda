@@ -1,0 +1,39 @@
+import {delayWhen, EMPTY, filter, from, interval, map, mergeMap, of, share, switchScan, take, timer} from 'rxjs';
+
+let timeSrc = interval(5).pipe(
+    share({
+      resetOnError: false,
+      resetOnComplete: false,
+      resetOnRefCountZero: false,
+    })
+  );
+
+let modifiers: [number, (number) => number][] = [
+    [10, (x) => x + 2 ],
+    [62, (x) => x * 2 ],
+    [84, (x) => x * x ],
+    [90, undefined],
+    [168, (x) => x - 5 ],
+    [253, (x) => (0.4 * x * x) - (6 * x)]
+]
+
+of(...modifiers).pipe(
+    filter( (x) => !!x ),
+    delayWhen((value) => timer(value[0])),
+    switchScan((acc, value) => {
+        console.log(`<${acc}>; <${value}>`);
+        const func = value[1];
+        if (! func) { return new Promise((resolve, reject) => {}); }
+        return timeSrc.pipe(
+            map((tick) => {
+                // console.log(`${tick} -> ${func}`);
+                return func(tick);
+            })
+        );
+    }, EMPTY),
+    take(54)
+).subscribe({
+    next: (next) => { console.log(next); },
+    error: (err) => {console.error(err); },
+    complete: () => { console.log("Done"); }
+});

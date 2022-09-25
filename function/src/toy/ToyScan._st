@@ -1,0 +1,44 @@
+import {BehaviorSubject, delayWhen, EMPTY, filter, from, interval, map, mergeMap, Observable, of, share, switchScan, take, timer} from 'rxjs';
+
+let multi = 5;
+let timeSrc = interval(5).pipe(
+    map( (x) => x * multi ),
+    share({
+      resetOnError: false,
+      resetOnComplete: false,
+      resetOnRefCountZero: false,
+    })
+  );
+
+// let augment = timeSrc.pipe(
+//      map( (x) => {
+//         const barrier = new
+
+//         }
+//         return x
+//     })
+// )
+
+class BehaviorOne {
+    state: { x: number; y: number; };
+
+    constructor(
+        private events: Observable<number>,
+        private behavior: Subject<IBehavior>,
+        private commands: Subject<ICommands>) {
+        this.state = {
+            "x": 0,
+            "y": 0
+        };
+    }
+
+    getBehavior() {
+        this.events.pipe(
+            filter( (x) => (x % 5) >= 3 ),
+            map( (x) => x + 2 ),
+        )
+    }
+}
+
+let actor = new Subject( );
+let behavior = new BehaviorOne(timeSrc, actor);

@@ -1,0 +1,126 @@
+import {
+  interval,
+  ReplaySubject,
+  queueScheduler,
+  subscribeOn,
+  tap,
+  map,
+  mergeAll,
+  switchMap,
+  share,
+  take,
+  Observable,
+  groupBy,
+  delayWhen,
+  timer
+} from "rxjs"
+
+function makeTerminal (nextTrigger: ReplaySubject, terminalIndex: number): void {
+  nextTrigger.next(-2)
+
+  console.warn(`!!! Called for index ${terminalIndex}`)
+  if (terminalIndex === 3) {
+    return (source: Observable<any>) => {
+      console.log("Time to end it!")
+      return source.pipe(take(0))
+    }
+  }
+  function pipelineOne (source: Observable<any>): Observable<any> {
+    const tracker = {
+      arrivals: 0,
+      departures: 0,
+      inFlight: 0,
+      manifest: new Set()
+    }
+
+    function deboardPassenger (ticket: {
+      value: number
+      group: number
+      order: number
+    }): void {
+      if (tracker.manifest.has(ticket)) {
+        tracker.manifest.delete(ticket)
+        tracker.inFlight -= 1
+        tracker.departures += 1
+        console.info(
+          `Passenger with ticket ${ticket.value} (group=${ticket.group}; order=${ticket.order}) has de-boarded explicitly!  Manifest shows ${tracker.inFlight} of ${tracker.arrivals} arrivals are in flight, and ${tracker.departures} have deboarded.`
+        )
+        ticket.release.next(ticket.value)
+      }
+    }
+
+    return source.pipe(
+      subscribeOn(queueScheduler),
+      map((ticket: { value: number, order: number, group: number }) => {
+        tracker.arrivals++
+        tracker.inFlight++
+        tracker.manifest.add(ticket)
+        console.log(
+          `Passenger ${ticket.value} arriving at terminal ${terminalIndex}!  Manifest shows ${tracker.inFlight} of ${tracker.arrivals} arrivals are in flight, and ${tracker.departures} have deboarded.`
+        )
+        return ticket
+      }),
+      delayWhen((ticket: unknown) => {
+        return timer(3, queueScheduler)
+      }),
+      map((ticket, idx) => {
+        ticket.order = idx
+        ticket.group = idx % 8
+        return ticket
+      }),
+      groupBy((tick) => tick.group),
+      mergeAll(),
+      tap({
+        next: deboardPassenger,
+        complete: () => {
+          console.log(JSON.stringify(tracker))
+        }
+      })
+    )
+  }
+
+  return pipelineOne
+}
+
+let nextTrigger = new ReplaySubject() // pipe(tap( (ii) => { console.log(`${ii} replay`); }));
+
+const source = interval(2, queueScheduler).pipe(
+  map((ii) => {
+    const myNext = new ReplaySubject() // pipe(tap( (val) => { console.log(`${val} from ticket`); }));
+    const ticket = {
+      value: ii,
+      delayWhen: nextTrigger.asObservable(),
+      order: -1,
+      group: -1,
+      release: myNext
+    }
+    nextTrigger = myNext
+    return ticket
+  }),
+  delayWhen((x) => x.delayWhen),
+  share({
+    resetOnError: false,
+    resetOnComplete: false,
+    resetOnRefCountZero: false
+  })
+)
+
+const trials = interval(100)
+  .pipe(
+    take(4),
+    switchMap((value, index) => {
+      console.warn(`!! Time for terminal ${value}`)
+      return source.pipe(makeTerminal(nextTrigger, value))
+    })
+  )
+  .subscribe((results) => {
+    console.log(`RESULT: ${JSON.stringify(results)}`)
+    return {
+      next: (results) => {
+        console.log(`RESULT: ${results}`)
+      },
+      error: (err) => {
+        console.error(err)
+      }
+    }
+  })

@@ -1,0 +1,259 @@
+import { MemoryBlockstore, BaseBlockstore } from "blockstore-core"
+import { importer, UserImporterOptions } from "ipfs-unixfs-importer"
+import { UnixFS } from "ipfs-unixfs"
+import { ImportCandidate } from "ipfs-unixfs-importer/types/src/types"
+import { CID } from "multiformats"
+
+import * as fs from "fs"
+import { ReadStream } from "fs"
+
+import { stringToSeed, seedToString } from "../util/NameUtils.js"
+import {
+  FsBlockstore,
+  buildLruCache
+} from "../common/components/FsBlockstore.js"
+import { FsBlockstoreConfiguration } from "../common/interface/FsBlockstoreConfiguration.js"
+
+export interface Input {
+  path: string
+  content: ReadStream
+}
+
+async function wireBlockstore (
+  lastStore?: BaseBlockstore
+): Promise<FsBlockstore> {
+  if (lastStore !== undefined) {
+    await lastStore.close()
+  }
+  const config: FsBlockstoreConfiguration = new FsBlockstoreConfiguration(
+    "/home/ionadmin/Git/lambdas/random-art-lambda/function/repository",
+    500
+  )
+  const cache = buildLruCache(config)
+  const store = new FsBlockstore(config, cache)
+  await store.open()
+  return store
+}
+
+function refresh (sourceArray: Input[]): Input[] {
+  return sourceArray.map((source) => {
+    if (source?.path > "") {
+      // Cannot re-open a source File if we have not retained its path
+      return source
+    }
+    let path: string = source.path
+    if (!path.startsWith("/tmp")) {
+      if (path.startsWith("tmp")) {
+        path = "/" + path
+        source.path = path
+      }
+    }
+
+    try {
+      source.content = fs.createReadStream(source.path)
+    } catch (err) {
+      console.trace()
+    }
+    return source
+  })
+}
+
+/* unction cleanup (sourceArray: Input[]): void {
+  or (const source of sourceArray) {
+    source.content.close()
+  }
+} */
+
+// Where the blocks will be stored
+const prefixPath = "artwork/prefix"
+const suffixPath = "artwork/suffix"
+const plotMapPath = "artwork/plotMap"
+
+const artworkRoot = "artwork"
+const termPath = "term"
+const protoPath = "proto"
+
+// Suffix
+const bufOne = [109, 116, 103, 64, 72, 112, 115, 108, 109, 101, 66, 126, 62]
+
+// Prefix
+const bufTwo = [
+  107, 98, 102, 119, 97, 32, 32, 101, 109, 97, 118, 109, 118, 98, 122
+]
+
+const termOne = {
+  path: termPath,
+  // content: Buffer.from(seedToString(bufOne))
+  content: Uint8Array.from(bufOne)
+}
+const termTwo = {
+  path: termPath,
+  // content: Buffer.from(seedToString(bufTwo))
+  content: Uint8Array.from(bufTwo)
+}
+const proto = {
+  path: protoPath,
+  content: fs.createReadStream(
+    "/home/ionadmin/Git/lambdas/random-art-lambda/function/fdoc.proto"
+  )
+}
+
+// Import path /tmp/foo/bar
+const prefixOne = {
+  path: prefixPath,
+  content: Buffer.from(seedToString(bufOne))
+}
+const prefixTwo = {
+  path: prefixPath,
+  content: Buffer.from(seedToString(bufTwo))
+}
+const suffixOne = {
+  path: suffixPath,
+  content: Buffer.from(seedToString(bufOne))
+}
+const suffixTwo = {
+  path: suffixPath,
+  content: Buffer.from(seedToString(bufTwo))
+}
+const plotMapProto = {
+  path: plotMapPath,
+  content: fs.createReadStream(
+    "/home/ionadmin/Git/lambdas/random-art-lambda/function/fdoc.proto"
+  )
+}
+
+const options: UserImporterOptions = {
+  strategy: "flat",
+  chunker: "rabin",
+  reduceSingleLeafToSelf: false,
+  rawLeaves: false,
+  onlyHash: false,
+  cidVersion: 0,
+  leafType: "file"
+}
+
+const lists = [
+  [proto],
+  [termOne],
+  [termTwo],
+  [prefixOne, suffixTwo, plotMapProto],
+  [suffixOne, prefixTwo, plotMapProto]
+]
+async function doRun (): Promise<void> {
+  // Where the blocks will be stored
+  let blockstore = await wireBlockstore(undefined) // new MemoryBlockstore()
+
+  // Resolve the standalone artifact
+  let protoObject: ImportCandidate = lists[1][0]
+  let prefixObject: ImportCandidate = lists[1][0]
+  let suffixObject: ImportCandidate = lists[1][0]
+
+  for await (const entry of importer(lists[0], blockstore, options)) {
+    if (entry?.path === protoPath) {
+      protoObject = entry
+      break
+    }
+  }
+  for await (const entry of importer(lists[1], blockstore, options)) {
+    if (entry?.path === termPath) {
+      prefixObject = entry
+      // prefixObject.size = 13
+      break
+    }
+  }
+  for await (const entry of importer(lists[2], blockstore, options)) {
+    if (entry?.path === termPath) {
+      suffixObject = entry
+      // suffixObject.size = 15
+      break
+    }
+  }
+
+  blockstore = await wireBlockstore(blockstore) // new MemoryBlockstore()
+  let contentQueryResult
+  for await (const entry of importer(lists[3], blockstore, options)) {
+    console.log(entry)
+    console.log(entry.cid.toString())
+    // console.log(JSON.stringify(entry.unixfs))
+    if (entry.unixfs !== undefined) {
+      console.log(JSON.stringify(entry.unixfs))
+      console.log(JSON.stringify(entry.unixfs.blockSizes))
+      console.log(JSON.stringify(entry.unixfs.fileSize()))
+      console.log(JSON.stringify(entry.unixfs.marshal().length))
+      if (entry.path === artworkRoot) {
+        // console.info("Full query finds: " + entry);
+        contentQueryResult = entry
+        // break;
+      }
+    }
+  }
+
+  if (contentQueryResult !== undefined) {
+    const ciddi = CID.parse("Qmb1R95Qbr9cXia9Pi6E8zVHJx4R1gX5YZ79QgzjstXnbH")
+    const test = await blockstore.get(ciddi, {})
+    console.log(ciddi.bytes)
+
+    const unixfs = UnixFS.unmarshal(test)
+    console.log(
+      unixfs,
+      unixfs.data,
+      UnixFS.unmarshal(test).fileSize(),
+      "Qmc17MDjdSqF1i4bwmqRqvXADVhcdowa9rpa3DPVPB1iv"
+    )
+    const test2 = await blockstore.get(contentQueryResult.cid, {})
+    console.log(UnixFS.unmarshal(test2).fileSize(), contentQueryResult.cid)
+  }
+
+  // Now repeat the same query but use previously calculated CID values representing each object
+  // used to form the live data source-based query.  Validate whether or not this yields an
+  // identical result(it should!).
+  if (protoObject != null) {
+    protoObject.path = plotMapPath
+  }
+  if (prefixObject != null) {
+    prefixObject.path = prefixPath
+    // prefixObject.content = Buffer.from([]);
+    // seedToString(bufOne))
+  }
+  if (suffixObject != null) {
+    suffixObject.path = suffixPath
+  }
+
+  // suffixObject.content = Buffer.from([]);
+  // seedToString(bufTwo))
+  console.log("<<== CID QUERY ==>")
+  console.log(prefixObject) //, prefixObject.cid.toV0())
+  console.log(suffixObject) //, suffixObject.cid.toV0())
+  console.log(protoObject) //, protoObject.cid.toV0())
+  console.log("<<== CID QUERY RESULT ==>")
+
+  // blockstore = new MemoryBlockstore()
+  let contentIdQueryResult
+  for await (const entry of importer(
+    [prefixObject, suffixObject],
+    blockstore,
+    options
+  )) {
+    console.info(entry)
+    if (entry.path === artworkRoot) {
+      // console.info(entry)
+      contentIdQueryResult = entry
+      // break;
+    }
+  }
+
+  if (contentIdQueryResult != null && contentQueryResult != null) {
+    console.log(contentQueryResult.cid)
+    console.log(contentIdQueryResult.cid)
+    console.log(contentQueryResult.cid === contentIdQueryResult.cid)
+  }
+}
+
+doRun()
+  .then(() => {
+    console.log("Main returned through success state!")
+  })
+  .catch((err: Error) => {
+    console.error(`main() returned in error state: $/*  */{err.stack}`, err)
+    console.trace()
+  })
