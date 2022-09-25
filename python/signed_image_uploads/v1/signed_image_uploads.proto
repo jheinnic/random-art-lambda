@@ -1,0 +1,78 @@
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package signed_image_uploads;
+
+option java_package = "jchein.name.grpc.signed_image_uploads.actions.v1";
+
+message CreateSignedUploadSingleRequest {
+    repeated OptionalUploadFeature options = 1;
+}
+
+message CreateSignedUploadBatchRequest {
+    repeated OptionalUploadFeature options = 1;
+    uint32 totalCount = 2;
+}
+
+message CreateSignedUploadCursorRequest {
+    repeated OptionalUploadFeature options = 1;
+    uint32 totalCount = 2;
+    uint32 fetchCount = 3;
+}
+
+message ContinueSignedUploadCursorRequest {
+    string cursorToken = 1;
+}
+
+enum FlaggedOptionalFeature {
+    COLOR_ANALYSIS = 0;
+    IMAGE_METADATA = 1;
+    QUALITY_ANALYSIS = 2;
+}
+
+message AutoTaggingOptionalFeature {
+    float autoTagThreshold = 1;
+    bool googleTagging = 2;
+    bool imaggaTagging = 3;
+    bool awsRekTagging = 4;
+}
+
+message OptionalUploadFeature {
+    oneof featureKind {
+        FlaggedOptionalFeature flag = 1;
+        AutoTaggingOptionalFeature autoTag = 2;
+    }
+}
+
+message SignedUploadSingleReply {
+    string publicId = 1;
+    //
+    string queryString = 2;
+    //
+    string uploadUrl = 3;
+}
+
+message SignedUploadCursorReply {
+    string cursorToken = 1;
+}
+
+// Service for retrieving signed image upload URLs
+service ImageUploadSigningService {
+    rpc createSignedUpload(CreateSignedUploadSingleRequest) returns (SignedUploadSingleReply) {}
+    rpc createSignedUploadBatch(CreateSignedUploadBatchRequest) returns (stream SignedUploadSingleReply) {}
+    // rpc createSignedUploadCursor(CreateSignedUploadCursorRequest) returns (SignedUploadCursorReply) {}
+    // rpc continueSignedUploadCursor(ContinueSignedUploadCursorRequest) returns (stream SignedUploadSingleReply) {}
+}

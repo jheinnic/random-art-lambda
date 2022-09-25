@@ -1,0 +1,7 @@
+cloudinary==1.22
+grpcio==1.33.2
+grpcio-tools==1.33.2
+protobuf==3.14.0
+python-dotenv==0.15.0
+scikit-image==0.17.2
+datauri==1.0.0
