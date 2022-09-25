@@ -1,0 +1,21 @@
+env:
+  browser: true
+  es2021: true
+extends: standard-with-typescript
+overrides: []
+parserOptions:
+  ecmaVersion: latest
+  project: /home/ionadmin/Git/lambdas/random-art-lambda/function/tsconfig.json
+  sourceType: module
+rules:
+  quotes: off
+  "@typescript-eslint/quotes":
+    - error
+    - double
+    - allowTemplateLiterals: true
+  no-unused-vars: off
+  "@typescript-eslint/no-unused-vars":
+    - warn
+    - vars: all
+      args: after-used
+      ignoreRestSiblings: false
