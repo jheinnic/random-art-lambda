@@ -1,0 +1,30 @@
+import { Module } from "@nestjs/common"
+/*
+import { CommandBus, CqrsModule } from "@nestjs/cqrs"
+import { LambdaSqsAdapter } from "../../aws/components/LambdaSqsAdapter"
+import { AppService } from "../components/AppService"
+import { CreateRandomArtTaskCommandHandler } from "../components/commands/CreateRandomArtTaskCommandHandler"
+import { CreatedRandomArtTaskEventHandler } from "../components/events/CreatedRandomArtTaskEventHandler"
+import { RandomArtTaskSagas } from "../components/sagas/RandomArtTaskSagas"
+*/
+import { RandomArtTaskRepository } from "../components/models/RandomArtTaskRepository.js"
+import { IpfsModule } from "../../ipfs/di/IpfsModule.js"
+
+// export const CommandHandlers = [CreateRandomArtTaskCommandHandler]
+// export const EventHandlers = [CreatedRandomArtTaskEventHandler]
+
+@Module({
+  // imports: [CqrsModule, PlotMapLoaderModule, StorageStrategyLoaderModule],
+  imports: [IpfsModule],
+  //   controllers: [HeroesGameController],
+  providers: [
+/* LambdaSqsAdapter,
+  RandomArtTaskSagas,
+  ...CommandHandlers,
+  ...EventHandlers, */
+  RandomArtTaskRepository
+  ],
+  exports: [/* AppService, */ RandomArtTaskRepository]
+  })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
+export class RandomArtModule {}
