@@ -35,4 +35,4 @@ import { PlottingModuleTypes } from "./typez.js"
   exports: [PlottingModuleTypes.IpldRegionMapRepository, PlottingModuleTypes.ProtoBufAdapter, IpfsModuleTypes.AbstractBlockstore ]
   })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class, @typescript-eslint/no-unused-vars
-export class PlotMappingModule {}
+export class PlottingModule { }
