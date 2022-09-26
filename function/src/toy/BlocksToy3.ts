@@ -14,7 +14,7 @@ import pkg from "../painting/components/genjs6.cjs"
 import { GenModelPlotter } from "../painting/components/GenModelPlotter.js"
 import { IRegionPlotter } from "../painting/interface/IRegionPlotter.js"
 import { IpldRegionMapRepository } from "../plotting/components/IpldRegionMapRepository.js"
-import { PlotMappingModule } from "../plotting/di/PlottingModule.js"
+import { PlottingModule } from "../plotting/di/PlottingModule.js"
 import { PlottingModuleTypes } from "../plotting/di/typez.js"
 import { PBufRegionMapDecoder } from "../plotting/protobuf/PBufRegionMapDecoder.js"
 import { PointPlotData, PointPlotDocument, RefPoint } from "../plotting/protobuf/plot_mapping_pb.mjs"
@@ -513,29 +513,34 @@ export class AppService {
     const plotCid: CID = await this.adapter.transfer(plotData, 64)
     console.log(plotCid)
     const regionMap = await this.repository.load(plotCid)
-    const prefix = [...Buffer.from("This")]
+    const prefix = [...Buffer.from("Dos")]
+    // const prefix = [...Buffer.from("This")]
     // const prefix = [...Buffer.from("In the middle")]
-    const suffix = [...Buffer.from("place")]
+    const suffix = [...Buffer.from("37 Bone Coloured Stars")]
+    // const suffix = [...Buffer.from("place")]
     // const suffix = [...Buffer.from("of everything we saw")]
-    const genModel = newPicture(prefix, suffix)
-    const canvas: Canvas = new Canvas(1024, 1024)
-    const painter1 = new CanvasPixelPainter(canvas, fs.createWriteStream("./balloon1.png"))
-    const painter2 = new CanvasPixelPainter(canvas, fs.createWriteStream("./balloon2.png"))
-    const plotter1 = new GenModelPlotter(genModel, painter1)
-    const plotter2 = new GenModelPlotter(genModel, painter2)
-
-    // const plotter3 = new LoggingPlotter(fs.createWriteStream("./ipldPlotLog.dat"))
-    // const plotter4 = new LoggingPlotter(fs.createWriteStream("./pbPlotLog.dat"))
+    let genModel = newPicture(prefix, suffix)
+    let canvas: Canvas = new Canvas(1024, 1024)
+    let painter1 = new CanvasPixelPainter(canvas, fs.createWriteStream("./saloon1.png"))
+    let painter2 = new CanvasPixelPainter(canvas, fs.createWriteStream("./saloon2.png"))
+    let plotter1 = new GenModelPlotter(genModel, painter1)
+    let plotter2 = new GenModelPlotter(genModel, painter2)
 
     console.log("Starting first plot!")
-    // pbRegionMap.drive(plotter4)
-    // console.log("Plotted pbPlotLog.dat")
-    // regionMap.drive(plotter3)
-    // console.log("Plotted ipldPlotLog.dat")
     pbRegionMap.drive(plotter2)
-    console.log("Plotted gallon2.png")
+    console.log("Plotted saloon2.png")
     regionMap.drive(plotter1)
-    console.log("Plotted gallon.png")
+    console.log("Plotted saloon1.png")
+    const prefix2 = [...Buffer.from("m")]
+    genModel = newPicture(prefix2, suffix)
+    painter1 = new CanvasPixelPainter(canvas, fs.createWriteStream("./spoon1.png"))
+    painter2 = new CanvasPixelPainter(canvas, fs.createWriteStream("./spoon2.png"))
+    plotter1 = new GenModelPlotter(genModel, painter1)
+    plotter2 = new GenModelPlotter(genModel, painter2)
+    pbRegionMap.drive(plotter2)
+    console.log("Plotted spoon2.png")
+    regionMap.drive(plotter1)
+    console.log("Plotted spoon1.png")
     console.log("Finished!")
   }
 }
@@ -545,7 +550,7 @@ export class AppService {
   // IpfsModule.register(
 // { rootPath: "/home/ionadmin/Documents/raBlocks", cacheSize: 500, injectToken: IpfsModuleTypes.AbstractBlockstore}
   // ),
-  PlotMappingModule
+  PlottingModule
   ],
   providers: [AppService, ProtobufAdapter],
   exports: []
