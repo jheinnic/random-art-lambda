@@ -40,33 +40,34 @@ export interface RandomArtTask {
   plotMap: CID
 }
 
-export interface IModelBuilder {
-  prefix: (bytes: Uint8Array) => IModelBuilder
-  suffix: (bytes: Uint8Array) => IModelBuilder
-  plotMap: (link: CID) => IModelBuilder
+export interface IRandomArtTaskBuilder {
+  prefix: (bytes: Uint8Array) => IRandomArtTaskBuilder
+  suffix: (bytes: Uint8Array) => IRandomArtTaskBuilder
+  plotMap: (link: CID) => IRandomArtTaskBuilder
 }
 
 const NO_TERM = Uint8Array.of()
+const NO_CID = CID.parse("bafyreidthqcofmbxevgnm2tm3wgkwlaue5wjomm2ofyef4avlpduy6y2he")
 
-class ModelBuilder implements IModelBuilder {
+class RandomArtTaskBuilder implements IRandomArtTaskBuilder {
   private _prefix: Uint8Array = NO_TERM
   private _suffix: Uint8Array = NO_TERM
-  private _plotMap?: CID
+  private _plotMap: CID = NO_CID
 
   constructor (private readonly _repository: RandomArtTaskRepository) {
   }
 
-  public prefix (bytes: Uint8Array): ModelBuilder {
+  public prefix (bytes: Uint8Array): RandomArtTaskBuilder {
     this._prefix = bytes
     return this
   }
 
-  public suffix (bytes: Uint8Array): ModelBuilder {
+  public suffix (bytes: Uint8Array): RandomArtTaskBuilder {
     this._suffix = bytes
     return this
   }
 
-  public plotMap (link: CID): ModelBuilder {
+  public plotMap (link: CID): RandomArtTaskBuilder {
     this._plotMap = link
     return this
   }
@@ -75,7 +76,7 @@ class ModelBuilder implements IModelBuilder {
     const source = {
       prefix: this._prefix,
       suffix: this._suffix,
-      plotMap: this._plotMap!
+      plotMap: this._plotMap
     }
     return await this._repository.save(source)
   }
@@ -84,8 +85,8 @@ class ModelBuilder implements IModelBuilder {
 export class RandomArtTaskRepository {
   constructor (@Inject(IpfsModuleTypes.AbstractBlockstore) private readonly blockStore: BaseBlockstore) { }
 
-  public async create (director: (builder: IModelBuilder) => void): Promise<CID> {
-    const builder = new ModelBuilder(this)
+  public async create (director: (builder: IRandomArtTaskBuilder) => void): Promise<CID> {
+    const builder = new RandomArtTaskBuilder(this)
     director(builder)
     return await builder.build()
   }
@@ -141,7 +142,7 @@ export class AppService {
       const prefix = base64.baseDecode(fields[0])
       const suffix = base64.baseDecode(fields[1])
       const plotMap = CID.parse(fields[2])
-      const raTask = await this.repository.create((builder: IModelBuilder) => {
+      const raTask = await this.repository.create((builder: IRandomArtTaskBuilder) => {
         builder.prefix(prefix).suffix(suffix).plotMap(plotMap)
       })
       console.log(raTask)

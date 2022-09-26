@@ -1,10 +1,9 @@
 import { MemoryBlockstore } from "blockstore-core"
+import * as fs from "fs"
 import { importer, UserImporterOptions } from "ipfs-unixfs-importer"
 import { ImportCandidate } from "ipfs-unixfs-importer/types/src/types"
-import * as fs from "fs"
-import { ReadStream } from "fs"
 
-async function main () {
+async function main (): Promise<void> {
   // await trialOne();
   await trialTwo()
 }
@@ -14,7 +13,7 @@ export interface Input {
   content: ReadStream
 }
 
-function refresh (sourceArray: Input[]) {
+function refresh (sourceArray: Input[]): void {
   return sourceArray.map((source) => {
     if (!source.path) {
       // Cannot re-open a source File if we have not retained its path
@@ -37,7 +36,7 @@ function refresh (sourceArray: Input[]) {
   })
 }
 
-function cleanup (sourceArray: Input[]) {
+function cleanup (sourceArray: Input[]): void {
   for (const source of sourceArray) {
     source.content.close()
   }
@@ -81,7 +80,7 @@ const options: UserImporterOptions = {
   leafType: "raw"
 }
 
-async function trialOne () {
+async function trialOne (): Promise<void> {
   // Where the blocks will be stored
   const blockstore = new MemoryBlockstore()
 
@@ -90,9 +89,9 @@ async function trialOne () {
   }
 }
 
-async function trialTwo () {
+async function trialTwo (): Promise<void> {
   for (let source of testOne) {
-    console.warn("Begin new import!  " + source)
+    console.warn("Begin new import!  " + source.toString())
     const blockstore = new MemoryBlockstore()
     source = refresh(source)
     for await (const entry of importer(source, blockstore, options)) {
@@ -122,8 +121,8 @@ main().then(
     console.log("Main returned through success state!")
   }
 ).catch(
-  (err) => {
-    console.error(`main() returned in error state: ${err.stack}`, err)
+  (err: Error) => {
+    console.error(`main() returned in error state: ${err.stack ?? "No Stack"}`, err)
     console.trace()
   }
 )
