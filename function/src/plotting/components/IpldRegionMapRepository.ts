@@ -1,19 +1,29 @@
 import * as codec from "@ipld/dag-cbor"
 import { Inject, Injectable, Module } from "@nestjs/common"
-import { BitOutputStream } from "@thi.ng/bitstream"
 import { BaseBlockstore } from "blockstore-core"
-import * as fs from "fs"
-import * as math from "mathjs"
 import { CID } from "multiformats"
 import * as Block from "multiformats/block"
 import { sha256 as hasher } from "multiformats/hashes/sha2"
 
+import { printIndexBzl } from "../../../../external/build_bazel_rules_nodejs/internal/npm_install/generate_build_file"
 import { IpfsModuleTypes } from "../../ipfs/di/typez.js"
 import { PlottingModuleTypes } from "../di/typez.js"
 import { IRegionMapRepository } from "../interface/IRegionMapRepository.js"
 import { IpldRegionMap } from "./IpldRegionMap.js"
 import { RegionMapSchemaDsl } from "./IpldRegionMapSchemaDsl.js"
-import { DataBlock, NO_BYTES, RegionMap } from "./IpldSchemaTypes.js"
+import {
+  blockify,
+  DataBlock,
+  EMPTY_DIMENSION,
+  Fractioned,
+  fractionify,
+  logFractions,
+  Numeric,
+  paletteMaybe,
+  rationalize,
+  RegionMap,
+  stats,
+} from "./IpldSchemaTypes.js"
 
 @Injectable()
 export class IpldRegionMapRepository implements IRegionMapRepository {
@@ -82,8 +92,8 @@ class RegionMapBuilder implements IRegionMapBuilder {
   private _pixelWidth: number = -1
   private _pixelHeight: number = -1
   private _regionBoundary: Fractioned<string & keyof RegionBoundary> = { topN: 0, topD: 0, bottomN: 0, bottomD: 0, leftN: 0, leftD: 0, rightN: 0, rightD: 0 }
-  private _rows: Fractions = { N: [], D: [] }
-  private _cols: Fractions = { N: [], D: [] }
+  private _rowOrderX: number[] = EMPTY_DIMENSION
+  private _rowOrderY: number[] = EMPTY_DIMENSION
 
   constructor (
     private readonly _repository: IpldRegionMapRepository,
@@ -108,127 +118,111 @@ class RegionMapBuilder implements IRegionMapBuilder {
 
   public regionBoundary (boundary: Numeric<string & keyof RegionBoundary>): RegionMapBuilder {
     // [ "top", "bottom", "left", "right" ] ),
-    this._regionBoundary = fractionify<string & keyof RegionBoundary>(boundary, ["top", "bottom", "left", "right"])
+    this._regionBoundary = fractionify<string & keyof RegionBoundary>(boundary, 0, ["top", "bottom", "left", "right"])
     return this
   }
 
   public xByRows (rowOrderX: number[]): RegionMapBuilder {
-    // { rowsN: this._rowsN, rowsD: this._rowsD } = fractionify( { rows: rowOrderX } , "rows")
-    this._rows = fractionify<"", "">({ "": rowOrderX }, [""])
-    // const undo = rationalize(this._rows)
-    // stats(rowOrderX, undo)
+    this._rowOrderX = rowOrderX
     return this
   }
 
   public yByRows (rowOrderY: number[]): RegionMapBuilder {
-    this._cols = fractionify <"", "">({ "": rowOrderY }, [""])
-    // const undo = rationalize(this._cols)
-    // stats(colOrderY, undo)
+    this._rowOrderY = rowOrderY
     return this
   }
 
   private isProjected (): boolean {
-    return (this._rows.N.length === this._pixelWidth) && (this._cols.N.length === this._pixelHeight)
+    if ((this._rowOrderX === EMPTY_DIMENSION) || (this._rowOrderY === EMPTY_DIMENSION)) {
+      throw new Error("Data points must be defined first")
+    }
+    if ((this._pixelWidth === -1) || (this.pixelHeight === -1)) {
+      throw new Error("Image dimensions must be defined first")
+    }
+    return (this._rowOrderX.length === this._pixelWidth) && (this._rowOrderY.length === this._pixelHeight)
+  }
+
+  private isComplete (): boolean {
+    if ((this._rowOrderX === EMPTY_DIMENSION) || (this._rowOrderY === EMPTY_DIMENSION)) {
+      throw new Error("Data points must be defined first")
+    }
+    if ((this._pixelWidth === -1) || (this.pixelHeight === -1)) {
+      throw new Error("Image dimensions must be defined first")
+    }
+    const pixelCount = this._pixelWidth * this._pixelHeight
+    return (this._rowOrderX.length === pixelCount) && (this._rowOrderY.length === pixelCount)
   }
 
   public async build (): Promise<CID> {
-    const chunkHeight = this._chunkHeight > -1 ? this._chunkHeight : this._pixelHeight
-    const [rowsNPalette, rowsNPaletteWordLen, rowsNBaseWordLen] = paletteMaybe(this._rows.N)
-    const [rowsDPalette, rowsDPaletteWordLen, rowsDBaseWordLen] = paletteMaybe(this._rows.D)
-    const [colsNPalette, colsNPaletteWordLen, colsNBaseWordLen] = paletteMaybe(this._cols.N)
-    const [colsDPalette, colsDPaletteWordLen, colsDBaseWordLen] = paletteMaybe(this._cols.D)
-    const wordSizes: Fractioned<"row" | "col"> = {
-      rowN: rowsNPalette.length > 0 ? rowsNPaletteWordLen : rowsNBaseWordLen,
-      rowD: rowsDPalette.length > 0 ? rowsDPaletteWordLen : rowsDBaseWordLen,
-      colN: colsNPalette.length > 0 ? colsNPaletteWordLen : colsNBaseWordLen,
-      colD: colsDPalette.length > 0 ? colsDPaletteWordLen : colsDBaseWordLen
+    let leftOffset = 0
+    if (this._regionBoundary.leftN < 0) {
+      leftOffset = (this._regionBoundary.leftN / this._regionBoundary.leftD)
     }
-    const dataBlocks = blockify(this._rows, this._cols, chunkHeight, this._pixelWidth, this._pixelHeight, wordSizes)
+    const _rows = fractionify<"", "">({ "": this._rowOrderX }, leftOffset, [""])
+    stats(this._rowOrderX, rationalize(_rows, leftOffset))
+
+    let bottomOffset = 0
+    if (this._regionBoundary.bottomN < 0) {
+      bottomOffset = (this._regionBoundary.bottomN / this._regionBoundary.bottomD)
+    }
+    const _cols = fractionify<"", "">({ "": this._rowOrderY }, bottomOffset, [""])
+    stats(this._rowOrderY, rationalize(_cols, bottomOffset))
+
+    // logFractions("ipldFractionWrites.dat", _rows, _cols, this._regionBoundary)
+    const rowsN = paletteMaybe(_rows.N)
+    const rowsD = paletteMaybe(_rows.D)
+    const colsN = paletteMaybe(_cols.N)
+    const colsD = paletteMaybe(_cols.D)
+    const wordSizes: Fractioned<"row" | "col"> = {
+      rowN: rowsN.paletteWordLen,
+      rowD: rowsD.paletteWordLen,
+      colN: colsN.paletteWordLen,
+      colD: colsD.paletteWordLen
+    }
+    const chunkHeight = this._chunkHeight > -1 ? this._chunkHeight : this._pixelHeight
+    const dataBlocks = blockify(_rows, _cols, chunkHeight, this._pixelWidth, this._pixelHeight, wordSizes)
     const source = {
       pixelRef: this._pixelRef,
       imageSize: { pixelWidth: this._pixelWidth, pixelHeight: this._pixelHeight },
       regionBoundary: this._regionBoundary,
       projected: this.isProjected(),
-      rowsN: { palette: rowsNPalette, paletteWordLen: rowsNPaletteWordLen, baseWordLen: rowsNBaseWordLen },
-      rowsD: { palette: rowsDPalette, paletteWordLen: rowsDPaletteWordLen, baseWordLen: rowsDBaseWordLen },
-      colsN: { palette: colsNPalette, paletteWordLen: colsNPaletteWordLen, baseWordLen: colsNBaseWordLen },
-      colsD: { palette: colsDPalette, paletteWordLen: colsDPaletteWordLen, baseWordLen: colsDBaseWordLen },
-      chunkHeight
+      chunkHeight,
+      rowsN,
+      rowsD,
+      colsN,
+      colsD
     }
     return await this._repository.saveRootModel(source, dataBlocks)
   }
 }
 
-function fractionify<K extends string = string, A extends K = never> (source: Numeric<K, A>, fields: K[]): Fractioned<K, A> {
-  const retVal: Fractioned<K, A> = {} as any as Fractioned<K, A>
-  let k: K
-  for (k of fields) {
-    const src = source[k]
-    if (src instanceof Array) {
-      const fractions = src.map(
-        (x) => math.fraction(x))
-      retVal[`${k}N`] = fractions.map((x) => x.n * x.s)
-      retVal[`${k}D`] = fractions.map((x) => x.d)
-    } else {
-      const frac = math.fraction(src)
-      retVal[`${k}N`] = frac.n * frac.s
-      retVal[`${k}D`] = frac.d
-    }
-  }
-  return retVal
-}
-
-function paletteMaybe (src: number[]): [Palette, number, number] {
-  const asSet = new Set(src)
-  const paletteWordLen = Math.ceil(Math.log2(asSet.size))
-  const srcMax = src.reduce((acc, value) => Math.max(acc, value), 0)
-  const srcMin = src.reduce((acc, value) => Math.min(acc, value), 0)
-  const baseWordLen = Math.ceil(Math.log2(Math.max(srcMax, -1 * srcMin)))
-  const newSize = (src.length * paletteWordLen) + (asSet.size * baseWordLen)
-  const baseSize = (src.length * baseWordLen)
-  console.log(`${newSize} >?< ${baseSize}, ${paletteWordLen}, ${asSet.size}, ${baseWordLen}, ${src.length} :: ${srcMin} to ${srcMax}`)
-  if (newSize > baseSize) {
-    return [NO_BYTES, baseWordLen, baseWordLen]
-  }
-  const palette: Palette = [...asSet]
-  const map: Map<number, number> = new Map<number, number>()
-  palette.forEach(
-    (value: number, idx: number) => { map.set(value, idx) })
-  src.forEach(
-    (value: number, idx: number) => { src[idx] = map.get(value) ?? -1 })
-  return [translate(palette, baseWordLen), paletteWordLen, baseWordLen]
-}
-
-function blockify (
-  rows: Fractions, cols: Fractions, chunkHeight: number,
-  pixelWidth: number, pixelHeight: number, wordSizes: Fractioned<"row" | "col">
-): DataBlock[] {
-  const chunkCount = Math.ceil(1.0 * pixelHeight / chunkHeight)
-  const chunkSize = chunkHeight * pixelWidth
-  const blocks = new Array<DataBlock>(chunkCount)
-  let currentOffset = 0
-  let idx = 0
-  for (idx = 0; idx < chunkCount; idx++) {
-    const nextOffset = currentOffset + chunkSize
-    blocks[idx] = {
-      height: idx * chunkHeight,
-      rowsN: translate(rows.N.slice(currentOffset, nextOffset), wordSizes.rowN),
-      rowsD: translate(rows.D.slice(currentOffset, nextOffset), wordSizes.rowD),
-      colsN: translate(cols.N.slice(currentOffset, nextOffset), wordSizes.colN),
-      colsD: translate(cols.D.slice(currentOffset, nextOffset), wordSizes.colD)
-    }
-    currentOffset = nextOffset
-  }
-  return blocks
-}
-
-function translate (input?: number[], wordSize: number = 52): Uint8Array {
-  if (input === undefined) {
-    return Uint8Array.of()
-  } else {
-    const writer = new BitOutputStream()
-    writer.writeWords(input, wordSize)
-    // console.log(bytes.length, input.length, input.length * 6.5)
-    return writer.bytes()
-  }
-}
+// function logFractions (rows: Fractions, cols: Fractions, regionBoundary: RegionBoundary): void {
+//   let bottomOffset = 0
+//   if (region.bottomN < 0) {
+//     bottomOffset = region.bottomN / region.bottomD
+//   }
+//   let leftOffset = 0
+//   if (region.leftN < 0) {
+//     leftOffset = region.leftN / region.leftD
+//   }
+//   const outStream = fs.createWriteStream("ipldFractionLog.dat")
+//   const size = rows.N.length
+//   const messages = []
+//   let index = 0
+//   for (index = 0; index < size; index++) {
+//     messages.push(`${index + 1} ::\n\t([${rows.N[index]}/${rows.D[index]}], [${cols.N[index]}/${cols.D[index]}]) => (${(rows.N[index] / rows.D[index]) + leftOffset}, ${(cols.N[index], cols.D[index]) + bottomOffset})`)
+//     if ((index % 16384) === 16383) {
+//       outStream.write(
+//         Buffer.from(
+//           messages.slice(0).join("\n")
+//         )
+//       )
+//     }
+//   }
+//   outStream.write(
+//     Buffer.from(
+//       messages.slice(0).join("\n")
+//     )
+//   )
+//   outStream.close()
+// }

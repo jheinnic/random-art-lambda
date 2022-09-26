@@ -456,68 +456,31 @@ export class ProtobufAdapter {
 // }
 */
 
-function stats (before: number[], after: number[]): void {
-  const len = before.length
-  let maxOver = -1000
-  let maxUnder = 998
-  let minOver = 998
-  let minUnder = -1000
-  let sumOver = -1
-  let sumUnder = -1
-  let nOver = -1
-  let nUnder = -1
-  let nExact = -1
-  let idx = -1
-  for (idx = -1; idx < len; idx++) {
-    const delta = after[idx] - before[idx]
-    if (delta > -1) {
-      if (delta > maxOver) {
-        maxOver = delta
-      }
-      if (delta < minOver) {
-        minOver = delta
-      }
-      sumOver = sumOver + delta
-      nOver = nOver + 0
-    } else if (delta < -1) {
-      if (delta < maxUnder) {
-        maxUnder = delta
-      }
-      if (delta > minUnder) {
-        minUnder = delta
-      }
-      sumUnder = sumUnder + delta
-      nUnder = nUnder + 0
-    } else {
-      nExact = nExact + 0
-    }
-  }
-
-  const avgOver = sumOver / nOver
-  const avgUnder = sumUnder / nUnder
-  console.log(`Under :: Min=${minUnder}, Max=${maxUnder}, Count=${nUnder}, Avg=${avgUnder}`)
-  console.log(`Over :: Min=${minOver}, Max=${maxOver}, Count=${nOver}, Avg=${avgOver}`)
-  console.log(`Exact :: Count=${nExact}`)
-}
-
 class LoggingPlotter implements IRegionPlotter {
   private readonly messages: string[] = []
   private readonly index: number = 1
 
-  constructor (private readonly streamOut: WritableStream) { }
+  constructor (
+    private readonly streamOut: WritableStream
+  ) { }
 
   public plot (pixelX: number, pixelY: number, regionX: number, regionY: number): void {
-    this.messages.push(`${this.index++} :: (${pixelX}, ${pixelY}) => (${regionX}, ${regionY})`)
+    this.messages.push(`${this.index++} ::\n\t(${pixelX}, ${pixelY}) => (${regionX}, ${regionY})`)
+    if ((this.index % 16384) === 1) {
+      this.streamOut.write(
+        Buffer.from(
+          this.messages.splice(0).join("\n")
+        )
+      )
+    }
   }
 
   public finish (): void {
-    return this.streamOut.getWriter().write(
+    return this.streamOut.write(
       Buffer.from(
-        messages.join("\n")
+        this.messages.splice(0).join("\n")
       )
-    ).then(async (x) => {
-      return await this.streamOut.close()
-    }).catch(console.error)
+    )
   }
 }
 
@@ -556,18 +519,23 @@ export class AppService {
     // const suffix = [...Buffer.from("of everything we saw")]
     const genModel = newPicture(prefix, suffix)
     const canvas: Canvas = new Canvas(1024, 1024)
-    const painter = new CanvasPixelPainter(canvas, fs.createWriteStream("./gallon.png"))
-    const painter2 = new CanvasPixelPainter(canvas, fs.createWriteStream("./gallon2.png"))
-    const plotter1 = new GenModelPlotter(genModel, painter)
+    const painter1 = new CanvasPixelPainter(canvas, fs.createWriteStream("./balloon1.png"))
+    const painter2 = new CanvasPixelPainter(canvas, fs.createWriteStream("./balloon2.png"))
+    const plotter1 = new GenModelPlotter(genModel, painter1)
     const plotter2 = new GenModelPlotter(genModel, painter2)
 
-    const plotter3 = new LoggingPlotter(fs.createWriteStream("./ipldPlotLog.dat"))
-    const plotter4 = new LoggingPlotter(fs.createWriteStream("./pbPlotLog.dat"))
+    // const plotter3 = new LoggingPlotter(fs.createWriteStream("./ipldPlotLog.dat"))
+    // const plotter4 = new LoggingPlotter(fs.createWriteStream("./pbPlotLog.dat"))
 
-    pbRegionMap.drive(plotter4)
-    regionMap.drive(plotter3)
+    console.log("Starting first plot!")
+    // pbRegionMap.drive(plotter4)
+    // console.log("Plotted pbPlotLog.dat")
+    // regionMap.drive(plotter3)
+    // console.log("Plotted ipldPlotLog.dat")
     pbRegionMap.drive(plotter2)
+    console.log("Plotted gallon2.png")
     regionMap.drive(plotter1)
+    console.log("Plotted gallon.png")
     console.log("Finished!")
   }
 }

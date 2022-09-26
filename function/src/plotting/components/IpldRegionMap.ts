@@ -1,8 +1,5 @@
-import { BitInputStream } from "@thi.ng/bitstream"
-import * as mathjs from "mathjs"
-
 import { AbstractRegionMap } from "../../painting/components/AbstractRegionMap.js"
-import { DataBlock, RegionMap } from "./IpldSchemaTypes.js"
+import { DataBlock, hydrate, logFractions, rationalize, RegionMap } from "./IpldSchemaTypes.js"
 
 export class IpldRegionMap extends AbstractRegionMap {
   private readonly rowList: number[]
@@ -31,10 +28,22 @@ export class IpldRegionMap extends AbstractRegionMap {
       const colDPalette = hydrate(regionMap.colsD.palette, [], regionMap.colsD.baseWordLen)
       console.log("7h")
       const colD = hydrate(colDBytes, colDPalette, regionMap.colsD.paletteWordLen)
+      console.log("8h")
+      const rows = { N: rowN, D: rowD }
+      const cols = { N: colN, D: colD }
+      // logFractions("ipldFractionReads.dat", rows, cols, regionMap.regionBoundary)
       console.log("ah")
-      this.rowList = rationalize({ N: rowN, D: rowD })
+      let leftOffset = 0
+      if (regionMap.regionBoundary.leftN < 0) {
+        leftOffset = regionMap.regionBoundary.leftN / regionMap.regionBoundary.leftD
+      }
+      this.rowList = rationalize(rows, leftOffset)
       console.log("ih")
-      this.colList = rationalize({ N: colN, D: colD })
+      let bottomOffset = 0
+      if (regionMap.regionBoundary.bottomN < 0) {
+        bottomOffset = regionMap.regionBoundary.bottomN / regionMap.regionBoundary.bottomD
+      }
+      this.colList = rationalize(cols, bottomOffset)
       console.log("oh")
     } catch (error: any) {
       console.error("uh", error)
@@ -60,31 +69,4 @@ export class IpldRegionMap extends AbstractRegionMap {
   public get isUniform (): boolean {
     return this.regionMap.projected
   }
-}
-
-function hydrate (bytes: Buffer, palette: number[], wordSize: number): number[] {
-  if (bytes.length <= 0) {
-    return []
-  }
-  const reader = new BitInputStream(bytes)
-  let unpacked = reader.readWords(Math.floor(8 * bytes.length / wordSize), wordSize)
-  if (palette.length > 0) {
-    unpacked = unpacked.map((x) => palette[x])
-  }
-  return unpacked
-}
-
-function rationalize (fractions: Fractions): number[] {
-  const len = fractions.N.length
-  const retval = new Array<number>(len)
-  let idx = 0
-  for (idx = 0; idx < len; idx++) {
-    if (fractions.N[idx] === 0) {
-      console.log(idx, fractions.D[idx], fractions.N[idx])
-      retval[idx] = mathjs.fraction(fractions.D[idx], 1)
-    } else {
-      retval[idx] = mathjs.fraction(fractions.D[idx], fractions.N[idx])
-    }
-  }
-  return retval
 }
