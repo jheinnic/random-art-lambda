@@ -9,9 +9,11 @@ import { CID } from "multiformats"
 
 import { concatAll } from "../../../util"
 import { IpfsModuleTypes } from "../../ipfs/di/typez.js"
+import { PaintingModuleTypes } from "../di/typez.js"
+import { IRandomArtTaskRepository } from "../interface"
 import { RandomArtTask } from "./RandomArtTask.js"
 
- // import { AsyncIterable } from "@reactivex/ix-ts"
+// import { AsyncIterable } from "@reactivex/ix-ts"
 @Injectable()
 export class RandomArtTaskRepository implements IRandomArtTaskRepository {
   private readonly _storeCache: {
@@ -45,7 +47,7 @@ export class RandomArtTaskRepository implements IRandomArtTaskRepository {
     prefixBits: Uint8Array,
     suffixBits: Uint8Array
   ): Promise<RandomArtTask> {
-    const plotMapBits: Uint8Array = this._loadFileByCid(
+    const plotMapBits: Uint8Array = await this._loadFileByCid(
       CID.parse(plotMapCidStr)
     )
     const list = [
