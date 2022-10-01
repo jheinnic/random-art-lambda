@@ -16,17 +16,18 @@ export const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN, OPTIONS_TYPE, ASYN
     .build()
 
 function applyExtras (module: DynamicModule, extras: ModuleInstanceConfiguration): DynamicModule {
-  return {
-    ...module,
-    providers: [
-      ...(module.providers ?? []),
-      {
-        provide: extras.injectToken,
-        useExisting: BaseBlockstore
-      }
-    ],
-    exports: [
-      ...(module.exports ?? []), extras.injectToken
-    ]
+  if (extras.injectToken !== IpfsModuleTypes.AbstractBlockstore) {
+    if (module.providers === undefined) {
+      module.providers = [{ provide: extras.injectToken, useExisting: IpfsModuleTypes.AbstractBlockstore }]
+    } else {
+      module.providers.push({ provide: extras.injectToken, useExisting: IpfsModuleTypes.AbstractBlockstore })
+    }
+    if (module.exports === undefined) {
+      module.exports = [extras.injectToken]
+    } else {
+      module.exports.push(extras.injectToken)
+    }
   }
+  console.log(module.module)
+  return module
 }
