@@ -1,7 +1,6 @@
 import { Canvas, CanvasRenderingContext2D } from "canvas"
 
 import { IPixelPainter } from "../interface/IPixelPainter.js"
-import { computePixel } from "./genjs6.js"
 
 export class CanvasPixelPainter implements IPixelPainter {
   private readonly context: CanvasRenderingContext2D

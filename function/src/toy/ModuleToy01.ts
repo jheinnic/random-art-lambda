@@ -77,8 +77,8 @@ export class DynamicImportConfig {
   constructor (public readonly blockStorage: BaseBlockstore) { }
 }
 
-const { ConfigurableModuleClass: DynamicRepoBaseModule, MODULE_OPTIONS_TOKEN: MOD_OPT_TOKEN, OPTIONS_TYPE: OPTIONS_TYPE_2, ASYNC_OPTIONS_TYPE_2 } =
-  new ConfigurableModuleBuilder<DynamicImportConfig, "register", "provideBlockstore">({
+const { ConfigurableModuleClass: DynamicRepoBaseModule, MODULE_OPTIONS_TOKEN: MOD_OPT_TOKEN, OPTIONS_TYPE: OPTIONS_TYPE_2, ASYNC_OPTIONS_TYPE: ASYNC_OPTIONS_TYPE_2 } =
+  new ConfigurableModuleBuilder<BaseBlockstore, "register", "provideBlockstore">({
     optionsInjectionToken: InjectedBlockstore,
     alwaysTransient: false
   })
@@ -113,13 +113,14 @@ export class IpfsModule extends ConfigurableModuleClass {
   }
 }
 
-const SharedArtBlockstore: unique symbol = Symbol("SharedArtworkBlockstore")
-const SharedArtBlockstoreHolder: unique symbol = Symbol("SharedArtworkBlockstoreHolder")
+const SharedArtBlockStore: unique symbol = Symbol("SharedArtworkBlockstore")
+// const SharedArtBlockStoreDynamicImport: unique symbol = Symbol("DynamicImport<SharedArtworkBlockstore>")
+const SharedArtBlockStoreHolder: unique symbol = Symbol("SharedArtworkBlockstoreHolder")
 
-@Injectable
+@Injectable()
 export class BlockStoreHolder {
   constructor (
-    @Inject(SharedArtBlockstore) private readonly sharedBlockstore: BaseBlockstore
+    @Inject(SharedArtBlockStore) private readonly sharedBlockstore: BaseBlockstore
   ) {
     console.log(`Block store holder has ${sharedBlockstore.constructor.name} on construction`)
   }
@@ -129,24 +130,21 @@ export class BlockStoreHolder {
   }
 }
 
-const dynamicIpfs = IpfsModule.register({ rootPath: "/home/ionadmin/Documents/raBlocks", cacheSize: 500, injectToken: SharedArtBlockstore })
+const dynamicIpfs = IpfsModule.register({ rootPath: "/home/ionadmin/Documents/raBlocks", cacheSize: 500, injectToken: SharedArtBlockStore })
 
 @Module({
   imports: [ dynamicIpfs ],
-  providers: [{
-  provide: SharedArtBlockstoreHolder,
-  useClass: BlockStoreHolder
-  }],
-  exports: [ dynamicIpfs, SharedArtBlockstoreHolder, SharedArtBlockstore ],
+  providers: [ BlockStoreHolder ],
+  exports: [ dynamicIpfs, BlockStoreHolder ]
   })
 export class IpfsArtworkStoreModule { }
 
 const AltRepository: unique symbol = Symbol("AltRepository")
 
-@Injectable
+@Injectable()
 export class AnotherRepository {
   constructor (
-    @Inject(SharedArtBlockstore) private readonly sharedBlockstore: BaseBlockstore
+    @Inject(SharedArtBlockStore) private readonly sharedBlockstore: BaseBlockstore
   ) {
     console.log(`Block store has ${sharedBlockstore.constructor.name} on construction`)
   }
@@ -162,7 +160,7 @@ export class AnotherRepository {
   })
 export class AltStaticDependencyModule { }
 
-@Injectable
+@Injectable()
 export class InjectedAltRepository {
   constructor (
     @Inject(InjectedBlockstore) private readonly sharedBlockstore: BaseBlockstore
@@ -175,14 +173,14 @@ export class InjectedAltRepository {
   imports: [],
   providers: [
   {
-  provides: InjectedAltRepo,
+  provide: InjectedAltRepo,
   useClass: InjectedAltRepository
   }
   ],
   exports: [InjectedAltRepo]
   })
 export class AltDynamicDependencyModule extends DynamicRepoBaseModule {
-  public static registerAsync (opts: ASYNC_OPTIONS_TYPE_2): DynamicModule {
+  public static registerAsync (options: typeof ASYNC_OPTIONS_TYPE_2): DynamicModule {
     return super.registerAsync(options)
   }
 }
@@ -206,9 +204,8 @@ export class AltDynamicDependencyModule extends DynamicRepoBaseModule {
   provide: PlottingModuleTypes.ProtoBufAdapter,
   useClass: ProtobufAdapter
   },
-  { provide: IpfsModuleTypes.AbstractBlockstore, useExisting: SharedArtBlockstore }
   ],
-  exports: [PlottingModuleTypes.IpldRegionMapRepository, PlottingModuleTypes.ProtoBufAdapter, IpfsModuleTypes.AbstractBlockstore ]
+  exports: [PlottingModuleTypes.IpldRegionMapRepository, PlottingModuleTypes.ProtoBufAdapter]
   })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class, @typescript-eslint/no-unused-vars
 export class PlottingModule { }
@@ -234,7 +231,7 @@ export class AppService {
   AltStaticDependencyModule,
   AltDynamicDependencyModule.registerAsync({
     imports: [ IpfsArtworkStoreModule ],
-    useExisting: SharedArtBlockstoreHolder
+    useExisting: BlockStoreHolder
     }),
   PlottingModule
   ],
