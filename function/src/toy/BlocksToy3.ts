@@ -16,10 +16,9 @@ import { IRegionPlotter } from "../painting/interface/IRegionPlotter.js"
 import { IpldRegionMapRepository } from "../plotting/components/IpldRegionMapRepository.js"
 import { PlottingModule } from "../plotting/di/PlottingModule.js"
 import { PlottingModuleTypes } from "../plotting/di/typez.js"
-import { PBufRegionMapDecoder } from "../plotting/protobuf/PBufRegionMapDecoder.js"
+import { PBufRegionMap } from "../plotting/protobuf/PBufRegionMap.js"
 import { PointPlotData, PointPlotDocument, RefPoint } from "../plotting/protobuf/plot_mapping_pb.mjs"
 import { ProtobufAdapter } from "../plotting/protobuf/ProtobufAdapter.js"
-
 
 const { newPicture } = pkg
 
@@ -67,9 +66,6 @@ export class AppService {
     await this.fsBlockstore.open()
     console.log("Blockstore is open")
     const modelBuf = fs.readFileSync("fdoc.proto")
-    const dec = new PBufRegionMapDecoder()
-    let pbRegionMap
-    dec.provide(modelBuf).then((x) => { pbRegionMap = x }).catch(console.error)
 
     const plotDocument = PointPlotDocument.deserializeBinary(modelBuf)
     const plotData = plotDocument.getData()
@@ -81,6 +77,7 @@ export class AppService {
     console.log(plotCid)
     const regionMap = await this.repository.load(plotCid)
     const prefix = [...Buffer.from("Dos")]
+    const pbRegionMap = new PBufRegionMap(plotData)
     // const prefix = [...Buffer.from("This")]
     // const prefix = [...Buffer.from("In the middle")]
     const suffix = [...Buffer.from("37 Bone Coloured Stars")]
