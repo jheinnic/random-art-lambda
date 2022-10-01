@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common"
+import { Inject, Injectable } from "@nestjs/common"
 
 import { PaintingModuleTypes } from "../../painting/di/typez"
 import { IRandomArtTaskRepository } from "../../painting/interface/IRandomArtTaskRepository.js"
