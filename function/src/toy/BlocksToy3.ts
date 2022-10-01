@@ -76,35 +76,39 @@ export class AppService {
     const plotCid = await this.adapter.transfer(plotData, 64)
     console.log(plotCid)
     const regionMap = await this.repository.load(plotCid)
-    const prefix = [...Buffer.from("Dos")]
     const pbRegionMap = new PBufRegionMap(plotData)
+    const prefix = [...Buffer.from("mv8f5f85676\":KP}567r8ft89tyfjfgrf>{ygfrtg-%#8rgf5f85676\":KPh5KR^kf76hfrghtfjuyhjufyfhyufiujffyu87fyh5f9kvv08ypop")]
+    // const prefix = [...Buffer.from("MAGICration")]
+    // const prefix = [...Buffer.from("Dos")]
     // const prefix = [...Buffer.from("This")]
     // const prefix = [...Buffer.from("In the middle")]
-    const suffix = [...Buffer.from("37 Bone Coloured Stars")]
+    const suffix = [...Buffer.from("dothis")]
+    // const suffix = [...Buffer.from("37 Bone Coloured Stars")]
     // const suffix = [...Buffer.from("place")]
     // const suffix = [...Buffer.from("of everything we saw")]
     let genModel = newPicture(prefix, suffix)
     let canvas: Canvas = new Canvas(1024, 1024)
-    let painter1 = new CanvasPixelPainter(canvas, fs.createWriteStream("./saloon1.png"))
-    let painter2 = new CanvasPixelPainter(canvas, fs.createWriteStream("./saloon2.png"))
+    let painter1 = new CanvasPixelPainter(canvas, fs.createWriteStream("./famine1.png"))
+    // let painter2 = new CanvasPixelPainter(canvas, fs.createWriteStream("./falcon2.png"))
     let plotter1 = new GenModelPlotter(genModel, painter1)
-    let plotter2 = new GenModelPlotter(genModel, painter2)
+    // let plotter2 = new GenModelPlotter(genModel, painter2)
 
     console.log("Starting first plot!")
-    pbRegionMap.drive(plotter2)
-    console.log("Plotted saloon2.png")
+    // pbRegionMap.drive(plotter2)
+    // console.log("Plotted faloon2.png")
     regionMap.drive(plotter1)
-    console.log("Plotted saloon1.png")
-    const prefix2 = [...Buffer.from("m")]
+    console.log("Plotted faloon1.png")
+    canvas = new Canvas(1024, 1024)
+    const prefix2 = [...Buffer.from("mv8f5f85676\":KP}567r8ft89tyfjfgrfygfrtgrgh5f76hfrghtfjuyhjufygyhfgyfurrrrrrtgfhttyuyh4ehfhyufiujffyu87fyh5f9kvv08ypop")]
     genModel = newPicture(prefix2, suffix)
-    painter1 = new CanvasPixelPainter(canvas, fs.createWriteStream("./spoon1.png"))
-    painter2 = new CanvasPixelPainter(canvas, fs.createWriteStream("./spoon2.png"))
+    painter1 = new CanvasPixelPainter(canvas, fs.createWriteStream("./manon1.png"))
+    // painter2 = new CanvasPixelPainter(canvas, fs.createWriteStream("./manon2.png"))
     plotter1 = new GenModelPlotter(genModel, painter1)
-    plotter2 = new GenModelPlotter(genModel, painter2)
-    pbRegionMap.drive(plotter2)
-    console.log("Plotted spoon2.png")
+    // plotter2 = new GenModelPlotter(genModel, painter2)
+    // pbRegionMap.drive(plotter2)
+    // console.log("Plotted fpoon2.png")
     regionMap.drive(plotter1)
-    console.log("Plotted spoon1.png")
+    console.log("Plotted fpoon1.png")
     console.log("Finished!")
   }
 }
