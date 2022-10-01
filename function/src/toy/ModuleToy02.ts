@@ -3,6 +3,7 @@ import { NestFactory } from "@nestjs/core"
 import { BaseBlockstore } from "blockstore-core"
 
 import { buildLruCache, FsBlockstore } from "../ipfs/components/FsBlockstore.js"
+import { FsBlockstoreConfiguration } from "../ipfs/components/FsBlockstoreConfiguration.js"
 import { IpfsModuleTypes } from "../ipfs/di/typez.js"
 import { IpldRegionMapRepository } from "../plotting/components/IpldRegionMapRepository.js"
 import { IpldRegionMapSchemaDsl } from "../plotting/components/IpldRegionMapSchemaDsl.js"
@@ -10,13 +11,6 @@ import { PlottingModuleTypes } from "../plotting/di/typez.js"
 import { IRegionMapRepository } from "../plotting/interface/IRegionMapRepository.js"
 import { PBufRegionMapDecoder } from "../plotting/protobuf/PBufRegionMapDecoder.js"
 import { ProtobufAdapter } from "../plotting/protobuf/ProtobufAdapter.js"
-
-export class FsBlockstoreConfiguration {
-  constructor (
-    public readonly rootPath: string,
-    public readonly cacheSize: number
-  ) {}
-}
 
 export class ModuleInstanceConfiguration {
   constructor (
@@ -75,17 +69,35 @@ console.log("BB")
 
 export class DynamicImportConfig {
   // constructor (public readonly sourceModule: any, public readonly blockstoreProvider: string | symbol) {}
-  constructor (public readonly blockStorage: BaseBlockstore) { }
+  constructor (public readonly ipfsModule?: DynamicModule, bsToken: string | symbol) { }
 }
 
 const { ConfigurableModuleClass: DynamicRepoBaseModule, MODULE_OPTIONS_TOKEN: MOD_OPT_TOKEN, OPTIONS_TYPE: OPTIONS_TYPE_2, ASYNC_OPTIONS_TYPE: ASYNC_OPTIONS_TYPE_2 } =
-  new ConfigurableModuleBuilder<BaseBlockstore, "register", "provideBlockstore">({
+  new ConfigurableModuleBuilder<{}, "register", "provideBlockstore", DynamicImportConfig>({
     optionsInjectionToken: InjectedBlockstore,
     alwaysTransient: true
   })
     .setClassMethodName("register")
     .setFactoryMethodName("provideBlockstore")
-    .build()
+    .setExtras(new DynamicImportConfig(undefined), (module: DynamicModule, extra: DynamicImportConfig) => {
+      if (extra.ipfsModule !== undefined) {
+        if (module.imports === undefined) {
+          module.imports = [extra.ipfsModule]
+        } else {
+          module.imports.push(extra.ipfsModule)
+        }
+      }
+      if (extra.bsToken !== undefined) {
+        if (module.providers === undefined) {
+          module.providers = [{ provide: InjectedBlockstore, useExisting: extra.bsTokenp }]
+        } else {
+          module.providers.push({ provide: InjectedBlockstore, useExisting: extra.bsTokenp })
+        }
+      }
+
+      console.dir(module, { depth: Infinity })
+      return module
+    }).build()
 
 console.log("CC")
 console.log(DynamicRepoBaseModule, MOD_OPT_TOKEN, OPTIONS_TYPE_2, ASYNC_OPTIONS_TYPE_2)
@@ -118,48 +130,9 @@ const SharedArtBlockStore: unique symbol = Symbol("SharedArtworkBlockstore")
 // const SharedArtBlockStoreDynamicImport: unique symbol = Symbol("DynamicImport<SharedArtworkBlockstore>")
 const SharedArtBlockStoreHolder: unique symbol = Symbol("SharedArtworkBlockstoreHolder")
 
-@Injectable()
-export class BlockStoreHolder {
-  constructor (
-    @Inject(SharedArtBlockStore) private readonly sharedBlockstore: BaseBlockstore
-  ) {
-    console.log(`Block store holder has ${sharedBlockstore.constructor.name} on construction`)
-  }
-
-  public provideBlockstore (): BaseBlockstore {
-    return this.sharedBlockstore
-  }
-}
-
 const dynamicIpfs = IpfsModule.register({ rootPath: "/home/ionadmin/Documents/raBlocks", cacheSize: 500, injectToken: SharedArtBlockStore })
 
-@Module({
-  imports: [ dynamicIpfs ],
-  providers: [ BlockStoreHolder ],
-  exports: [ dynamicIpfs, BlockStoreHolder ]
-  })
-export class IpfsArtworkStoreModule { }
-
 const AltRepository: unique symbol = Symbol("AltRepository")
-
-@Injectable()
-export class AnotherRepository {
-  constructor (
-    @Inject(SharedArtBlockStore) private readonly sharedBlockstore: BaseBlockstore
-  ) {
-    console.log(`Block store has ${sharedBlockstore.constructor.name} on construction`)
-  }
-}
-
-@Module({
-  imports: [IpfsArtworkStoreModule],
-  providers: [ {
-  provide: AltRepository,
-  useClass: AnotherRepository
-  } ],
-  exports: [AltRepository]
-  })
-export class AltStaticDependencyModule { }
 
 @Injectable()
 export class InjectedAltRepository {
@@ -186,58 +159,32 @@ export class AltDynamicDependencyModule extends DynamicRepoBaseModule {
   }
 }
 
-@Module({
-  imports:[IpfsArtworkStoreModule],
-  providers: [
-  {
-  provide: PlottingModuleTypes.PBufPlotRegionMapDecoder,
-  useClass: PBufRegionMapDecoder
-  },
-  {
-  provide: PlottingModuleTypes.IpldRegionMapRepository,
-  useClass: IpldRegionMapRepository
-  },
-  {
-  provide: PlottingModuleTypes.IpldRegionMapSchemaDsl,
-  useClass: IpldRegionMapSchemaDsl
-  },
-  {
-  provide: PlottingModuleTypes.ProtoBufAdapter,
-  useClass: ProtobufAdapter
-  },
-  ],
-  exports: [PlottingModuleTypes.IpldRegionMapRepository, PlottingModuleTypes.ProtoBufAdapter]
-  })
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class, @typescript-eslint/no-unused-vars
-export class PlottingModule { }
-
 @Injectable()
 export class AppService {
   constructor (
-    @Inject(PlottingModuleTypes.IpldRegionMapRepository)
-    private readonly ipldRepo: IRegionMapRepository,
-    @Inject(AltRepository)
-    private readonly altStaticRepo: AnotherRepository,
     @Inject(InjectedAltRepo)
-    private readonly altDynamicRepo: InjectedAltRepository
+    private readonly altDynamicRepo: InjectedAltRepository,
+    @Inject(SharedArtBlockStore)
+    private readonly sabs: BaseBlockstore
   ) { }
 
   public doWork (): void {
-    console.log(`Got <${this.ipldRepo.constructor.name}, ${this.altStaticRepo.constructor.name}, ${this.altDynamicRepo.constructor.name}`)
+    console.log(`Got <${this.altDynamicRepo.constructor.name}`)
+    if (this.sabs !== undefined) {
+      console.log("Got sabs")
+    }
   }
 }
 
 @Module({
   imports: [
-  AltStaticDependencyModule,
+  dynamicIpfs,
   AltDynamicDependencyModule.registerAsync({
-    imports: [ IpfsArtworkStoreModule ],
-    useExisting: BlockStoreHolder
-    }),
-  PlottingModule
+    ipfsModule: dynamicIpfs, bsToken: SharedArtBlockStore
+    })
   ],
   providers: [AppService],
-  exports: [AppService]
+  exports: [dynamicIpfs, AppService ]
   })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class AppModule {}
