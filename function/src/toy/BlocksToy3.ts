@@ -510,7 +510,7 @@ export class AppService {
       console.error("Not Plot Data!")
       throw new Error()
     }
-    const plotCid: CID = await this.adapter.transfer(plotData, 64)
+    const plotCid = await this.adapter.transfer(plotData, 64)
     console.log(plotCid)
     const regionMap = await this.repository.load(plotCid)
     const prefix = [...Buffer.from("Dos")]
