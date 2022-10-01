@@ -12,11 +12,17 @@ export class GenModelPlotter implements IRegionPlotter {
   ) { }
 
   public plot (pixelX: number, pixelY: number, regionX: number, regionY: number): void {
-    this.painter.paint(
-      pixelX, pixelY, computePixel(this.genModel, regionX, regionY).reduce(
-        (acc: string, x: number) => acc + x.toString(16), "#"
-      )
-    )
+    const rgb = computePixel(this.genModel, regionX, regionY)
+    const strv = rgb.reduce(
+      (acc: string, x: number) => {
+        const colorByte = x.toString(16)
+        if (x < 16) {
+          return `${acc}0${colorByte}`
+        }
+        return `${acc}${colorByte}`
+      }, "#")
+    // console.log(`${pixelX}, ${pixelY}) => (${regionX}, ${regionY}) => ${rgb} => ${strv}`)
+    this.painter.paint(pixelX, pixelY, strv)
   }
 
   public finish (): void {
