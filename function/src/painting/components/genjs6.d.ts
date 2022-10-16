@@ -1,6 +1,6 @@
-import "./genjs6.cjs"
+import "./genjs6.js"
 
-declare module "./genjs6.cjs" {
+declare module "./genjs6.js" {
   export type GenModel = object
 
   export function newNewPicture (prefix: number[], suffix: number[]): GenModel
