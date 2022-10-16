@@ -1,20 +1,20 @@
 import { Canvas } from "canvas"
 
-import { RandomArtTask } from "../../domain/components/models/RandomArtTask.js"
-import { IPlotModel } from "../../plotting/interface/IPlotModel.js"
-import { PointPlotData } from "../../plotting/protobuf/plot_mapping_pb.js"
+import { ImageSize } from "../../plotting/protobuf/plot_mapping_pb"
 import { GenModel } from "../components/genjs6.js"
+import { RandomArtTask } from "../components/RandomArtTask.js"
+import { IRegionMap } from "../interface/IRegionMap.js"
 import { IRandomArtWriter } from "./ICanvasWriter.js"
 import { IRandomArtPainter } from "./IRandomArtPainter.js"
 
 export interface IRandomArtFactory {
   allocateGenModel: (modelSeed: RandomArtTask) => GenModel
 
-  allocateCanvas: (plotMap: PointPlotData) => Canvas
+  allocateCanvas: (plotMap: ImageSize.AsObject) => Canvas
 
   allocatePainter: (
     genModel: GenModel,
-    plotter: IPlotModel,
+    plotter: IRegionMap,
     canvas: Canvas
   ) => IRandomArtPainter
 
