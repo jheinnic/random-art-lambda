@@ -1,4 +1,4 @@
-export class ModuleInstanceConfiguration {
+export class ModuleExportConfiguration {
   constructor (
     public readonly injectToken: symbol | string
   ) {}
