@@ -1,17 +1,19 @@
 import { Injectable } from "@nestjs/common"
 import { Canvas } from "canvas"
 
-import { IPlotModel } from "../interface/IPlotModel.js"
+import { PBufRegionMap } from "../../plotting/protobuf/PBufRegionMap.js"
+import { ImageSize, PointPlotData, PointPlotDocument } from "../../plotting/protobuf/plot_mapping_pb"
 import { IRandomArtFactory } from "../interface/IRandomArtFactory.js"
 import { IRandomArtPainter } from "../interface/IRandomArtPainter.js"
+import { IRegionMap } from "../interface/IRegionMap.js"
 import { GenModel, newPicture } from "./genjs6.js"
 import { RandomArtTask } from "./RandomArtTask.js"
 
 @Injectable()
 export class RandomArtFactory implements IRandomArtFactory {
   public allocateGenModel (modelSeed: RandomArtTask): GenModel {
-    const prefix = [...modelSeed.prefixBytes]
-    const suffix = [...modelSeed.suffixBytes]
+    const prefix = [...modelSeed.prefix]
+    const suffix = [...modelSeed.suffix]
 
     // if (modelSeed.novel) {
     //   return new_new_picture(prefix, suffix)
@@ -20,21 +22,21 @@ export class RandomArtFactory implements IRandomArtFactory {
     return newPicture(prefix, suffix)
   }
 
-  // public allocateCanvas (plotPoint: PlotPoint): Canvas {
-  // return new Canvas(plotPoint.x, plotPoint.y)
-  // }
+  public allocateCanvas (plotPoint: ImageSize.AsObject): Canvas {
+    return new Canvas(plotPoint.pixelwidth, plotPoint.pixelheight)
+  }
 
-  public alllocatePlotModel (encodedModel: Uint8Array): IPlotModel {
+  public alllocateRegionMap (encodedModel: Uint8Array): IRegionMap {
     const plotDocument: PointPlotDocument =
       PointPlotDocument.deserializeBinary(encodedModel)
     const plotData: PointPlotData | undefined = plotDocument.getData()
     if (plotData === undefined) {
       throw new Error("Plot document lacks a data payload")
     }
-    return new PBufPlotModel(plotData)
+    return new PBufRegionMap(plotData)
   }
 
-  public allocatePainter (genModel: GenModel, plotter: IPlotModel, canvas: Canvas): IRandomArtPainter {
+  public allocatePainter (genModel: GenModel, plotter: IRegionMap, canvas: Canvas): IRandomArtPainter {
     throw new Error()
   }
 

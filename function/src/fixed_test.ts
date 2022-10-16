@@ -1,9 +1,10 @@
-import { PBufPlotModelProvider } from "./plotting/protobuf/PBufPlotModelProvider"
-import { RandomArtPainter } from "./painting/components/RandomArtPainter"
-import { CanvasWriter } from "./painting/components/CanvasWriter"
-import { FileTransport } from "./common/components/FileTransport"
 import { createWriteStream } from "fs"
+
+import { FileTransport } from "./common/components/FileTransport"
+import { CanvasWriter } from "./painting/components/CanvasWriter"
 import * as genjs6 from "./painting/components/genjs6"
+import { RandomArtPainter } from "./painting/components/RandomArtPainter"
+import { PBufPlotModelProvider } from "./plotting/protobuf/PBufPlotModelProvider"
 
 async function run (): Promise<void> {
   const plotterOne = await new PBufPlotModelProvider(
