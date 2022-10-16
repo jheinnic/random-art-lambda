@@ -48,6 +48,7 @@
         "@reactivex/ix-ts": "^5.0.0",
         "@thi.ng/bitstream": "^2.2.3",
         "@types/proper-lockfile": "^4.1.2",
+        "@types/transducers-js": "^0.4.4",
         "@types/uuid": "^8.3.4",
         "aws-sdk": "^2.1199.0",
         "blockstore-core": "^1.0.5",
@@ -69,7 +70,8 @@
         "rxjs": "7.5.5",
         "short-unique-id": "^4.4.4",
         "simplytyped": "^3.3.0",
-        "sprintf-js": "^1.1.2"
+        "sprintf-js": "^1.1.2",
+        "transducers-js": "^0.4.174"
     },
     "devDependencies": {
         "@bazel/typescript": "^5.5.3",
@@ -97,7 +99,7 @@
         "ts-node": "^10.9.1",
         "ts-protoc-gen": "^0.15.0",
         "tsconfig-paths": "4.0.0",
-        "typescript": "*",
+        "typescript": "^4.8.2",
         "webpack": "^5.0.0"
     },
     "suspended": {
