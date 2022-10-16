@@ -45,5 +45,14 @@
     "java.saveActions.organizeImports": false,
     "importSorter.generalConfiguration.sortOnBeforeSave": true,
     "importSorter.importStringConfiguration.hasSemicolon": false,
-    "importSorter.importStringConfiguration.quoteMark": "double"
+    "importSorter.importStringConfiguration.quoteMark": "double",
+    "eslint.format.enable": true,
+    "editor.formatOnType": true,
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "[typescript]": {
+        // "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+        "typescript.suggest.enabled": true
+    }
 }
