@@ -8,8 +8,8 @@ import { IpldRegionMapRepository } from "../plotting/components/IpldRegionMapRep
 import { IpldRegionMapSchemaDsl } from "../plotting/components/IpldRegionMapSchemaDsl.js"
 import { PlottingModuleTypes } from "../plotting/di/typez.js"
 import { IRegionMapRepository } from "../plotting/interface/IRegionMapRepository.js"
+import { PBufAdapter } from "../plotting/protobuf/PBufAdapter.js"
 import { PBufRegionMapDecoder } from "../plotting/protobuf/PBufRegionMapDecoder.js"
-import { ProtobufAdapter } from "../plotting/protobuf/ProtobufAdapter.js"
 
 export class FsBlockstoreConfiguration {
   constructor (
@@ -136,7 +136,7 @@ const dynamicIpfs = IpfsModule.register({ rootPath: "/home/ionadmin/Documents/ra
 @Module({
   imports: [ dynamicIpfs ],
   providers: [ BlockStoreHolder ],
-  exports: [ dynamicIpfs, BlockStoreHolder ]
+  exports: [IpfsModule, BlockStoreHolder]
   })
 export class IpfsArtworkStoreModule { }
 
@@ -203,7 +203,7 @@ export class AltDynamicDependencyModule extends DynamicRepoBaseModule {
   },
   {
   provide: PlottingModuleTypes.ProtoBufAdapter,
-  useClass: ProtobufAdapter
+  useClass: PBufAdapter
   },
   ],
   exports: [PlottingModuleTypes.IpldRegionMapRepository, PlottingModuleTypes.ProtoBufAdapter]

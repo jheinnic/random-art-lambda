@@ -1,3 +1,4 @@
+/// <reference path="../painting/components/genjs6.d.ts"/>
 import * as codec from "@ipld/dag-cbor"
 import { Inject, Injectable, Module } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
@@ -10,21 +11,22 @@ import * as Block from "multiformats/block"
 import { IpfsModule } from "../ipfs/di/IpfsModule.js"
 import { IpfsModuleTypes } from "../ipfs/di/typez.js"
 import { CanvasPixelPainter } from "../painting/components/CanvasPixelPainter.js"
-import pkg from "../painting/components/genjs6.cjs"
+import * as pkg from "../painting/components/genjs6.js"
 import { GenModelPlotter } from "../painting/components/GenModelPlotter.js"
 import { IRegionPlotter } from "../painting/interface/IRegionPlotter.js"
 import { IpldRegionMapRepository } from "../plotting/components/IpldRegionMapRepository.js"
 import { PlottingModule } from "../plotting/di/PlottingModule.js"
 import { PlottingModuleTypes } from "../plotting/di/typez.js"
+import { PBufAdapter } from "../plotting/protobuf/PBufAdapter.js"
 import { PBufRegionMap } from "../plotting/protobuf/PBufRegionMap.js"
-import { PointPlotData, PointPlotDocument, RefPoint } from "../plotting/protobuf/plot_mapping_pb.mjs"
-import { ProtobufAdapter } from "../plotting/protobuf/ProtobufAdapter.js"
+import { PointPlotData, PointPlotDocument, RefPoint } from "../plotting/protobuf/plot_mapping_pb"
+
 
 const { newPicture } = pkg
 
 class LoggingPlotter implements IRegionPlotter {
   private readonly messages: string[] = []
-  private readonly index: number = 1
+  private index: number = 1
 
   constructor (
     private readonly streamOut: WritableStream
@@ -58,7 +60,7 @@ export class AppService {
     @Inject(PlottingModuleTypes.IpldRegionMapRepository)
     private readonly repository: IpldRegionMapRepository,
     @Inject(PlottingModuleTypes.ProtoBufAdapter)
-    private readonly adapter: ProtobufAdapter
+    private readonly adapter: PBufAdapter
   ) { }
 
   public async doWork (): Promise<void> {
@@ -69,7 +71,7 @@ export class AppService {
 
     const plotDocument = PointPlotDocument.deserializeBinary(modelBuf)
     const plotData = plotDocument.getData()
-    if (plotData === undefined) {
+    if ((plotData === undefined) || (plotData === null)) {
       console.error("Not Plot Data!")
       throw new Error()
     }
@@ -115,12 +117,12 @@ export class AppService {
 
 @Module({
   imports: [
-  // IpfsModule.register(
-// { rootPath: "/home/ionadmin/Documents/raBlocks", cacheSize: 500, injectToken: IpfsModuleTypes.AbstractBlockstore}
-  // ),
+  IpfsModule.register(
+    { rootPath: "/home/ionadmin/Documents/raBlocks", cacheSize: 500, injectToken: IpfsModuleTypes.AbstractBlockstore}
+  ),
   PlottingModule
   ],
-  providers: [AppService, ProtobufAdapter],
+  providers: [AppService, PBufAdapter],
   exports: []
   })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
