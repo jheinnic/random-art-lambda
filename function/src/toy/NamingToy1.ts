@@ -10,12 +10,12 @@ async function main (): Promise<void> {
 
 export interface Input {
   path: string
-  content: ReadStream
+  content: fs.ReadStream
 }
 
-function refresh (sourceArray: Input[]): void {
+function refresh (sourceArray: Input[]): Input[] {
   return sourceArray.map((source) => {
-    if (!source.path) {
+    if (source.path === "") {
       // Cannot re-open a source File if we have not retained its path
       return source
     }

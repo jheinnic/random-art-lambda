@@ -3,14 +3,18 @@ import { Inject, Injectable, Module } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
 import { BaseBlockstore } from "blockstore-core"
 import * as fs from "fs"
-import * as math from "mathjs"
 import { CID } from "multiformats"
 import { base64 } from "multiformats/bases/base64"
 import * as Block from "multiformats/block"
 import { sha256 as hasher } from "multiformats/hashes/sha2"
 
 import { IpfsModule } from "../ipfs/di/IpfsModule.js"
-import { IpfsModuleTypes } from "../ipfs/di/typez.js"
+import { SharedArtBlockstoreModule } from "../ipfs/di/SharedArtBlockstoreModule.js"
+import { IpfsModuleTypes, SharedArtBlockstoreModuleTypes } from "../ipfs/di/typez.js"
+import { RandomArtTaskRepository } from "../painting/components/RandomArtTaskRepository.js"
+import { IRandomArtTaskBuilder } from "../painting/interface/IRandomArtTaskBuilder.js"
+import { IRandomArtTaskRepository } from "../painting/interface/IRandomArtTaskRepository.js"
+import { PlottingModule } from "../plotting/di/PlottingModule.js"
 import { create, fromDSL } from "./BlocksToy3Util.mjs"
 
 // a schema for a terse data format
@@ -40,91 +44,16 @@ export interface RandomArtTask {
   plotMap: CID
 }
 
-export interface IRandomArtTaskBuilder {
-  prefix: (bytes: Uint8Array) => IRandomArtTaskBuilder
-  suffix: (bytes: Uint8Array) => IRandomArtTaskBuilder
-  plotMap: (link: CID) => IRandomArtTaskBuilder
-}
-
-const NO_TERM = Uint8Array.of()
-const NO_CID = CID.parse("bafyreidthqcofmbxevgnm2tm3wgkwlaue5wjomm2ofyef4avlpduy6y2he")
-
-class RandomArtTaskBuilder implements IRandomArtTaskBuilder {
-  private _prefix: Uint8Array = NO_TERM
-  private _suffix: Uint8Array = NO_TERM
-  private _plotMap: CID = NO_CID
-
-  constructor (private readonly _repository: RandomArtTaskRepository) {
-  }
-
-  public prefix (bytes: Uint8Array): RandomArtTaskBuilder {
-    this._prefix = bytes
-    return this
-  }
-
-  public suffix (bytes: Uint8Array): RandomArtTaskBuilder {
-    this._suffix = bytes
-    return this
-  }
-
-  public plotMap (link: CID): RandomArtTaskBuilder {
-    this._plotMap = link
-    return this
-  }
-
-  public async build (): Promise<CID> {
-    const source = {
-      prefix: this._prefix,
-      suffix: this._suffix,
-      plotMap: this._plotMap
-    }
-    return await this._repository.save(source)
-  }
-}
-
-export class RandomArtTaskRepository {
-  constructor (@Inject(IpfsModuleTypes.AbstractBlockstore) private readonly blockStore: BaseBlockstore) { }
-
-  public async create (director: (builder: IRandomArtTaskBuilder) => void): Promise<CID> {
-    const builder = new RandomArtTaskBuilder(this)
-    director(builder)
-    return await builder.build()
-  }
-
-  public async save (source: RandomArtTask): Promise<CID> {
-    // validate and transform
-    const sourceData = rootTyped.toRepresentation({ RandomArtTask: source })
-    if (sourceData === undefined) {
-      throw new TypeError("Invalid typed form, does not match schema")
-    }
-
-    // what do we have?
-    // console.log("Representation form:", sourceData)
-    // console.dir(sourceData, { depth: Infinity })
-
-    // validate and transform back into representation form
-    // what do we have?
-    // console.log("Modified representation data:", JSON.stringify(newData))
-    const rootBlock = await Block.encode({ codec, hasher, value: sourceData })
-    // console.log("Root block, encoded")
-    // console.dir(rootBlock, { depth: Infinity })
-    await this.blockStore.put(rootBlock.cid, rootBlock.bytes, {})
-
-    const blockObject = await Block.decode({ codec, hasher, bytes: rootBlock.bytes })
-    // console.log("Root block, decoded")
-    // console.dir(blockObject, { depth: Infinity })
-    const rootTwo = rootTyped.toTyped(blockObject.value)
-    console.dir(rootTwo, { depth: Infinity })
-    console.log(rootTwo.constructor.name)
-
-    return rootBlock.cid
-  }
-}
+// export interface IRandomArtTaskBuilder {
+//   prefix: (bytes: Uint8Array) => IRandomArtTaskBuilder
+//   suffix: (bytes: Uint8Array) => IRandomArtTaskBuilder
+//   plotMap: (link: CID) => IRandomArtTaskBuilder
+// }
 
 @Injectable()
 export class AppService {
   constructor (
-    @Inject(IpfsModuleTypes.AbstractBlockstore)
+    @Inject(SharedArtBlockstoreModuleTypes.SharedArtBlockstore)
     private readonly fsBlockstore: BaseBlockstore,
     @Inject(RandomArtTaskRepository)
     private readonly repository: RandomArtTaskRepository
@@ -152,13 +81,12 @@ export class AppService {
 }
 
 @Module({
-  imports: [
-  IpfsModule.register(
-    { rootPath: "/home/ionadmin/Documents/raBlocks", cacheSize: 500, injectToken: IpfsModuleTypes.AbstractBlockstore}
-  )
-  ],
+  imports: [ SharedArtBlockstoreModule, PlottingModule],
+  // IpfsModule.register(
+// { rootPath: "/home/ionadmin/Documents/raBlocks", cacheSize: 500, injectToken: IpfsModuleTypes.AbstractBlockstore}
+  // )
   providers: [AppService, RandomArtTaskRepository],
-  exports: []
+  exports: [AppService]
   })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class AppModule {}

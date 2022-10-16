@@ -1,108 +1,51 @@
-import { ConfigurableModuleBuilder, DynamicModule, Inject, Injectable, Module } from "@nestjs/common"
+import { ConfigurableModuleBuilder, DynamicModule, Inject, Injectable, Module, Type } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
 import { BaseBlockstore } from "blockstore-core"
 
 import { buildLruCache, FsBlockstore } from "../ipfs/components/FsBlockstore.js"
-import { FsBlockstoreConfiguration } from "../ipfs/components/FsBlockstoreConfiguration.js"
+import { FsBlockstoreConfiguration } from "../ipfs/components/FsBlockstoreConfiguration"
 import { IpfsModuleTypes } from "../ipfs/di/typez.js"
 import { IpldRegionMapRepository } from "../plotting/components/IpldRegionMapRepository.js"
 import { IpldRegionMapSchemaDsl } from "../plotting/components/IpldRegionMapSchemaDsl.js"
 import { PlottingModuleTypes } from "../plotting/di/typez.js"
 import { IRegionMapRepository } from "../plotting/interface/IRegionMapRepository.js"
 import { PBufRegionMapDecoder } from "../plotting/protobuf/PBufRegionMapDecoder.js"
-import { ProtobufAdapter } from "../plotting/protobuf/ProtobufAdapter.js"
 
+/**
+ * Configuration class used set an externally deifned injection token for a given module instance's exposure of an otherwise
+ * stock resource token.  It becomes necessary to use this if a given module's dynamic registration may be used multiple times
+ * by the same importer, making it necessary for each dynamic import to have a distinct resource token for the artifacts the
+ * modules are created to acquire.
+ */
 export class ModuleInstanceConfiguration {
   constructor (
     public readonly injectToken: symbol | string
   ) {}
 }
 
-export const InjectedBlockstore: unique symbol = Symbol("InjectedBlockstore")
-export const InjectedAltRepo: unique symbol = Symbol("InjectedAltRepository")
-
-function applyExtras (module: DynamicModule, extras: ModuleInstanceConfiguration): DynamicModule {
-  if (extras.injectToken !== IpfsModuleTypes.AbstractBlockstore) {
-    if (module.providers === undefined) {
-      module.providers = [{ provide: extras.injectToken, useExisting: IpfsModuleTypes.AbstractBlockstore }]
-    } else {
-      module.providers.push({ provide: extras.injectToken, useExisting: IpfsModuleTypes.AbstractBlockstore })
-    }
-    if (module.exports === undefined) {
-      module.exports = [extras.injectToken]
-    } else {
-      module.exports.push(extras.injectToken)
-    }
-  }
-  console.log(module.module)
-  return module
-  /*
-  return {
-    ...module,
-    providers: [
-      ...(module.providers ?? []),
-      {
-        provide: extras.injectToken,
-        useExisting: BaseBlockstore
-      }
-    ],
-    exports: [
-      ...(module.exports ?? []), extras.injectToken
-    ]
-  }
-  */
-}
-
 export const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN, OPTIONS_TYPE, ASYNC_OPTIONS_TYPE } =
-  new ConfigurableModuleBuilder<FsBlockstoreConfiguration, "register", "create">({
+  new ConfigurableModuleBuilder<FsBlockstoreConfiguration, "register", "create", ModuleInstanceConfiguration>({
     optionsInjectionToken: IpfsModuleTypes.FsBlockstoreConfig,
     alwaysTransient: true
   })
     .setClassMethodName("register")
     .setFactoryMethodName("create")
-    .setExtras(new ModuleInstanceConfiguration("Inject"), applyExtras)
-    .build()
-
-console.log("AA")
-console.log(ConfigurableModuleClass, MODULE_OPTIONS_TOKEN, OPTIONS_TYPE, ASYNC_OPTIONS_TYPE)
-console.log("BB")
-
-export class DynamicImportConfig {
-  // constructor (public readonly sourceModule: any, public readonly blockstoreProvider: string | symbol) {}
-  constructor (public readonly ipfsModule?: DynamicModule, bsToken: string | symbol) { }
-}
-
-const { ConfigurableModuleClass: DynamicRepoBaseModule, MODULE_OPTIONS_TOKEN: MOD_OPT_TOKEN, OPTIONS_TYPE: OPTIONS_TYPE_2, ASYNC_OPTIONS_TYPE: ASYNC_OPTIONS_TYPE_2 } =
-  new ConfigurableModuleBuilder<{}, "register", "provideBlockstore", DynamicImportConfig>({
-    optionsInjectionToken: InjectedBlockstore,
-    alwaysTransient: true
-  })
-    .setClassMethodName("register")
-    .setFactoryMethodName("provideBlockstore")
-    .setExtras(new DynamicImportConfig(undefined), (module: DynamicModule, extra: DynamicImportConfig) => {
-      if (extra.ipfsModule !== undefined) {
-        if (module.imports === undefined) {
-          module.imports = [extra.ipfsModule]
-        } else {
-          module.imports.push(extra.ipfsModule)
-        }
-      }
-      if (extra.bsToken !== undefined) {
+    .setExtras(new ModuleInstanceConfiguration(IpfsModuleTypes.AbstractBlockstore), (module: DynamicModule, extras: ModuleInstanceConfiguration): DynamicModule => {
+      if (extras.injectToken !== IpfsModuleTypes.AbstractBlockstore) {
         if (module.providers === undefined) {
-          module.providers = [{ provide: InjectedBlockstore, useExisting: extra.bsTokenp }]
+          module.providers = [{ provide: extras.injectToken, useExisting: IpfsModuleTypes.AbstractBlockstore }]
         } else {
-          module.providers.push({ provide: InjectedBlockstore, useExisting: extra.bsTokenp })
+          module.providers.push({ provide: extras.injectToken, useExisting: IpfsModuleTypes.AbstractBlockstore })
+        }
+        if (module.exports === undefined) {
+          module.exports = [extras.injectToken]
+        } else {
+          module.exports.push(extras.injectToken)
         }
       }
-
-      console.dir(module, { depth: Infinity })
       return module
-    }).build()
-
-console.log("CC")
-console.log(DynamicRepoBaseModule, MOD_OPT_TOKEN, OPTIONS_TYPE_2, ASYNC_OPTIONS_TYPE_2)
-console.log("DD")
-
+    })
+    .build()
 @Module({
   providers: [
   {
@@ -114,9 +57,7 @@ console.log("DD")
   ],
   exports: [IpfsModuleTypes.AbstractBlockstore]
   })
-export class IpfsModule extends ConfigurableModuleClass {
-  // static module = initializer(IpfsModule)
-
+export class ZpfsModule extends ConfigurableModuleClass {
   static register (config: typeof OPTIONS_TYPE): DynamicModule {
     return super.register(config)
   }
@@ -126,16 +67,14 @@ export class IpfsModule extends ConfigurableModuleClass {
   }
 }
 
-const SharedArtBlockStore: unique symbol = Symbol("SharedArtworkBlockstore")
+// Next Module //
+
 // const SharedArtBlockStoreDynamicImport: unique symbol = Symbol("DynamicImport<SharedArtworkBlockstore>")
-const SharedArtBlockStoreHolder: unique symbol = Symbol("SharedArtworkBlockstoreHolder")
-
-const dynamicIpfs = IpfsModule.register({ rootPath: "/home/ionadmin/Documents/raBlocks", cacheSize: 500, injectToken: SharedArtBlockStore })
-
-const AltRepository: unique symbol = Symbol("AltRepository")
+export const InjectedBlockstore: unique symbol = Symbol("InjectedBlockstore")
+export const AltRepository: unique symbol = Symbol("AlternateRepository")
 
 @Injectable()
-export class InjectedAltRepository {
+export class AlternateRepository {
   constructor (
     @Inject(InjectedBlockstore) private readonly sharedBlockstore: BaseBlockstore
   ) {
@@ -143,27 +82,48 @@ export class InjectedAltRepository {
   }
 }
 
+const { ConfigurableModuleClass: Dynamic2RepoBaseModule } = // MODULE_OPTIONS_TOKEN: MOD_OPT_TOKEN, OPTIONS_TYPE: OPTIONS_TYPE_2, ASYNC_OPTIONS_TYPE: ASYNC_OPTIONS_TYPE_2 } =
+  new ConfigurableModuleBuilder<BaseBlockstore, "register">({
+    optionsInjectionToken: InjectedBlockstore,
+    alwaysTransient: false
+  })
+    .setClassMethodName("register")
+    .build()
+
 @Module({
   imports: [],
   providers: [
   {
-  provide: InjectedAltRepo,
-  useClass: InjectedAltRepository
+  provide: AltRepository,
+  useClass: AlternateRepository
   }
   ],
-  exports: [InjectedAltRepo]
+  exports: [AltRepository]
   })
-export class AltDynamicDependencyModule extends DynamicRepoBaseModule {
-  public static registerAsync (options: typeof ASYNC_OPTIONS_TYPE_2): DynamicModule {
-    return super.registerAsync(options)
-  }
+export class AltDynamicDependency2Module extends Dynamic2RepoBaseModule {
+  // public static registerAsync (options: typeof ASYNC_OPTIONS_TYPE_2): DynamicModule {
+  // return super.registerAsync(options)
+  // }
 }
+
+// Next Module //
+
+const SharedArtBlockStore: unique symbol = Symbol("SharedArtworkBlockstore")
+
+@Module({
+  imports: [ ZpfsModule.register({ rootPath: "/home/ionadmin/Documents/raBlocks", cacheSize: 500, injectToken: SharedArtBlockStore }) ],
+  exports: [ZpfsModule]
+  })
+export class SharedArtBlockstoreModule {
+}
+
+// Next Module //
 
 @Injectable()
 export class AppService {
   constructor (
-    @Inject(InjectedAltRepo)
-    private readonly altDynamicRepo: InjectedAltRepository,
+    @Inject(AltRepository)
+    private readonly altDynamicRepo: AlternateRepository,
     @Inject(SharedArtBlockStore)
     private readonly sabs: BaseBlockstore
   ) { }
@@ -178,13 +138,17 @@ export class AppService {
 
 @Module({
   imports: [
-  dynamicIpfs,
-  AltDynamicDependencyModule.registerAsync({
-    ipfsModule: dynamicIpfs, bsToken: SharedArtBlockStore
+  SharedArtBlockstoreModule,
+  AltDynamicDependency2Module.registerAsync({
+    imports: [SharedArtBlockstoreModule],
+    useFactory: (blockStore) => {
+    return blockStore
+    },
+    inject: [SharedArtBlockStore]
     })
   ],
   providers: [AppService],
-  exports: [dynamicIpfs, AppService ]
+  exports: [AppService]
   })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class AppModule {}
