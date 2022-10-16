@@ -21,7 +21,7 @@ async function run (): Promise<void> {
   const aFilename = `testrun/test_003`
 
   const painterOne = new RandomArtPainter(
-    genjs6.new_picture(prefix, suffix),
+    genjs6.newPicture(prefix, suffix),
     plotterOne
   )
   new CanvasWriter(painterOne.paint()).writeCallbacks(
@@ -29,7 +29,7 @@ async function run (): Promise<void> {
   )
 
   const painterTwo = new RandomArtPainter(
-    genjs6.new_picture(prefix, suffix),
+    genjs6.newPicture(prefix, suffix),
     plotterTwo
   )
   new CanvasWriter(painterTwo.paint()).writeCallbacks(

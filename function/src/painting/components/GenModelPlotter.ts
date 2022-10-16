@@ -1,9 +1,6 @@
 import { IPixelPainter } from "../interface/IPixelPainter.js"
 import { IRegionPlotter } from "../interface/IRegionPlotter.js"
-import pkg from "./genjs6.cjs"
-
-// import { GenModel } from "./genjs6"
-const { computePixel, GenModel } = pkg
+import { computePixel, GenModel } from "./genjs6.js"
 
 export class GenModelPlotter implements IRegionPlotter {
   public constructor (
