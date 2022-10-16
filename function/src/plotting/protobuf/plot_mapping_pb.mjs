@@ -1,3 +1,5 @@
+import * as jspb from "google-protobuf"
+
 // source: protobuf/plot_mapping.proto
 /**
  * @fileoverview
@@ -10,8 +12,6 @@
 // GENERATED CODE -- DO NOT EDIT!
 /* eslint-disable */
 // @ts-nocheck
-import * as jspb from "google-protobuf"
-
 
 var goog = jspb;
 var global = (function() { return this || global || Function('return this')(); }).call(null);
