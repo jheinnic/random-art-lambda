@@ -1,5 +1,6 @@
 import { AbstractRegionMap } from "../../painting/components/AbstractRegionMap.js"
-import { DataBlock, hydrate, logFractions, rationalize, RegionMap } from "./IpldSchemaTypes.js"
+import { DataBlock, RegionMap } from "../interface/RegionMapSchemaTypes.js"
+import { hydrate, rationalize } from "./RegionMapUtils.js"
 
 export class IpldRegionMap extends AbstractRegionMap {
   private readonly rowList: number[]
@@ -11,7 +12,8 @@ export class IpldRegionMap extends AbstractRegionMap {
     const rowDBytes = Buffer.concat(dataBlocks.map((dataBlock) => dataBlock.rowsD))
     const colNBytes = Buffer.concat(dataBlocks.map((dataBlock) => dataBlock.colsN))
     const colDBytes = Buffer.concat(dataBlocks.map((dataBlock) => dataBlock.colsD))
-
+    let rowList: number[] = []
+    let colList: number[] = []
     try {
       const rowNPalette = hydrate(regionMap.rowsN.palette, [], regionMap.rowsN.baseWordLen)
       console.log("1h")
@@ -37,17 +39,20 @@ export class IpldRegionMap extends AbstractRegionMap {
       if (regionMap.regionBoundary.leftN < 0) {
         leftOffset = regionMap.regionBoundary.leftN / regionMap.regionBoundary.leftD
       }
-      this.rowList = rationalize(rows, leftOffset)
+      rowList = rationalize(rows, leftOffset)
       console.log("ih")
       let bottomOffset = 0
       if (regionMap.regionBoundary.bottomN < 0) {
         bottomOffset = regionMap.regionBoundary.bottomN / regionMap.regionBoundary.bottomD
       }
-      this.colList = rationalize(cols, bottomOffset)
+      colList = rationalize(cols, bottomOffset)
       console.log("oh")
     } catch (error: any) {
       console.error("uh", error)
     }
+
+    this.rowList = rowList
+    this.colList = colList
   }
 
   public get regionRows (): number[] {
