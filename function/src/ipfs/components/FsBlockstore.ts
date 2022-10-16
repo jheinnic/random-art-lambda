@@ -9,8 +9,8 @@ import { base58btc } from "multiformats/bases/base58"
 import { dirname, join } from "path"
 import * as lockfile from "proper-lockfile"
 
+import { FsBlockstoreConfiguration } from "../di/FsBlockstoreConfiguration.js"
 import { IpfsModuleTypes } from "../di/typez.js"
-import { FsBlockstoreConfiguration } from "../interface/FsBlockstoreConfiguration.js"
 
 enum OpenState {
   CLOSED = "closed",
@@ -35,6 +35,7 @@ export class FsBlockstore extends BaseBlockstore {
   ) {
     super()
     this.rootPath = config.rootPath
+    console.log("New FsBlockstore constructor call")
   }
 
   async open (): Promise<void> {
