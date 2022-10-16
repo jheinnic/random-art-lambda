@@ -2,17 +2,16 @@ import { Module } from "@nestjs/common"
 import { BaseBlockstore } from "blockstore-core"
 
 import { IpfsModule } from "../../ipfs/di/IpfsModule.js"
-import { IpfsModuleTypes } from "../../ipfs/di/typez.js"
+import { SharedArtBlockstoreModule } from "../../ipfs/di/SharedArtBlockstoreModule.js"
+import { IpfsModuleTypes, SharedArtBlockstoreModuleTypes } from "../../ipfs/di/typez.js"
 import { IpldRegionMapRepository } from "../components/IpldRegionMapRepository.js"
 import { IpldRegionMapSchemaDsl } from "../components/IpldRegionMapSchemaDsl.js"
+import { PBufAdapter } from "../protobuf/PBufAdapter.js"
 import { PBufRegionMapDecoder } from "../protobuf/PBufRegionMapDecoder.js"
-import { ProtobufAdapter } from "../protobuf/ProtobufAdapter.js"
 import { PlottingModuleTypes } from "./typez.js"
 
 @Module({
-  imports: [
-  IpfsModule.register({ rootPath: "/home/ionadmin/Documents/raBlocks", cacheSize: 500, injectToken: PlottingModuleTypes.ImportedBlockStore}),
-  ],
+  imports: [SharedArtBlockstoreModule],
   providers: [
   {
   provide: PlottingModuleTypes.PBufPlotRegionMapDecoder,
@@ -28,11 +27,11 @@ import { PlottingModuleTypes } from "./typez.js"
   },
   {
   provide: PlottingModuleTypes.ProtoBufAdapter,
-  useClass: ProtobufAdapter
+  useClass: PBufAdapter
   },
-  { provide: IpfsModuleTypes.AbstractBlockstore, useExisting: PlottingModuleTypes.ImportedBlockStore }
+  { provide: PlottingModuleTypes.ImportedBlockStore, useExisting: SharedArtBlockstoreModuleTypes.SharedArtBlockstore }
   ],
-  exports: [PlottingModuleTypes.IpldRegionMapRepository, PlottingModuleTypes.ProtoBufAdapter, IpfsModuleTypes.AbstractBlockstore ]
+  exports: [PlottingModuleTypes.IpldRegionMapRepository, PlottingModuleTypes.ProtoBufAdapter, PlottingModuleTypes.ImportedBlockStore]
   })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class, @typescript-eslint/no-unused-vars
 export class PlottingModule { }

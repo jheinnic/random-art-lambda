@@ -12,7 +12,7 @@ export type StrKeyOf<T> = keyof T & string
 type SomeNumbers<P extends string, A extends string> = P extends A ? number[] : number
 
 export type Fractioned<K extends string = string, A extends K = never> =
-  { [ P in K as `${P}${NorD}` ]: SomeNumbers<P, A> }
+  { [ P in K as `${P}N` | `${P}D` ]: SomeNumbers<P, A> }
   // { [ P in K as `${P}${NorD}` ]: P extends A ? number[] : number }
 
 export type Numeric<K extends string = string, A extends K = never> =

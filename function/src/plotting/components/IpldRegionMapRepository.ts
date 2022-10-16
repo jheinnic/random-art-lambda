@@ -4,38 +4,38 @@ import { BaseBlockstore } from "blockstore-core"
 import { CID } from "multiformats"
 import * as Block from "multiformats/block"
 import { sha256 as hasher } from "multiformats/hashes/sha2"
+import { Optional } from "simplytyped"
 
-import { printIndexBzl } from "../../../../external/build_bazel_rules_nodejs/internal/npm_install/generate_build_file"
 import { IpfsModuleTypes } from "../../ipfs/di/typez.js"
+import { AbstractRegionMap } from "../../painting/components/AbstractRegionMap.js"
 import { PlottingModuleTypes } from "../di/typez.js"
+import { IRegionMapBuilder } from "../interface/IRegionMapBuilder.js"
 import { IRegionMapRepository } from "../interface/IRegionMapRepository.js"
-import { IpldRegionMap } from "./IpldRegionMap.js"
-import { RegionMapSchemaDsl } from "./IpldRegionMapSchemaDsl.js"
+import { IRegionMapSchemaDsl } from "../interface/IRegionMapSchemaDsl.js"
 import {
-  blockify,
   DataBlock,
   EMPTY_DIMENSION,
   Fractioned,
-  fractionify,
-  logFractions,
-  Numeric,
-  paletteMaybe,
-  rationalize,
+  RegionBoundaries,
+  RegionBoundaryFractions,
   RegionMap,
-  stats,
-} from "./IpldSchemaTypes.js"
+} from "../interface/RegionMapSchemaTypes.js"
+import { IpldRegionMap } from "./IpldRegionMap.js"
+import { blockify, fractionify, paletteMaybe, rationalize, stats } from "./RegionMapUtils.js"
 
 @Injectable()
 export class IpldRegionMapRepository implements IRegionMapRepository {
   constructor (
     @Inject(IpfsModuleTypes.AbstractBlockstore) private readonly blockStore: BaseBlockstore,
-    @Inject(PlottingModuleTypes.IpldRegionMapSchemaDsl) private readonly schemaDsl: RegionMapSchemaDsl
-  ) { }
+    @Inject(PlottingModuleTypes.IpldRegionMapSchemaDsl) private readonly schemaDsl: IRegionMapSchemaDsl
+  ) {
+    console.log(blockStore.constructor.name)
+  }
 
-  async saveRootModel (source: RegionMap, data: DataBlock[]): Promise<CID> {
+  public async saveRootModel (source: Optional<RegionMap, "data">, data: DataBlock[]): Promise<CID> {
     // validate and transform
     source.data = await this.commit(data)
-    const sourceData = this.schemaDsl.toRegionMapRepresentation({ RegionMap: source })
+    const sourceData = this.schemaDsl.toRegionMapRepresentation(source as RegionMap)
     if (sourceData === undefined) {
       throw new TypeError("Invalid typed form, does not match schema")
     }
@@ -74,7 +74,7 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
   public async load (cid: CID): Promise<AbstractRegionMap> {
     const encodingBytes = await this.blockStore.get(cid)
     const decodedBlock = await Block.decode({ codec, hasher, bytes: encodingBytes })
-    const rootObject: RegionMap = this.schemaDsl.toRegionMapTyped(decodedBlock.value).RegionMap
+    const rootObject: RegionMap = this.schemaDsl.toRegionMapTyped(decodedBlock.value)
     const dataBlocks: DataBlock[] = await this.loadData(rootObject.data)
     return new IpldRegionMap(rootObject, dataBlocks)
   }
@@ -91,7 +91,7 @@ class RegionMapBuilder implements IRegionMapBuilder {
   private _chunkHeight: number = -1
   private _pixelWidth: number = -1
   private _pixelHeight: number = -1
-  private _regionBoundary: Fractioned<string & keyof RegionBoundary> = { topN: 0, topD: 0, bottomN: 0, bottomD: 0, leftN: 0, leftD: 0, rightN: 0, rightD: 0 }
+  private _regionBoundary: RegionBoundaryFractions = { topN: 0, topD: 0, bottomN: 0, bottomD: 0, leftN: 0, leftD: 0, rightN: 0, rightD: 0 }
   private _rowOrderX: number[] = EMPTY_DIMENSION
   private _rowOrderY: number[] = EMPTY_DIMENSION
 
@@ -116,9 +116,15 @@ class RegionMapBuilder implements IRegionMapBuilder {
     return this
   }
 
-  public regionBoundary (boundary: Numeric<string & keyof RegionBoundary>): RegionMapBuilder {
-    // [ "top", "bottom", "left", "right" ] ),
-    this._regionBoundary = fractionify<string & keyof RegionBoundary>(boundary, 0, ["top", "bottom", "left", "right"])
+  public regionBoundary (boundary: RegionBoundaries): RegionMapBuilder
+  public regionBoundary (boundary: RegionBoundaryFractions): RegionMapBuilder
+  public regionBoundary (boundary: RegionBoundaries | RegionBoundaryFractions): RegionMapBuilder {
+    if ("top" in Object.keys(boundary)) {
+      this._regionBoundary = fractionify<"top" | "left" | "right" | "bottom">((boundary as RegionBoundaries), 0, ["top", "bottom", "left", "right"])
+      // this._regionBoundary = fractionify<StrKeyOf<RegionBoundaries>>(boundary, 0, ["top", "bottom", "left", "right"])
+    } else {
+      this._regionBoundary = { ...(boundary as RegionBoundaryFractions) }
+    }
     return this
   }
 
@@ -136,7 +142,7 @@ class RegionMapBuilder implements IRegionMapBuilder {
     if ((this._rowOrderX === EMPTY_DIMENSION) || (this._rowOrderY === EMPTY_DIMENSION)) {
       throw new Error("Data points must be defined first")
     }
-    if ((this._pixelWidth === -1) || (this.pixelHeight === -1)) {
+    if ((this._pixelWidth === -1) || (this._pixelHeight === -1)) {
       throw new Error("Image dimensions must be defined first")
     }
     return (this._rowOrderX.length === this._pixelWidth) && (this._rowOrderY.length === this._pixelHeight)
@@ -146,7 +152,7 @@ class RegionMapBuilder implements IRegionMapBuilder {
     if ((this._rowOrderX === EMPTY_DIMENSION) || (this._rowOrderY === EMPTY_DIMENSION)) {
       throw new Error("Data points must be defined first")
     }
-    if ((this._pixelWidth === -1) || (this.pixelHeight === -1)) {
+    if ((this._pixelWidth === -1) || (this._pixelHeight === -1)) {
       throw new Error("Image dimensions must be defined first")
     }
     const pixelCount = this._pixelWidth * this._pixelHeight

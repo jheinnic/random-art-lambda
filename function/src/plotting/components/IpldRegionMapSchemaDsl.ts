@@ -1,8 +1,8 @@
-import { fromDSL } from "@ipld/schema/from-dsl.js"
-import { create } from "@ipld/schema/typed.js"
 import { Injectable } from "@nestjs/common"
 
-import { DataBlock, RegionMap } from "./IpldSchemaTypes.js"
+import { IRegionMapSchemaDsl } from "../interface/IRegionMapSchemaDsl.js"
+import { DataBlock, RegionMap } from "../interface/RegionMapSchemaTypes.js"
+import { create, createValidate, fromDSL } from "./IpldSchemaTools.mjs"
 
 // import { create, fromDsl } from "./IpldSchemaTools.mjs"
 
@@ -68,18 +68,13 @@ type DataBlock struct {
 // if (plotData === undefined || plotData === null) {
 // throw new Error("Plot Data subunit must be defined!")
 // }
-export interface RegionMapSchemaDsl {
-  toRegionMapRepresentation: (typed: RegionMap) => unknown
-  toRegionMapTyped: (representation: unknown) => RegionMap
-  toDataBlockRepresentation: (typed: DataBlock) => unknown
-  toDataBlockTyped: (representation: unknown) => DataBlock
-}
 
 @Injectable()
-export class IpldRegionMapSchemaDsl implements RegionMapSchemaDsl {
+export class IpldRegionMapSchemaDsl implements IRegionMapSchemaDsl {
   private readonly schemaDmt = fromDSL(schemaDsl)
   private readonly rootTyped = create(this.schemaDmt, "ModelEnvelope")
   private readonly dataTyped = create(this.schemaDmt, "DataBlock")
+  private readonly validate = createValidate(this.schemaDmt)
 
   public toRegionMapRepresentation (typed: RegionMap): unknown {
     return this.rootTyped.toRepresentation(typed)
