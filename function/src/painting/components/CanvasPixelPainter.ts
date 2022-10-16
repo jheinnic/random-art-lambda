@@ -1,4 +1,5 @@
 import { Canvas, CanvasRenderingContext2D } from "canvas"
+import * as fs from "fs"
 
 import { IPixelPainter } from "../interface/IPixelPainter.js"
 
@@ -7,7 +8,7 @@ export class CanvasPixelPainter implements IPixelPainter {
 
   public constructor (
     private readonly canvas: Canvas,
-    private readonly streamOut: WriteStream
+    private readonly streamOut: fs.WriteStream
   ) {
     this.context = canvas.getContext("2d")
     if (this.context === null) {

@@ -1,5 +1,5 @@
-import { IPlotModel } from "./IPlotModel"
+import { IRegionMap } from "./IRegionMap.js"
 
 export interface IRegionMapDecoder {
-  provide: (modelData: Uint8Array) => Promise<IPlotModel>
+  provide: (modelData: Uint8Array) => Promise<IRegionMap>
 }

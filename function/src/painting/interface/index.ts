@@ -1,7 +1,6 @@
 export { IPoint } from "./IPoint.js"
-export { IRegionMap } from "./IRegionmap.js"
+export { IRegionMap } from "./IRegionMap.js"
 export { IRegionMapDecoder } from "./IRegionMapDecoder.js"
 export { IPixelPainter } from "./IPixelPainter.js"
 export { IRegionPlotter } from "./IRegionPlotter.js"
 export { IRandomArtTaskRepository } from "./IRandomArtTaskRepository.js"
-export { ICanvasFactory } from "./ICanvasFactory.js"
