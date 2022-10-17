@@ -14,10 +14,6 @@ import { PlottingModuleTypes } from "./typez.js"
   imports: [SharedArtBlockstoreModule],
   providers: [
   {
-  provide: PlottingModuleTypes.PBufPlotRegionMapDecoder,
-  useClass: PBufRegionMapDecoder
-  },
-  {
   provide: PlottingModuleTypes.IpldRegionMapRepository,
   useClass: IpldRegionMapRepository
   },
@@ -29,7 +25,7 @@ import { PlottingModuleTypes } from "./typez.js"
   provide: PlottingModuleTypes.ProtoBufAdapter,
   useClass: PBufAdapter
   },
-  { provide: PlottingModuleTypes.ImportedBlockStore, useExisting: SharedArtBlockstoreModuleTypes.SharedArtBlockstore }
+  { provide: PlottingModuleTypes.ImportedBlockStore, useExisting: SharedArtBlockstoreModuleTypes.SharedMapBlockstore }
   ],
   exports: [PlottingModuleTypes.IpldRegionMapRepository, PlottingModuleTypes.ProtoBufAdapter, PlottingModuleTypes.ImportedBlockStore]
   })

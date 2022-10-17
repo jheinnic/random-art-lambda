@@ -6,7 +6,7 @@ import * as Block from "multiformats/block"
 import { sha256 as hasher } from "multiformats/hashes/sha2"
 import { Optional } from "simplytyped"
 
-import { IpfsModuleTypes } from "../../ipfs/di/typez.js"
+import { IpfsModuleTypes, SharedArtBlockstoreModuleTypes } from "../../ipfs/di/typez.js"
 import { AbstractRegionMap } from "../../painting/components/AbstractRegionMap.js"
 import { PlottingModuleTypes } from "../di/typez.js"
 import { IRegionMapBuilder } from "../interface/IRegionMapBuilder.js"
@@ -26,7 +26,7 @@ import { blockify, fractionify, paletteMaybe, rationalize, stats } from "./Regio
 @Injectable()
 export class IpldRegionMapRepository implements IRegionMapRepository {
   constructor (
-    @Inject(IpfsModuleTypes.AbstractBlockstore) private readonly blockStore: BaseBlockstore,
+    @Inject(SharedArtBlockstoreModuleTypes.SharedMapBlockstore) private readonly blockStore: BaseBlockstore,
     @Inject(PlottingModuleTypes.IpldRegionMapSchemaDsl) private readonly schemaDsl: IRegionMapSchemaDsl
   ) {
     console.log(blockStore.constructor.name)
@@ -35,6 +35,7 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
   public async saveRootModel (source: Optional<RegionMap, "data">, data: DataBlock[]): Promise<CID> {
     // validate and transform
     source.data = await this.commit(data)
+    console.dir(source, { depth: Infinity })
     const sourceData = this.schemaDsl.toRegionMapRepresentation(source as RegionMap)
     if (sourceData === undefined) {
       throw new TypeError("Invalid typed form, does not match schema")
@@ -119,7 +120,7 @@ class RegionMapBuilder implements IRegionMapBuilder {
   public regionBoundary (boundary: RegionBoundaries): RegionMapBuilder
   public regionBoundary (boundary: RegionBoundaryFractions): RegionMapBuilder
   public regionBoundary (boundary: RegionBoundaries | RegionBoundaryFractions): RegionMapBuilder {
-    if ("top" in Object.keys(boundary)) {
+    if (Object.keys(boundary).includes("top")) {
       this._regionBoundary = fractionify<"top" | "left" | "right" | "bottom">((boundary as RegionBoundaries), 0, ["top", "bottom", "left", "right"])
       // this._regionBoundary = fractionify<StrKeyOf<RegionBoundaries>>(boundary, 0, ["top", "bottom", "left", "right"])
     } else {
