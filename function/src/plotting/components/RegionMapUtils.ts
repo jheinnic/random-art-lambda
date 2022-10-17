@@ -29,21 +29,25 @@ export function fractionify<K extends string = string, A extends K = never> (sou
       retVal[`${a}N`] = fractions.map((x: Fraction) => x.n * x.s) as Fractioned<K, A>[`${A}N`]
       retVal[`${a}D`] = fractions.map((x: Fraction) => x.d) as Fractioned<K, A>[`${A}D`]
     }
+    console.log(k)
+    console.dir(source[k], { depth: Infinity })
+    console.dir(retVal[`${k}N`], { depth: Infinity })
+    console.dir(retVal[`${k}D`], { depth: Infinity })
   }
   return retVal
 }
 
 export function paletteMaybe (src: number[]): PaletteMaybe {
   const asSet = new Set(src)
-  const paletteWordLen = Math.ceil(Math.log2(asSet.size))
+  const paletteWordLen = Math.max(Math.ceil(Math.log2(asSet.size)), 1)
   const srcMax = src.reduce((acc, value) => Math.max(acc, value), 0)
   const baseWordLen = Math.ceil(Math.log2(srcMax))
   const newSize = (src.length * paletteWordLen) + (asSet.size * baseWordLen)
   const baseSize = (src.length * baseWordLen)
   console.log(`${newSize} >?< ${baseSize}, ${paletteWordLen}, ${asSet.size}, ${baseWordLen}, ${src.length} :: ${srcMax}`)
   if (newSize > baseSize) {
-    // return { palette: NO_BYTES, paletteWordLen: baseWordLen, baseWordLen }
-    return { palette: NO_BYTES, paletteWordLen: 0, baseWordLen }
+    return { palette: NO_BYTES, paletteWordLen: baseWordLen, baseWordLen }
+    // return { palette: NO_BYTES, paletteWordLen: 0, baseWordLen }
   }
   const palette: number[] = [...asSet]
   const map: Map<number, number> = new Map<number, number>()
@@ -82,8 +86,8 @@ export function translate (input: number[], wordSize: number): Uint8Array {
     return Uint8Array.of()
   } else {
     const writer = new BitOutputStream()
-    writer.writeWords(input, wordSize)
-    console.log(writer.bytes().length, input.length, input.length * 6.5)
+    console.warn(writer.writeWords(input, wordSize))
+    console.log(8 * writer.bytes().length, " :: ", input.length, wordSize, input.length * wordSize) // " :: ", input.length * 6.5)
     return writer.bytes()
   }
 }
@@ -170,7 +174,7 @@ export function stats (before: number[], after: number[]): void {
   let idx = -1
   for (idx = -1; idx < len; idx++) {
     const delta = after[idx] - before[idx]
-    if (delta > -1) {
+    if (delta > 0) {
       if (delta > maxOver) {
         maxOver = delta
       }
@@ -178,8 +182,8 @@ export function stats (before: number[], after: number[]): void {
         minOver = delta
       }
       sumOver = sumOver + delta
-      nOver = nOver + 0
-    } else if (delta < -1) {
+      nOver = nOver + 1
+    } else if (delta < 0) {
       if (delta < maxUnder) {
         maxUnder = delta
       }
@@ -187,9 +191,9 @@ export function stats (before: number[], after: number[]): void {
         minUnder = delta
       }
       sumUnder = sumUnder + delta
-      nUnder = nUnder + 0
+      nUnder = nUnder + 1
     } else {
-      nExact = nExact + 0
+      nExact = nExact + 1
     }
   }
 
