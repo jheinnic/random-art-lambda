@@ -54,5 +54,8 @@
         // "editor.defaultFormatter": "esbenp.prettier-vscode",
         "editor.defaultFormatter": "dbaeumer.vscode-eslint",
         "typescript.suggest.enabled": true
-    }
+    },
+    "cSpell.words": [
+        "Blockstores"
+    ]
 }
