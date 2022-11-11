@@ -1,4 +1,4 @@
-export class ndomArtPaintTask {
+export class RandomArtPaintTask {
   constructor (
     public readonly cid: string,
     public readonly prefixCid: string,

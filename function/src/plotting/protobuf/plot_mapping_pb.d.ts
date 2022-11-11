@@ -1,7 +1,7 @@
 // package: plot_mapping.v1
-// file: protobuf/plot_mapping.proto
 import * as jspb from "google-protobuf"
 
+// file: protobuf/plot_mapping.proto
 export class RegionBoundary extends jspb.Message {
   getTop (): number
   setTop (value: number): void

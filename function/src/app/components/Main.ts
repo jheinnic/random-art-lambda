@@ -1,11 +1,12 @@
-import { NestFactory } from "@nestjs/core";
-import { AppService } from "./components/AppService";
-import { AppModule } from "./di/AppModule";
+import { NestFactory } from "@nestjs/core"
 
-async function bootstrap() {
-    const app = await NestFactory.createApplicationContext(AppModule);
-    const appSvc = app.get(AppService);
-    appSvc.testCommand();
+import { AppModule } from "../di/index.js"
+import { AppServiceTwo } from "./AppServiceTwo.js"
+
+async function bootstrap (): Promise<void> {
+  const app = await NestFactory.createApplicationContext(AppModule)
+  const appSvc = app.get(AppServiceTwo)
+  console.log(appSvc)
 }
 
-bootstrap();
+bootstrap().catch((x) => console.error(x))

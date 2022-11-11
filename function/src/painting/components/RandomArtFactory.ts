@@ -1,11 +1,10 @@
 import { Injectable } from "@nestjs/common"
 import { Canvas } from "canvas"
 
+import { IRegionMap } from "../../plotting/interface/index.js"
 import { PBufRegionMap } from "../../plotting/protobuf/PBufRegionMap.js"
 import { ImageSize, PointPlotData, PointPlotDocument } from "../../plotting/protobuf/plot_mapping_pb"
-import { IRandomArtFactory } from "../interface/IRandomArtFactory.js"
-import { IRandomArtPainter } from "../interface/IRandomArtPainter.js"
-import { IRegionMap } from "../interface/IRegionMap.js"
+import { ICompleteObserver, IPixelPainter, IRandomArtFactory } from "../interface/index.js"
 import { GenModel, newPicture } from "./genjs6.js"
 import { RandomArtTask } from "./RandomArtTask.js"
 
@@ -36,11 +35,11 @@ export class RandomArtFactory implements IRandomArtFactory {
     return new PBufRegionMap(plotData)
   }
 
-  public allocatePainter (genModel: GenModel, plotter: IRegionMap, canvas: Canvas): IRandomArtPainter {
+  public allocatePainter (genModel: GenModel, plotter: IRegionMap, canvas: Canvas): IPixelPainter {
     throw new Error()
   }
 
-  public allocateWriter (canvas: Canvas, pngSink: WritableStream): IRandomArtWriter {
+  public allocateWriter (canvas: Canvas, pngSink: WritableStream): ICompleteObserver {
     throw new Error()
   }
 }

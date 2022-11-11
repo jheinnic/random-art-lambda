@@ -1,18 +1,25 @@
 import { Module } from "@nestjs/common"
+import { Blockstore } from "interface-blockstore"
 
-import { RandomArtModule } from "../../domain/di/RandomArtModule.js"
-import { IpfsModule } from "../../ipfs/di/IpfsModule.js"
+import { IpfsModule, IpfsModuleTypes } from "../../ipfs/di/index.js"
+import { PlottingModule, PlottingModuleConfiguration, PlottingModuleConfigurationFactory } from "../../plotting/di/index.js"
 import { AppService } from "../components/AppService.js"
+import { AppServiceTwo } from "../components/AppServiceTwo.js"
+import { SharedBlockstoresModule } from "./SharedBlockstoresModule.js"
+import { SharedBlockstoresModuleTypes } from "./SharedBlockstoresModuleTypes.js"
 
 @Module({
   imports: [
-  RandomArtModule,
-  IpfsModule.registerAsync({
-    rootPath: "/home/ionadmin/Documents/ipfsDev",
-    cacheSize: 300
+  SharedBlockstoresModule,
+  PlottingModule.registerAsync({
+    imports: [SharedBlockstoresModule],
+    useFactory: (blockstore: Blockstore): PlottingModuleConfiguration =>
+    new PlottingModuleConfiguration(blockstore),
+    inject: [ SharedBlockstoresModuleTypes.SharedMapBlockstore ]
     })
   ],
-  providers: [AppService]
+  providers: [ AppServiceTwo ],
+  exports: [AppServiceTwo, PlottingModule]
   })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class AppModule {}

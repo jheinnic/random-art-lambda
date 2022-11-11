@@ -1,15 +1,14 @@
 import { Inject, Injectable } from "@nestjs/common"
 
 import { PaintingModuleTypes } from "../../painting/di/index.js"
-import { IRandomArtFactory, IRandomArtTaskRepository } from "../../painting/interface/index.js"
+import { PlottingModuleTypes } from "../../plotting/di/index.js"
+import { IRegionMapRepository } from "../../plotting/interface/IRegionMapRepository.js"
 
 @Injectable()
-export class AppService {
+export class AppServiceTwo {
   public constructor (
-    @Inject(PaintingModuleTypes.IRandomArtTaskRepository)
-    private readonly repository: IRandomArtTaskRepository,
-    @Inject(PaintingModuleTypes.IRandomArtPainterFactory)
-    private readonly factory: IRandomArtFactory
+    @Inject(PlottingModuleTypes.IpldRegionMapRepository)
+    private readonly repository: IRegionMapRepository
   ) { }
 
   public testRepo (): void {

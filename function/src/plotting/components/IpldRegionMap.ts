@@ -1,5 +1,5 @@
-import { AbstractRegionMap } from "../../painting/components/AbstractRegionMap.js"
-import { DataBlock, RegionMap } from "../interface/RegionMapSchemaTypes.js"
+import { DataBlock, RegionMap } from "../interface/index.js"
+import { AbstractRegionMap } from "./AbstractRegionMap.js"
 import { hydrate, rationalize } from "./RegionMapUtils.js"
 
 export class IpldRegionMap extends AbstractRegionMap {
@@ -8,51 +8,31 @@ export class IpldRegionMap extends AbstractRegionMap {
 
   constructor (private readonly regionMap: RegionMap, private readonly dataBlocks: DataBlock[]) {
     super()
-    const rowNBytes = Buffer.concat(dataBlocks.map((dataBlock) => dataBlock.rowsN))
-    const rowDBytes = Buffer.concat(dataBlocks.map((dataBlock) => dataBlock.rowsD))
-    const colNBytes = Buffer.concat(dataBlocks.map((dataBlock) => dataBlock.colsN))
-    const colDBytes = Buffer.concat(dataBlocks.map((dataBlock) => dataBlock.colsD))
-    let rowList: number[] = []
-    let colList: number[] = []
-    try {
-      const rowNPalette = hydrate(regionMap.rowsN.palette, [], regionMap.rowsN.baseWordLen)
-      console.log("1h")
-      const rowN = hydrate(rowNBytes, rowNPalette, regionMap.rowsN.paletteWordLen)
-      console.log("2h")
-      const rowDPalette = hydrate(regionMap.rowsD.palette, [], regionMap.rowsD.baseWordLen)
-      console.log("3h")
-      const rowD = hydrate(rowDBytes, rowDPalette, regionMap.rowsD.paletteWordLen)
-      console.log("4h")
-      const colNPalette = hydrate(regionMap.colsN.palette, [], regionMap.colsN.baseWordLen)
-      console.log("5h")
-      const colN = hydrate(colNBytes, colNPalette, regionMap.colsN.paletteWordLen)
-      console.log("6h")
-      const colDPalette = hydrate(regionMap.colsD.palette, [], regionMap.colsD.baseWordLen)
-      console.log("7h")
-      const colD = hydrate(colDBytes, colDPalette, regionMap.colsD.paletteWordLen)
-      console.log("8h")
-      const rows = { N: rowN, D: rowD }
-      const cols = { N: colN, D: colD }
-      // logFractions("ipldFractionReads.dat", rows, cols, regionMap.regionBoundary)
-      console.log("ah")
-      let leftOffset = 0
-      if (regionMap.regionBoundary.leftN < 0) {
-        leftOffset = regionMap.regionBoundary.leftN / regionMap.regionBoundary.leftD
-      }
-      rowList = rationalize(rows, leftOffset)
-      console.log("ih")
-      let bottomOffset = 0
-      if (regionMap.regionBoundary.bottomN < 0) {
-        bottomOffset = regionMap.regionBoundary.bottomN / regionMap.regionBoundary.bottomD
-      }
-      colList = rationalize(cols, bottomOffset)
-      console.log("oh")
-    } catch (error: any) {
-      console.error("uh", error)
-    }
+    const boundary = regionMap.regionBoundary
 
-    this.rowList = rowList
-    this.colList = colList
+    const rowNBytes = Buffer.concat(dataBlocks.map((dataBlock) => dataBlock.rowsN))
+    const rowNMap = regionMap.rowsN
+    const rowNPalette = hydrate(rowNMap.palette, [], rowNMap.baseWordLen)
+    const rowN = hydrate(rowNBytes, rowNPalette, rowNMap.paletteWordLen)
+
+    const rowDBytes = Buffer.concat(dataBlocks.map((dataBlock) => dataBlock.rowsD))
+    const rowDMap = regionMap.rowsD
+    const rowDPalette = hydrate(rowDMap.palette, [], rowDMap.baseWordLen)
+    const rowD = hydrate(rowDBytes, rowDPalette, rowDMap.paletteWordLen)
+
+    const leftOffset = (boundary.leftN < 0) ? (boundary.leftN / boundary.leftD) : 0
+    this.rowList = rationalize({ N: rowN, D: rowD }, leftOffset)
+
+    const colNBytes = Buffer.concat(dataBlocks.map((dataBlock) => dataBlock.colsN))
+    const colNPalette = hydrate(regionMap.colsN.palette, [], regionMap.colsN.baseWordLen)
+    const colN = hydrate(colNBytes, colNPalette, regionMap.colsN.paletteWordLen)
+
+    const colDBytes = Buffer.concat(dataBlocks.map((dataBlock) => dataBlock.colsD))
+    const colDPalette = hydrate(regionMap.colsD.palette, [], regionMap.colsD.baseWordLen)
+    const colD = hydrate(colDBytes, colDPalette, regionMap.colsD.paletteWordLen)
+    // logFractions("ipldFractionReads.dat", rows, cols, regionMap.regionBoundary)
+    const bottomOffset = (boundary.bottomN < 0) ? (boundary.bottomN / boundary.bottomD) : 0
+    this.colList = rationalize({ N: colN, D: colD }, bottomOffset)
   }
 
   public get regionRows (): number[] {
