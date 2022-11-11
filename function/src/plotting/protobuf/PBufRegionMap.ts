@@ -1,5 +1,5 @@
 // <reference path="./plot_mapping_pb.d.ts"/>
-import { AbstractRegionMap } from "../../painting/components/AbstractRegionMap.js"
+import { AbstractRegionMap } from "../components/AbstractRegionMap.js"
 import { PointPlotData } from "./plot_mapping_pb"
 
 export class PBufRegionMap extends AbstractRegionMap {

@@ -1,17 +1,17 @@
 import * as codec from "@ipld/dag-cbor"
 import { Inject, Injectable } from "@nestjs/common"
-import { BaseBlockstore } from "blockstore-core"
+import { Blockstore } from "interface-blockstore"
 import { CID } from "multiformats"
 import * as Block from "multiformats/block"
 import { sha256 as hasher } from "multiformats/hashes/sha2"
 
-import { SharedArtBlockstoreModuleTypes } from "../../ipfs/di/typez.js"
+import { SharedBlockstoresModuleTypes } from "../../app/di/index.js"
 import { IRandomArtTaskBuilder } from "../interface/IRandomArtTaskBuilder.js"
 import { RandomArtTask } from "./RandomArtTask.js"
 
 // import * as Block from "multiformats/block"
 export class RandomArtTaskRepository {
-  constructor (@Inject(SharedArtBlockstoreModuleTypes.SharedArtBlockstore) private readonly blockStore: BaseBlockstore) { }
+  constructor (@Inject(SharedBlockstoresModuleTypes.SharedArtBlockstore) private readonly blockStore: Blockstore) { }
 
   public async create (director: (builder: IRandomArtTaskBuilder) => void): Promise<CID> {
     const builder = new RandomArtTaskBuilder(this)
