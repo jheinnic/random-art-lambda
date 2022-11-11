@@ -10,7 +10,7 @@ export class TriggerBox<T> {
     const emitter = new EventEmitter()
     this._emitter = emitter
     this._promise = new Promise<T>((resolve, reject) => {
-      const handle: Timeout = setTimeout(reject, timeout)
+      const handle: number = setTimeout(reject, timeout)
       emitter.on("trigger", (item: T) => {
         clearTimeout(handle)
         resolve(item)
