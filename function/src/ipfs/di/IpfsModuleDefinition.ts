@@ -1,15 +1,15 @@
 import { ConfigurableModuleBuilder, DynamicModule } from "@nestjs/common"
 
 import { FsBlockstoreConfiguration } from "./FsBlockstoreConfiguration.js"
+import { FACTORY_METHOD_KEY, IpfsModuleTypes, REGISTER_METHOD_KEY } from "./IpfsModuleTypes.js"
 import { ModuleExportConfiguration } from "./ModuleExportConfiguration.js"
-import { IpfsModuleTypes } from "./typez.js"
 
 export const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN, OPTIONS_TYPE, ASYNC_OPTIONS_TYPE } =
-  new ConfigurableModuleBuilder<FsBlockstoreConfiguration, "register", "create", ModuleExportConfiguration>({
-    optionsInjectionToken: IpfsModuleTypes.FsBlockstoreConfig, alwaysTransient: true
+  new ConfigurableModuleBuilder<FsBlockstoreConfiguration, typeof REGISTER_METHOD_KEY, typeof FACTORY_METHOD_KEY, ModuleExportConfiguration>({
+    optionsInjectionToken: IpfsModuleTypes.FsBlockstoreConfiguration, alwaysTransient: true
   })
-    .setClassMethodName("register")
-    .setFactoryMethodName("create")
+    .setClassMethodName(REGISTER_METHOD_KEY)
+    .setFactoryMethodName(FACTORY_METHOD_KEY)
     .setExtras(
       new ModuleExportConfiguration(IpfsModuleTypes.AbstractBlockstore),
       (module: DynamicModule, extras: ModuleExportConfiguration): DynamicModule => {

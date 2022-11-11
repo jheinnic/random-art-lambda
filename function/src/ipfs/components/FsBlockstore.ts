@@ -9,8 +9,7 @@ import { base58btc } from "multiformats/bases/base58"
 import { dirname, join } from "path"
 import * as lockfile from "proper-lockfile"
 
-import { FsBlockstoreConfiguration } from "../di/FsBlockstoreConfiguration.js"
-import { IpfsModuleTypes } from "../di/typez.js"
+import { FsBlockstoreConfiguration, IpfsModuleTypes } from "../di/index.js"
 
 enum OpenState {
   CLOSED = "closed",
@@ -28,7 +27,7 @@ export class FsBlockstore extends BaseBlockstore {
   private openState: OpenState = OpenState.CLOSED
 
   constructor (
-    @Inject(IpfsModuleTypes.FsBlockstoreConfig)
+    @Inject(IpfsModuleTypes.FsBlockstoreConfiguration)
     readonly config: FsBlockstoreConfiguration,
     @Inject(IpfsModuleTypes.LruCache)
     private readonly lruCache: LRUCache<string, Uint8Array>

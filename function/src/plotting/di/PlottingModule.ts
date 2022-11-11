@@ -1,17 +1,16 @@
-import { Module } from "@nestjs/common"
-import { BaseBlockstore } from "blockstore-core"
+import { DynamicModule, Module } from "@nestjs/common"
+import { Blockstore } from "interface-blockstore"
 
-import { IpfsModule } from "../../ipfs/di/IpfsModule.js"
-import { SharedArtBlockstoreModule } from "../../ipfs/di/SharedArtBlockstoreModule.js"
-import { IpfsModuleTypes, SharedArtBlockstoreModuleTypes } from "../../ipfs/di/typez.js"
+import { IpfsModule, IpfsModuleTypes } from "../../ipfs/di/index.js"
 import { IpldRegionMapRepository } from "../components/IpldRegionMapRepository.js"
 import { IpldRegionMapSchemaDsl } from "../components/IpldRegionMapSchemaDsl.js"
-import { PBufAdapter } from "../protobuf/PBufAdapter.js"
-import { PBufRegionMapDecoder } from "../protobuf/PBufRegionMapDecoder.js"
-import { PlottingModuleTypes } from "./typez.js"
+import { PBufAdapterFactory } from "../protobuf/PBufAdapterFactory.js"
+import { PlottingModuleAsyncOptions } from "./PlottingModuleAsyncOptions.js"
+import { PlottingModuleConfiguration } from "./PlottingModuleConfiguration.js"
+import { ConfigurableModuleClass } from "./PlottingModuleDefinition.js"
+import { PlottingModuleTypes } from "./PlottingModuleTypes.js"
 
 @Module({
-  imports: [SharedArtBlockstoreModule],
   providers: [
   {
   provide: PlottingModuleTypes.IpldRegionMapRepository,
@@ -22,12 +21,22 @@ import { PlottingModuleTypes } from "./typez.js"
   useClass: IpldRegionMapSchemaDsl
   },
   {
-  provide: PlottingModuleTypes.ProtoBufAdapter,
-  useClass: PBufAdapter
+  provide: PlottingModuleTypes.ProtoBufAdapterFactory,
+  useClass: PBufAdapterFactory
   },
-  { provide: PlottingModuleTypes.ImportedBlockStore, useExisting: SharedArtBlockstoreModuleTypes.SharedMapBlockstore }
+  {
+  provide: PlottingModuleTypes.InjectedBlockStore,
+  useFactory: (config: PlottingModuleConfiguration): Blockstore => {
+  return config.blockStore
+  },
+  inject: [PlottingModuleTypes.PlottingModuleConfiguration]
+  }
   ],
-  exports: [PlottingModuleTypes.IpldRegionMapRepository, PlottingModuleTypes.ProtoBufAdapter, PlottingModuleTypes.ImportedBlockStore]
+  exports: [PlottingModuleTypes.IpldRegionMapRepository, PlottingModuleTypes.ProtoBufAdapterFactory]
   })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class, @typescript-eslint/no-unused-vars
-export class PlottingModule { }
+export class PlottingModule extends ConfigurableModuleClass {
+  registerAsync (options: PlottingModuleAsyncOptions): DynamicModule {
+    return super.registerAsync(options)
+  }
+}

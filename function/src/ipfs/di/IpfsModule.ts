@@ -2,14 +2,14 @@ import { DynamicModule, Module } from "@nestjs/common"
 
 import { buildLruCache, FsBlockstore } from "../components/FsBlockstore.js"
 import { ASYNC_OPTIONS_TYPE, ConfigurableModuleClass, OPTIONS_TYPE } from "./IpfsModuleDefinition.js"
-import { IpfsModuleTypes } from "./typez.js"
+import { IpfsModuleTypes } from "./IpfsModuleTypes.js"
 
 @Module({
   providers: [
   {
   provide: IpfsModuleTypes.LruCache,
   useFactory: buildLruCache,
-  inject: [IpfsModuleTypes.FsBlockstoreConfig]
+  inject: [IpfsModuleTypes.FsBlockstoreConfiguration]
   },
   { provide: IpfsModuleTypes.AbstractBlockstore, useClass: FsBlockstore }
   ],

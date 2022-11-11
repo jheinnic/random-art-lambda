@@ -1,11 +1,11 @@
 import { Canvas } from "canvas"
 
+import { IRegionMap } from "../../plotting/interface/index.js"
 import { ImageSize } from "../../plotting/protobuf/plot_mapping_pb"
 import { GenModel } from "../components/genjs6.js"
 import { RandomArtTask } from "../components/RandomArtTask.js"
-import { IRegionMap } from "../interface/IRegionMap.js"
-import { IRandomArtWriter } from "./ICanvasWriter.js"
-import { IRandomArtPainter } from "./IRandomArtPainter.js"
+import { ICompleteObserver } from "./ICompleteObserver.js"
+import { IPixelPainter } from "./IPixelPainter.js"
 
 export interface IRandomArtFactory {
   allocateGenModel: (modelSeed: RandomArtTask) => GenModel
@@ -16,7 +16,7 @@ export interface IRandomArtFactory {
     genModel: GenModel,
     plotter: IRegionMap,
     canvas: Canvas
-  ) => IRandomArtPainter
+  ) => IPixelPainter
 
-  allocateWriter: (canvas: Canvas, pngSink: WritableStream) => IRandomArtWriter
+  allocateWriter: (canvas: Canvas, pngSink: WritableStream) => ICompleteObserver
 }

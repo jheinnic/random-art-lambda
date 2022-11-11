@@ -1,14 +1,12 @@
 import * as codec from "@ipld/dag-cbor"
 import { Inject, Injectable, Module } from "@nestjs/common"
-import { BaseBlockstore } from "blockstore-core"
+import { Blockstore } from "interface-blockstore"
 import { CID } from "multiformats"
 import * as Block from "multiformats/block"
 import { sha256 as hasher } from "multiformats/hashes/sha2"
 import { Optional } from "simplytyped"
 
-import { IpfsModuleTypes, SharedArtBlockstoreModuleTypes } from "../../ipfs/di/typez.js"
-import { AbstractRegionMap } from "../../painting/components/AbstractRegionMap.js"
-import { PlottingModuleTypes } from "../di/typez.js"
+import { PlottingModuleTypes } from "../di/index.js"
 import { IRegionMapBuilder } from "../interface/IRegionMapBuilder.js"
 import { IRegionMapRepository } from "../interface/IRegionMapRepository.js"
 import { IRegionMapSchemaDsl } from "../interface/IRegionMapSchemaDsl.js"
@@ -16,74 +14,77 @@ import {
   DataBlock,
   EMPTY_DIMENSION,
   Fractioned,
+  PaletteMaybe,
   RegionBoundaries,
   RegionBoundaryFractions,
   RegionMap,
 } from "../interface/RegionMapSchemaTypes.js"
+import { AbstractRegionMap } from "./AbstractRegionMap.js"
 import { IpldRegionMap } from "./IpldRegionMap.js"
 import { blockify, fractionify, paletteMaybe, rationalize, stats } from "./RegionMapUtils.js"
 
 @Injectable()
 export class IpldRegionMapRepository implements IRegionMapRepository {
   constructor (
-    @Inject(SharedArtBlockstoreModuleTypes.SharedMapBlockstore) private readonly blockStore: BaseBlockstore,
+    @Inject(PlottingModuleTypes.InjectedBlockStore) private readonly blockStore: Blockstore,
     @Inject(PlottingModuleTypes.IpldRegionMapSchemaDsl) private readonly schemaDsl: IRegionMapSchemaDsl
   ) {
     console.log(blockStore.constructor.name)
   }
 
-  public async saveRootModel (source: Optional<RegionMap, "data">, data: DataBlock[]): Promise<CID> {
+  private async commitRoot (source: RegionMap): Promise<CID> {
     // validate and transform
-    source.data = await this.commit(data)
-    console.dir(source, { depth: Infinity })
-    const sourceData = this.schemaDsl.toRegionMapRepresentation(source as RegionMap)
-    if (sourceData === undefined) {
+    const value = this.schemaDsl.toRegionMapRepresentation(source)
+    if (value === undefined) {
       throw new TypeError("Invalid typed form, does not match schema")
     }
-    const rootBlock = await Block.encode({ codec, hasher, value: sourceData })
-    await this.blockStore.put(rootBlock.cid, rootBlock.bytes, {})
-    console.log(rootBlock.cid.toString())
-    return rootBlock.cid
+    const rootBlock = await Block.encode({ codec, hasher, value })
+    const rootCid: CID = rootBlock.cid
+    await this.blockStore.put(rootCid, rootBlock.bytes, {})
+    return rootCid
   }
 
-  async commit (data: DataBlock[]): Promise<CID[]> {
-    return await Promise.all(
+  private async commitData (data: DataBlock[]): Promise<CID[]> {
+    const retVal: CID[] = await Promise.all(
       data.map(async (dataBlock) => {
-        const dataRep = this.schemaDsl.toDataBlockRepresentation(dataBlock)
-        if (dataRep === undefined) {
+        const value = this.schemaDsl.toDataBlockRepresentation(dataBlock)
+        if (value === undefined) {
           throw new TypeError("Invalid typed form, does not match schema")
         }
-        const encodedBlock = await Block.encode({ codec, hasher, value: dataRep })
+        const encodedBlock = await Block.encode({ codec, hasher, value })
         const blockCid: CID = encodedBlock.cid
         await this.blockStore.put(blockCid, encodedBlock.bytes, {})
-        console.log(blockCid.toString())
         return blockCid
       })
     )
-  }
-
-  async loadData (links: CID[]): Promise<DataBlock[]> {
-    return await Promise.all(
-      links.map(async (cidLink: CID) => {
-        const encodingBytes = await this.blockStore.get(cidLink)
-        const decodedBlock = await Block.decode({ codec, hasher, bytes: encodingBytes })
-        return this.schemaDsl.toDataBlockTyped(decodedBlock.value)
-      })
-    )
+    return retVal
   }
 
   public async load (cid: CID): Promise<AbstractRegionMap> {
-    const encodingBytes = await this.blockStore.get(cid)
-    const decodedBlock = await Block.decode({ codec, hasher, bytes: encodingBytes })
-    const rootObject: RegionMap = this.schemaDsl.toRegionMapTyped(decodedBlock.value)
-    const dataBlocks: DataBlock[] = await this.loadData(rootObject.data)
+    const rootEncodingBytes = await this.blockStore.get(cid)
+    const decodedRootBlock =
+      await Block.decode({ codec, hasher, bytes: rootEncodingBytes })
+    const rootObject: RegionMap =
+      this.schemaDsl.toRegionMapTyped(decodedRootBlock.value)
+    const dataBlocks: DataBlock[] = await Promise.all(
+      rootObject.data.map(async (cidLink: CID) => {
+        const dataEncodingBytes = await this.blockStore.get(cidLink)
+        const decodedDataBlock =
+          await Block.decode({ codec, hasher, bytes: dataEncodingBytes })
+        return this.schemaDsl.toDataBlockTyped(decodedDataBlock.value)
+      })
+    )
     return new IpldRegionMap(rootObject, dataBlocks)
   }
 
-  public async import (director: (builder: IRegionMapBuilder) => void, paletteThreshold: number = 256): Promise<CID> {
-    const builder: RegionMapBuilder = new RegionMapBuilder(this, paletteThreshold)
+  public async import (director: (builder: IRegionMapBuilder) => void): Promise<CID> {
+    const builder: RegionMapBuilder = new RegionMapBuilder()
     director(builder)
-    return await builder.build()
+    const dataBlocks: DataBlock[] = builder.buildData()
+    const dataCids: CID[] = await this.commitData(dataBlocks)
+    const rootBlock: RegionMap = builder.buildRoot(dataCids)
+    const rootCid: CID = await this.commitRoot(rootBlock)
+    return rootCid
   }
 }
 
@@ -95,11 +96,10 @@ class RegionMapBuilder implements IRegionMapBuilder {
   private _regionBoundary: RegionBoundaryFractions = { topN: 0, topD: 0, bottomN: 0, bottomD: 0, leftN: 0, leftD: 0, rightN: 0, rightD: 0 }
   private _rowOrderX: number[] = EMPTY_DIMENSION
   private _rowOrderY: number[] = EMPTY_DIMENSION
-
-  constructor (
-    private readonly _repository: IpldRegionMapRepository,
-    private readonly _paletteThreshold: number = 128
-  ) { }
+  private _paletteMaybeRowsN?: PaletteMaybe
+  private _paletteMaybeRowsD?: PaletteMaybe
+  private _paletteMaybeColsN?: PaletteMaybe
+  private _paletteMaybeColsD?: PaletteMaybe
 
   public pixelRef (pixelRef: "Center" | "TopLeft"): RegionMapBuilder {
     this._pixelRef = pixelRef
@@ -160,7 +160,7 @@ class RegionMapBuilder implements IRegionMapBuilder {
     return (this._rowOrderX.length === pixelCount) && (this._rowOrderY.length === pixelCount)
   }
 
-  public async build (): Promise<CID> {
+  buildData (): DataBlock[] {
     let leftOffset = 0
     if (this._regionBoundary.leftN < 0) {
       leftOffset = (this._regionBoundary.leftN / this._regionBoundary.leftD)
@@ -176,30 +176,35 @@ class RegionMapBuilder implements IRegionMapBuilder {
     stats(this._rowOrderY, rationalize(_cols, bottomOffset))
 
     // logFractions("ipldFractionWrites.dat", _rows, _cols, this._regionBoundary)
-    const rowsN = paletteMaybe(_rows.N)
-    const rowsD = paletteMaybe(_rows.D)
-    const colsN = paletteMaybe(_cols.N)
-    const colsD = paletteMaybe(_cols.D)
+    this._paletteMaybeRowsN = paletteMaybe(_rows.N)
+    this._paletteMaybeRowsD = paletteMaybe(_rows.D)
+    this._paletteMaybeColsN = paletteMaybe(_cols.N)
+    this._paletteMaybeColsD = paletteMaybe(_cols.D)
     const wordSizes: Fractioned<"row" | "col"> = {
-      rowN: rowsN.paletteWordLen,
-      rowD: rowsD.paletteWordLen,
-      colN: colsN.paletteWordLen,
-      colD: colsD.paletteWordLen
+      rowN: this._paletteMaybeRowsN.paletteWordLen,
+      rowD: this._paletteMaybeRowsD.paletteWordLen,
+      colN: this._paletteMaybeColsN.paletteWordLen,
+      colD: this._paletteMaybeColsD.paletteWordLen
     }
-    const chunkHeight = this._chunkHeight > -1 ? this._chunkHeight : this._pixelHeight
-    const dataBlocks = blockify(_rows, _cols, chunkHeight, this._pixelWidth, this._pixelHeight, wordSizes)
-    const source = {
+    const chunkHeight: number = this._chunkHeight > -1 ? this._chunkHeight : this._pixelHeight
+    return blockify(_rows, _cols, chunkHeight, this._pixelWidth, this._pixelHeight, wordSizes)
+  }
+
+  buildRoot (data: CID[]): RegionMap {
+    const chunkHeight: number = this._chunkHeight > -1 ? this._chunkHeight : this._pixelHeight
+    const retVal: RegionMap = {
       pixelRef: this._pixelRef,
       imageSize: { pixelWidth: this._pixelWidth, pixelHeight: this._pixelHeight },
       regionBoundary: this._regionBoundary,
       projected: this.isProjected(),
       chunkHeight,
-      rowsN,
-      rowsD,
-      colsN,
-      colsD
+      rowsN: this._paletteMaybeRowsN!,
+      rowsD: this._paletteMaybeRowsD!,
+      colsN: this._paletteMaybeColsN!,
+      colsD: this._paletteMaybeColsD!,
+      data
     }
-    return await this._repository.saveRootModel(source, dataBlocks)
+    return retVal
   }
 }
 
