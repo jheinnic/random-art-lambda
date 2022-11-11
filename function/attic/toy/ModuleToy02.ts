@@ -3,16 +3,14 @@ import { NestFactory } from "@nestjs/core"
 import { BaseBlockstore } from "blockstore-core"
 
 import { buildLruCache, FsBlockstore } from "../ipfs/components/FsBlockstore.js"
-import { FsBlockstoreConfiguration } from "../ipfs/components/FsBlockstoreConfiguration"
-import { IpfsModuleTypes } from "../ipfs/di/typez.js"
+import { FsBlockstoreConfiguration, IpfsModuleTypes } from "../ipfs/di/index.js"
 import { IpldRegionMapRepository } from "../plotting/components/IpldRegionMapRepository.js"
 import { IpldRegionMapSchemaDsl } from "../plotting/components/IpldRegionMapSchemaDsl.js"
-import { PlottingModuleTypes } from "../plotting/di/typez.js"
-import { IRegionMapRepository } from "../plotting/interface/IRegionMapRepository.js"
-import { PBufRegionMapDecoder } from "../plotting/protobuf/PBufRegionMapDecoder.js"
+import { PlottingModuleTypes } from "../plotting/di/index.js"
+import { IRegionMapRepository } from "../plotting/interface/index.js"
 
 /**
- * Configuration class used set an externally deifned injection token for a given module instance's exposure of an otherwise
+ * Configuration class used set an externally defined injection token for a given module instance's exposure of an otherwise
  * stock resource token.  It becomes necessary to use this if a given module's dynamic registration may be used multiple times
  * by the same importer, making it necessary for each dynamic import to have a distinct resource token for the artifacts the
  * modules are created to acquire.

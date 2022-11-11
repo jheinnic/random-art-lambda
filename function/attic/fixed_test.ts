@@ -3,7 +3,7 @@ import { createWriteStream } from "fs"
 import { FileTransport } from "./common/components/FileTransport"
 import { CanvasWriter } from "./painting/components/CanvasWriter"
 import * as genjs6 from "./painting/components/genjs6"
-import { RandomArtPainter } from "./painting/components/RandomArtPainter"
+import { RandomArtPainter } from "./painting/components/RandomArtPainter.js"
 import { PBufPlotModelProvider } from "./plotting/protobuf/PBufPlotModelProvider"
 
 async function run (): Promise<void> {

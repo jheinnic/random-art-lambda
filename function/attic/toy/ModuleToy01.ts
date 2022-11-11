@@ -1,15 +1,15 @@
 import { ConfigurableModuleBuilder, DynamicModule, Inject, Injectable, Module } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
-import { BaseBlockstore } from "blockstore-core"
+import { Blockstore } from "interface-blockstore"
 
 import { buildLruCache, FsBlockstore } from "../ipfs/components/FsBlockstore.js"
-import { IpfsModuleTypes } from "../ipfs/di/typez.js"
+import { IpfsModuleTypes } from "../ipfs/di/index.js"
 import { IpldRegionMapRepository } from "../plotting/components/IpldRegionMapRepository.js"
 import { IpldRegionMapSchemaDsl } from "../plotting/components/IpldRegionMapSchemaDsl.js"
-import { PlottingModuleTypes } from "../plotting/di/typez.js"
-import { IRegionMapRepository } from "../plotting/interface/IRegionMapRepository.js"
+import { PlottingModule, PlottingModuleConfigurationFactory, PlottingModuleTypes } from "../plotting/di/index.js"
+import { IRegionMapRepository } from "../plotting/interface/index.js"
 import { PBufAdapter } from "../plotting/protobuf/PBufAdapter.js"
-import { PBufRegionMapDecoder } from "../plotting/protobuf/PBufRegionMapDecoder.js"
+import { PBufAdapterFactory } from "../plotting/protobuf/PBufAdapterFactory.js"
 
 export class FsBlockstoreConfiguration {
   constructor (
@@ -138,6 +138,7 @@ const dynamicIpfs = IpfsModule.register({ rootPath: "/home/ionadmin/Documents/ra
   providers: [ BlockStoreHolder ],
   exports: [IpfsModule, BlockStoreHolder]
   })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class, @typescript-eslint/no-unused-vars
 export class IpfsArtworkStoreModule { }
 
 const AltRepository: unique symbol = Symbol("AltRepository")
@@ -159,12 +160,13 @@ export class AnotherRepository {
   } ],
   exports: [AltRepository]
   })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class, @typescript-eslint/no-unused-vars
 export class AltStaticDependencyModule { }
 
 @Injectable()
 export class InjectedAltRepository {
   constructor (
-    @Inject(InjectedBlockstore) private readonly sharedBlockstore: BaseBlockstore
+    @Inject(InjectedBlockstore) private readonly sharedBlockstore: Blockstore
   ) {
     console.log(`Injected repository has ${sharedBlockstore.constructor.name} on construction`)
   }
@@ -186,30 +188,30 @@ export class AltDynamicDependencyModule extends DynamicRepoBaseModule {
   }
 }
 
-@Module({
-  imports:[IpfsArtworkStoreModule],
-  providers: [
-  {
-  provide: PlottingModuleTypes.PBufPlotRegionMapDecoder,
-  useClass: PBufRegionMapDecoder
-  },
-  {
-  provide: PlottingModuleTypes.IpldRegionMapRepository,
-  useClass: IpldRegionMapRepository
-  },
-  {
-  provide: PlottingModuleTypes.IpldRegionMapSchemaDsl,
-  useClass: IpldRegionMapSchemaDsl
-  },
-  {
-  provide: PlottingModuleTypes.ProtoBufAdapter,
-  useClass: PBufAdapter
-  },
-  ],
-  exports: [PlottingModuleTypes.IpldRegionMapRepository, PlottingModuleTypes.ProtoBufAdapter]
-  })
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class, @typescript-eslint/no-unused-vars
-export class PlottingModule { }
+// @Module({
+//   imports:[IpfsArtworkStoreModule],
+//   providers: [
+//   {
+//   provide: PlottingModuleTypes.PBufPlotRegionMapDecoder,
+//   useClass: PBufRegionMapDecoder
+//   },
+//   {
+//   provide: PlottingModuleTypes.IpldRegionMapRepository,
+//   useClass: IpldRegionMapRepository
+//   },
+//   {
+//   provide: PlottingModuleTypes.IpldRegionMapSchemaDsl,
+//   useClass: IpldRegionMapSchemaDsl
+//   },
+//   {
+//   provide: PlottingModuleTypes.ProtoBufAdapter,
+//   useClass: PBufAdapter
+//   },
+//   ],
+//   exports: [PlottingModuleTypes.IpldRegionMapRepository, PlottingModuleTypes.ProtoBufAdapter]
+//   })
+// // eslint-disable-next-line @typescript-eslint/no-extraneous-class, @typescript-eslint/no-unused-vars
+// export class PlottingModule { }
 
 @Injectable()
 export class AppService {
@@ -234,10 +236,19 @@ export class AppService {
     imports: [ IpfsArtworkStoreModule ],
     useExisting: BlockStoreHolder
     }),
-  PlottingModule
+  PlottingModule.registerAsync({
+    // imports: [SharedBlockstoresModule],
+    useFactory: (blockstore: Blockstore): PlottingModuleConfigurationFactory => {
+    return {
+    create: () => blockstore
+    }
+    },
+    inject: [ SharedArtBlockStore ],
+    provideInjectionTokensFrom: [ SharedArtBlockStore ],
+    })
   ],
   providers: [AppService],
-  exports: [AppService]
+  exports: [AppService, PlottingModule]
   })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class AppModule {}
