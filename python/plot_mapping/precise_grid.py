@@ -7,11 +7,12 @@ DIMENSION_MAX = 1
 PIXEL_WIDTH = 640
 PIXEL_HEIGHT = 480
 OUTPUT_SHAPE = [PIXEL_HEIGHT, PIXEL_WIDTH]
-
+p
 TOP = 1
 BOTTOM = -1
 LEFT = 1
 RIGHT = -1
+
 
 def check_resolution(pixel_height, pixel_width, pixel_unit):
     """
@@ -24,6 +25,7 @@ def check_resolution(pixel_height, pixel_width, pixel_unit):
     assert (pixel_width / pixel_unit) == (pixel_width // pixel_unit)
     return True
 
+
 def check_proportions(pixel_height, bottom, top, pixel_width, left, right, fix_by='matched'):
     pixel_ratio = 1.0 * pixel_height / pixel_width
     height = top - bottom
@@ -32,7 +34,8 @@ def check_proportions(pixel_height, bottom, top, pixel_width, left, right, fix_b
     if ratio == pixel_ratio:
         return bottom, top, left, right
     if fix_by == 'matched':
-        raise ValueError(f"Pixel ratio of {pixel_ratio} does not match plot region ratio of {ratio}.  Must fit or fill to compensate...")
+        raise ValueError(
+            f"Pixel ratio of {pixel_ratio} does not match plot region ratio of {ratio}.  Must fit or fill to compensate...")
     fix_scale = ratio / pixel_ratio
     if fix_by == 'to_fit':
         if pixel_ratio < ratio:
@@ -49,8 +52,10 @@ def check_proportions(pixel_height, bottom, top, pixel_width, left, right, fix_b
             left = left * fix_scale
             right = right * fix_scale
     else:
-        raise ValueError(f"{fix_by} is neither 'matched', 'to_fit', or 'to_fill'")
+        raise ValueError(
+            f"{fix_by} is neither 'matched', 'to_fit', or 'to_fill'")
     return bottom, top, left, right
+
 
 def compute_dimensions(pixel_height, bottom, top, pixel_width, left, right, pixel_unit=1):
     print(bottom, top, 2*pixel_height//pixel_unit)
@@ -69,19 +74,25 @@ def compute_dimensions(pixel_height, bottom, top, pixel_width, left, right, pixe
         .transpose()[0]
     return pixel_heights, frame_heights, pixel_lengths, frame_lengths
 
+
 def plot_points(pixel_heights, frame_heights, pixel_lengths, frame_lengths):
     height_count = len(pixel_heights)
     length_count = len(pixel_lengths)
     assert height_count == len(frame_heights)
     assert length_count == len(frame_lengths)
     # Frame matrix
-    frame_height_matrix  = frame_heights.reshape([height_count, 1]).repeat(length_count, 1)
-    frame_length_matrix = frame_lengths.reshape([1,length_count]).repeat(height_count, 0)
-    frame_points = np.array([frame_height_matrix, frame_length_matrix]).transpose(1, 2, 0)
+    frame_height_matrix = frame_heights.reshape(
+        [height_count, 1]).repeat(length_count, 1)
+    frame_length_matrix = frame_lengths.reshape(
+        [1, length_count]).repeat(height_count, 0)
+    frame_points = np.array(
+        [frame_height_matrix, frame_length_matrix]).transpose(1, 2, 0)
     # Pixel matrix
-    pixel_height_matrix  = pixel_heights.reshape([height_count, 1]).repeat(length_count, 1)
-    pixel_length_matrix = pixel_lengths.reshape([1,length_count]).repeat(height_count, 0)
-    pixel_points = np.array([pixel_height_matrix, pixel_length_matrix]).transpose(1, 2, 0)
-    # TODO: Combine these two [x, y, 2] shaped matrices into a single [x, y, 4] matrix? 
+    pixel_height_matrix = pixel_heights.reshape(
+        [height_count, 1]).repeat(length_count, 1)
+    pixel_length_matrix = pixel_lengths.reshape(
+        [1, length_count]).repeat(height_count, 0)
+    pixel_points = np.array(
+        [pixel_height_matrix, pixel_length_matrix]).transpose(1, 2, 0)
+    # TODO: Combine these two [x, y, 2] shaped matrices into a single [x, y, 4] matrix?
     return pixel_points, frame_points
-
