@@ -3,7 +3,7 @@
     "@bazel/jasmine": "^5.5.3",
     "@bazel/rollup": "^5.5.3",
     "@bazel/typescript": "^5.5.3",
-    "@nestjs/common": "^9.1.2",
+    "@nestjs/common": "^9.1.5",
     "@types/google-protobuf": "^3.15.6",
     "canvas": "^2.10.1",
     "reflect-metadata": "^0.1.13",
