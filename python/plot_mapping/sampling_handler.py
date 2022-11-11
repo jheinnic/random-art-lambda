@@ -11,13 +11,13 @@ def handle_event(event):
 handle_event({
     'width': 320,
     'height': 240,
-    'top': 1.0,
+    'top': 0.75,
     'left': -1.0,
     'right': 1.0,
-    'bottom': -1.0,
-    'sample_multi': 2.673,
-    'f_doc': 'f_320_240.proto',
-    'g_doc': 'g_320_240.proto',
-    'h_doc': 'h_320_240.proto',
+    'bottom': -0.75,
+    'sample_multi': 2.826,
+    'f_doc': 'fB_320_240.proto',
+    'g_doc': 'gB_320_240.proto',
+    'h_doc': 'hB_320_240.proto',
     'seed': 27635
 })
