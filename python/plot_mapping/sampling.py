@@ -82,7 +82,7 @@ def create_plot_maps(_width, _height, top, left, bottom, right, f_doc="fdoc.prot
     plot_searchspace(xx, 'Hammersly')
     print("empty fields: %d" %
           ((width*height) - np.size(np.unique(px, axis=0), 0)))
-    plt.show()
+    # plt.show()
 
     xp = []
     yp = []
@@ -115,20 +115,44 @@ def create_plot_maps(_width, _height, top, left, bottom, right, f_doc="fdoc.prot
     # plt.show()
     f = f.reshape([width * height, 2])
     plot_searchspace(f, 'Sampled with first fixed resoution')
-    plt.show()
+    # plt.show()
     g = g.reshape([width * height, 2])
     plot_searchspace(g, 'Sampled with incremental averaging')
-    plt.show()
+    # plt.show()
     n2 = np.ndarray([width, height, 2], 'int8')
     n2[:, :, 0] = n
     n2[:, :, 1] = n
-    print(h)
-    print(n2)
     h[:, :, :] = h / n2
-    print(h)
+    # print("ROW 1A")
+    # print(h[:, 0, :])
+    # print("ROW 2A")
+    # print(h[:, 1, :])
+    # print("COL 1A")
+    # print(h[0, :, :])
+    # print("COL 2A")
+    # print(h[1, :, :])
     h = h.reshape([width * height, 2])
+    print("ROWS 1-3, X")
+    print(h[0:960, 0])
+    print("ROWS 1-3, Y")
+    print(h[0:960, 1])
+    print("ROWS Again 1-3, X")
+    print(h[:, 0].reshape([width*height][0:960]))
+    print("ROWS Again 1-3, Y")
+    print(h[:, 1].reshape([width*height])[0:960])
+    # print(h[0:320, :])
+    # print("ROW 2")
+    # print(h[320:640, :])
+    # ii = 320 * 237
+    # jj = 320 * 238
+    # print("ROW N-1")
+    # print(h[ii:jj, :])
+    # ii = jj
+    # jj = jj + 320
+    # print("ROW N")
+    # print(h[ii:jj, :])
     plot_searchspace(h, 'Sampled with unbiased averaging')
-    plt.show()
+    # plt.show()
     # plt.show()
 
     f_document = PointPlotDocument()
