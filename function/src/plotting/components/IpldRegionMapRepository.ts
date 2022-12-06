@@ -27,7 +27,7 @@ import { blockify, fractionify, paletteMaybe, rationalize, stats } from "./Regio
 export class IpldRegionMapRepository implements IRegionMapRepository {
   constructor (
     @Inject(PlottingModuleTypes.InjectedBlockStore) private readonly blockStore: Blockstore,
-    @Inject(PlottingModuleTypes.IpldRegionMapSchemaDsl) private readonly schemaDsl: IRegionMapSchemaDsl
+    @Inject(PlottingModuleTypes.IRegionMapSchemaDsl) private readonly schemaDsl: IRegionMapSchemaDsl,
   ) {
     console.log(blockStore.constructor.name)
   }
@@ -55,7 +55,7 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
         const blockCid: CID = encodedBlock.cid
         await this.blockStore.put(blockCid, encodedBlock.bytes, {})
         return blockCid
-      })
+      }),
     )
     return retVal
   }
@@ -72,7 +72,7 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
         const decodedDataBlock =
           await Block.decode({ codec, hasher, bytes: dataEncodingBytes })
         return this.schemaDsl.toDataBlockTyped(decodedDataBlock.value)
-      })
+      }),
     )
     return new IpldRegionMap(rootObject, dataBlocks)
   }
@@ -184,13 +184,17 @@ class RegionMapBuilder implements IRegionMapBuilder {
       rowN: this._paletteMaybeRowsN.paletteWordLen,
       rowD: this._paletteMaybeRowsD.paletteWordLen,
       colN: this._paletteMaybeColsN.paletteWordLen,
-      colD: this._paletteMaybeColsD.paletteWordLen
+      colD: this._paletteMaybeColsD.paletteWordLen,
     }
     const chunkHeight: number = this._chunkHeight > -1 ? this._chunkHeight : this._pixelHeight
     return blockify(_rows, _cols, chunkHeight, this._pixelWidth, this._pixelHeight, wordSizes)
   }
 
   buildRoot (data: CID[]): RegionMap {
+    if ((this._paletteMaybeColsD === undefined) || (this._paletteMaybeColsN === undefined) ||
+      (this._paletteMaybeRowsD === undefined) || (this._paletteMaybeRowsN === undefined)) {
+      throw new Error("Palette refs may not be by the time buildRoot() is called!")
+    }
     const chunkHeight: number = this._chunkHeight > -1 ? this._chunkHeight : this._pixelHeight
     const retVal: RegionMap = {
       pixelRef: this._pixelRef,
@@ -198,11 +202,11 @@ class RegionMapBuilder implements IRegionMapBuilder {
       regionBoundary: this._regionBoundary,
       projected: this.isProjected(),
       chunkHeight,
-      rowsN: this._paletteMaybeRowsN!,
-      rowsD: this._paletteMaybeRowsD!,
-      colsN: this._paletteMaybeColsN!,
-      colsD: this._paletteMaybeColsD!,
-      data
+      rowsN: this._paletteMaybeRowsN,
+      rowsD: this._paletteMaybeRowsD,
+      colsN: this._paletteMaybeColsN,
+      colsD: this._paletteMaybeColsD,
+      data,
     }
     return retVal
   }

@@ -1,6 +1,4 @@
-import { ICompleteObserver } from "../../painting/interface/index.js"
-
-export interface IRegionPlotBuilder extends ICompleteObserver {
+export interface IRegionPlotBuilder {
   /**
    * Builder method that plots a pixel at (pixelX, pixelY) by plotting a value from
    * target region at (regionX, regionY)

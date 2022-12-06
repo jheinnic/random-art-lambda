@@ -6,16 +6,28 @@ import { IRegionMapRepository } from "../../plotting/interface/IRegionMapReposit
 
 @Injectable()
 export class AppServiceTwo {
+  private readonly cidCache: Map<CID, IRegionMap> = new Map()
+
   public constructor (
     @Inject(PlottingModuleTypes.IpldRegionMapRepository)
-    private readonly repository: IRegionMapRepository
+    private readonly mapRepo: IRegionMapRepository,
+    @Inject(PaintingModuleTypes.IRandomArtworkRepository)
+    private readonly taskRepo: IRandomArtRepository,
   ) { }
 
-  public testRepo (): void {
+  public async testRepo (cid: CID, prefix: Uint8Array, suffix: Uint8Array): void {
+    if (!this.cidCache.has(cid)) {
+      await this.mapRepo.load(cid).then((loadedMap) => {
+        if (!this.cidCache.has(cid)) {
+          this.cidCache.put(cid, loadedMap)
+        }
+      })
+    }
+    const resourceMap = this.cidCache.get(cid)
     const artTask = this.repository.create(
-      "cidBits",
+      cid,
       Uint8Array.of(84, 81, 81, 190),
-      Uint8Array.of(182, 81, 143, 94, 88, 104)
+      Uint8Array.of(182, 81, 143, 94, 88, 104),
     )
     console.log("Finished execute!")
   }
