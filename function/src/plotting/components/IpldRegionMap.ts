@@ -35,11 +35,11 @@ export class IpldRegionMap extends AbstractRegionMap {
     this.colList = rationalize({ N: colN, D: colD }, bottomOffset)
   }
 
-  public get regionRows (): number[] {
+  public get columnOrderedXCoordinates (): number[] {
     return this.rowList
   }
 
-  public get regionColumns (): number[] {
+  public get columnOrderedYCoordinates (): number[] {
     return this.colList
   }
 

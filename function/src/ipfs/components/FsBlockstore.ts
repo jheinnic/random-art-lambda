@@ -30,7 +30,7 @@ export class FsBlockstore extends BaseBlockstore {
     @Inject(IpfsModuleTypes.FsBlockstoreConfiguration)
     readonly config: FsBlockstoreConfiguration,
     @Inject(IpfsModuleTypes.LruCache)
-    private readonly lruCache: LRUCache<string, Uint8Array>
+    private readonly lruCache: LRUCache<string, Uint8Array>,
   ) {
     super()
     this.rootPath = config.rootPath
@@ -56,11 +56,11 @@ export class FsBlockstore extends BaseBlockstore {
     if (!rootStat.isDirectory()) {
       this.openState = OpenState.CLOSED
       throw new Error(
-        `Root path, ${this.rootPath}, must be a directory to open FsBlockStore!`
+        `Root path, ${this.rootPath}, must be a directory to open FsBlockStore!`,
       )
     }
     this.lockRelease = await lockfile.lock(this.rootPath, {
-      lockfilePath: join(this.rootPath, ".lock")
+      lockfilePath: join(this.rootPath, ".lock"),
     })
     console.log("Lock acquired!")
     this.openState = OpenState.OPEN
@@ -79,7 +79,9 @@ export class FsBlockstore extends BaseBlockstore {
     this.openState = OpenState.CLOSING
     const releaseHandle = await this.lockRelease()
     console.log("Repository lock release initiated")
-    console.log(await releaseHandle)
+    const released = await releaseHandle
+    console.log(released)
+    console.log(releaseHandle)
     console.log("Repository lock released")
     this.lockRelease = FsBlockstore.NO_OP_RELEASE
     this.openState = OpenState.CLOSED
@@ -105,7 +107,7 @@ export class FsBlockstore extends BaseBlockstore {
     try {
       await writeFile(blockPath, val, {
         signal: options?.signal,
-        mode: "0600"
+        mode: "0600",
       })
       this.lruCache.set(cidStr, val)
     } catch (err: any) {
@@ -213,14 +215,14 @@ function fromCidToPath (rootPath: string, key: string | CID): string {
     keyStr.slice(-6, -4),
     keyStr.slice(-4, -2),
     keyStr.slice(-2),
-    keyStr.slice(0, -6)
+    keyStr.slice(0, -6),
   )
 }
 
 async function fetchMethod (
   cidStr: string,
   staleValue: Uint8Array,
-  { signal, context }: { signal: AbortSignal, context: string }
+  { signal, context }: { signal: AbortSignal, context: string },
 ): Promise<Uint8Array> {
   const blockPath = fromCidToPath(context, cidStr)
   const readBuf: Buffer = await readFile(blockPath, { signal })
@@ -228,11 +230,11 @@ async function fetchMethod (
 }
 
 export function buildLruCache (
-  config: FsBlockstoreConfiguration
+  config: FsBlockstoreConfiguration,
 ): LRUCache<string, Uint8Array> {
   return new LRUCache<string, Uint8Array>({
     max: config.cacheSize,
     fetchContext: config.rootPath,
-    fetchMethod
+    fetchMethod,
   })
 }

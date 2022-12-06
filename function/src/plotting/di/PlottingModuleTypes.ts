@@ -5,8 +5,8 @@ export const INJECTED_BLOCK_STORE: unique symbol = Symbol("Blockstore")
 export const PLOTTING_MODULE_CONFIGURATION: unique symbol = Symbol("PlottingModuleConfiguration")
 
 export const PlottingModuleTypes = {
-  IpldRegionMapRepository: IPLD_REGION_MAP_REPOSITORY,
-  IpldRegionMapSchemaDsl: IPLD_REGION_MAP_SCHEMA_DSL,
+  IRegionMapRepository: IPLD_REGION_MAP_REPOSITORY,
+  IRegionMapSchemaDsl: IPLD_REGION_MAP_SCHEMA_DSL,
   ProtoBufAdapterFactory: PROTO_BUF_ADAPTER_FACTORY,
   InjectedBlockStore: INJECTED_BLOCK_STORE,
   PlottingModuleConfiguration: PLOTTING_MODULE_CONFIGURATION

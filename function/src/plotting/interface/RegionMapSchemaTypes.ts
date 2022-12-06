@@ -16,7 +16,7 @@ export type Fractioned<K extends string = string, A extends K = never> =
   // { [ P in K as `${P}${NorD}` ]: P extends A ? number[] : number }
 
 export type Numeric<K extends string = string, A extends K = never> =
-  { [ P in K ]: P extends A ? number[] : number }
+  { [ P in K ]: SomeNumbers<P, A> }
 
 // export type Fractioned<K extends string = string, A extends K = never> = Numeric<`${K}${NorD}`, `${A}${NorD}`>
 

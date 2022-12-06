@@ -13,11 +13,11 @@ import { PlottingModuleTypes } from "./PlottingModuleTypes.js"
 @Module({
   providers: [
   {
-  provide: PlottingModuleTypes.IpldRegionMapRepository,
+  provide: PlottingModuleTypes.IRegionMapRepository,
   useClass: IpldRegionMapRepository
   },
   {
-  provide: PlottingModuleTypes.IpldRegionMapSchemaDsl,
+  provide: PlottingModuleTypes.IRegionMapSchemaDsl,
   useClass: IpldRegionMapSchemaDsl
   },
   {
@@ -32,7 +32,7 @@ import { PlottingModuleTypes } from "./PlottingModuleTypes.js"
   inject: [PlottingModuleTypes.PlottingModuleConfiguration]
   }
   ],
-  exports: [PlottingModuleTypes.IpldRegionMapRepository, PlottingModuleTypes.ProtoBufAdapterFactory]
+  exports: [PlottingModuleTypes.IRegionMapRepository, PlottingModuleTypes.ProtoBufAdapterFactory]
   })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class, @typescript-eslint/no-unused-vars
 export class PlottingModule extends ConfigurableModuleClass {

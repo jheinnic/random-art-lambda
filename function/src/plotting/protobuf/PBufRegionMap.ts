@@ -1,17 +1,17 @@
-// <reference path="./plot_mapping_pb.d.ts"/>
 import { AbstractRegionMap } from "../components/AbstractRegionMap.js"
 import { PointPlotData } from "./plot_mapping_pb"
 
+// <reference path="./plot_mapping_pb.d.ts"/>
 export class PBufRegionMap extends AbstractRegionMap {
   constructor (private readonly _data: PointPlotData) {
     super()
   }
 
-  public get regionRows (): number[] {
+  public get columnOrderedXCoordinates (): number[] {
     return this._data.getRowsList()
   }
 
-  public get regionColumns (): number[] {
+  public get columnOrderedYCoordinates (): number[] {
     return this._data.getColumnsList()
   }
 
