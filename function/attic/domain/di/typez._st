@@ -1,4 +1,4 @@
-export const RANDOM_ART_REPOSITORY: unique symbol = Symbol("IRandomArtTaskRepository")
+export const RANDOM_ART_REPOSITORY: unique symbol = Symbol("IRandomArtworkRepository")
 export const FS_BLOCKSTORE: unique symbol = Symbol("FsBlockstore")
 export const LRU_CACHE_FACTORY: unique symbol = Symbol("LruCacheFactory")
 export const LRU_CACHE: unique symbol = Symbol("LRU")

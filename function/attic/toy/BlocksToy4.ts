@@ -11,21 +11,21 @@ import { sha256 as hasher } from "multiformats/hashes/sha2"
 import { IpfsModule } from "../ipfs/di/IpfsModule.js"
 import { SharedArtBlockstoreModule } from "../ipfs/di/SharedArtBlockstoreModule.js"
 import { IpfsModuleTypes, SharedArtBlockstoreModuleTypes } from "../ipfs/di/typez.js"
-import { RandomArtTaskRepository } from "../painting/components/RandomArtTaskRepository.js"
+import { RandomArtworkRepository } from "../painting/components/RandomArtworkRepository.js"
 import { IRandomArtTaskBuilder } from "../painting/interface/IRandomArtTaskBuilder.js"
-import { IRandomArtTaskRepository } from "../painting/interface/IRandomArtTaskRepository.js"
+import { IRandomArtworkRepository } from "../painting/interface/IRandomArtworkRepository.js"
 import { PlottingModule } from "../plotting/di/PlottingModule.js"
 import { create, fromDSL } from "./BlocksToy3Util.mjs"
 
 // a schema for a terse data format
 const schemaDsl = `type ModelEnvelope union {
-  | RandomArtTask "RandomArtTask_1.0.0"
+  | RandomArtTaskRequest "RandomArtTask_1.0.0"
 } representation envelope {
   discriminantKey "version"
   contentKey "model"
 }
 
-type RandomArtTask struct {
+type RandomArtTaskRequest struct {
   prefix Bytes
   suffix Bytes
   plotMap Link
@@ -38,7 +38,7 @@ const schemaDmt = fromDSL(schemaDsl)
 // create a typed converter/validator
 const rootTyped = create(schemaDmt, "ModelEnvelope")
 
-export interface RandomArtTask {
+export interface RandomArtTaskRequest {
   prefix: Uint8Array
   suffix: Uint8Array
   plotMap: CID
@@ -55,8 +55,8 @@ export class AppService {
   constructor (
     @Inject(SharedArtBlockstoreModuleTypes.SharedArtBlockstore)
     private readonly fsBlockstore: BaseBlockstore,
-    @Inject(RandomArtTaskRepository)
-    private readonly repository: RandomArtTaskRepository
+    @Inject(RandomArtworkRepository)
+    private readonly repository: RandomArtworkRepository
   ) { }
 
   public async doWork (): Promise<void> {
@@ -85,7 +85,7 @@ export class AppService {
   // IpfsModule.register(
 // { rootPath: "/home/ionadmin/Documents/raBlocks", cacheSize: 500, injectToken: IpfsModuleTypes.AbstractBlockstore}
   // )
-  providers: [AppService, RandomArtTaskRepository],
+  providers: [AppService, RandomArtworkRepository],
   exports: [AppService]
   })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
