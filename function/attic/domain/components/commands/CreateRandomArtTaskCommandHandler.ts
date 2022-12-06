@@ -1,12 +1,13 @@
-import { CommandHandler, ICommandHandler, EventPublisher } from "@nestjs/cqrs"
+import { CommandHandler, EventPublisher, ICommandHandler } from "@nestjs/cqrs"
+
 import { CreateRandomArtTaskCommand } from "../../interface/commands/CreateRandomArtTaskCommand"
-import { RandomArtTask } from "../models/RandomArtTask"
-import { RandomArtTaskRepository } from "../models/RandomArtTaskRepository"
+import { RandomArtTaskRequest } from "../models/RandomArtTaskRequest"
+import { RandomArtworkRepository } from "../models/RandomArtworkRepository"
 
 @CommandHandler(CreateRandomArtTaskCommand)
 export class CreateRandomArtTaskCommandHandler
 implements ICommandHandler<CreateRandomArtTaskCommand> {
-  constructor (private readonly repository: RandomArtTaskRepository) {}
+  constructor (private readonly repository: RandomArtworkRepository) {}
 
   async execute (command: CreateRandomArtTaskCommand): Promise<void> {
     const { prefixBytes, suffixBytes, plotMapCid } = command

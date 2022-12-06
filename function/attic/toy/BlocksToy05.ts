@@ -12,7 +12,7 @@ import { SharedArtBlockstoreModule } from "../ipfs/di/SharedArtBlockstoreModule.
 import { SharedArtBlockstoreModuleTypes } from "../ipfs/di/typez.js"
 import { CanvasPixelPainter } from "../painting/components/CanvasPixelPainter.js"
 import { newPicture } from "../painting/components/genjs6.js"
-import { GenModelPlotter } from "../painting/components/GenModelPlotter.js"
+import { GenModelArtist } from "../painting/components/GenModelArtist.js"
 import { IRegionPlotter } from "../painting/interface/IRegionPlotter.js"
 import { IpldRegionMapRepository } from "../plotting/components/IpldRegionMapRepository.js"
 import { PlottingModule } from "../plotting/di/PlottingModule.js"
@@ -57,7 +57,7 @@ export class AppService {
     const suffix = [...Buffer.from("37 Bone Coloured Stars")]
     let genModel = newPicture(prefix, suffix)
     let painter1 = new CanvasPixelPainter(canvas, fs.createWriteStream("./woodoo.png"))
-    let plotter1 = new GenModelPlotter(genModel, painter1)
+    let plotter1 = new GenModelArtist(genModel, painter1)
     regionMap.drive(plotter1)
     console.log("Plotted woodoo.png")
 
@@ -66,7 +66,7 @@ export class AppService {
     const suffix2 = [...Buffer.from("we are floating in space")]
     genModel = newPicture(prefix2, suffix2)
     painter1 = new CanvasPixelPainter(canvas, fs.createWriteStream("./spirit.png"))
-    plotter1 = new GenModelPlotter(genModel, painter1)
+    plotter1 = new GenModelArtist(genModel, painter1)
     regionMap.drive(plotter1)
     console.log("Plotted spirit.png")
   }

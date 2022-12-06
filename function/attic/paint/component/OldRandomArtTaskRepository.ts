@@ -10,14 +10,14 @@ import { CID } from "multiformats"
 import { concatAll } from "../../../util"
 import { IpfsModuleTypes } from "../../ipfs/di/typez.js"
 import { PaintingModuleTypes } from "../di/typez.js"
-import { IRandomArtTaskRepository } from "../interface"
-import { RandomArtTask } from "./RandomArtTask.js"
+import { IRandomArtworkRepository } from "../interface"
+import { RandomArtTaskRequest } from "./RandomArtTaskRequest.js"
 
 // import { AsyncIterable } from "@reactivex/ix-ts"
 @Injectable()
-export class OldRandomArtTaskRepository implements IRandomArtTaskRepository {
+export class OldRandomArtTaskRepository implements IRandomArtworkRepository {
   private readonly _storeCache: {
-    [K in string]: RandomArtTask;
+    [K in string]: RandomArtTaskRequest;
   }
 
   private readonly _storeOptions: { signal?: AbortSignal }
@@ -46,7 +46,7 @@ export class OldRandomArtTaskRepository implements IRandomArtTaskRepository {
     plotMapCidStr: string,
     prefixBits: Uint8Array,
     suffixBits: Uint8Array
-  ): Promise<RandomArtTask> {
+  ): Promise<RandomArtTaskRequest> {
     const plotMapBits: Uint8Array = await this._loadFileByCid(
       CID.parse(plotMapCidStr)
     )
@@ -62,7 +62,7 @@ export class OldRandomArtTaskRepository implements IRandomArtTaskRepository {
       throw new Error(`No root folder assets for ${plotMapCidStr}`)
     }
     const rootCidStr: string = assets.rootFolder.toString()
-    const retVal = new RandomArtTask(
+    const retVal = new RandomArtTaskRequest(
       rootCidStr,
       prefixBits,
       (assets.prefixFile ?? "TBD").toString(),
@@ -72,19 +72,19 @@ export class OldRandomArtTaskRepository implements IRandomArtTaskRepository {
       plotMapCidStr
     )
     // const retVal = this.eventPublisher.mergeObjectontext(
-    // new RandomArtTask(assets.rootFolder.cid)
+    // new RandomArtTaskRequest(assets.rootFolder.cid)
     // )
     // retVal.commit()
     this._storeCache[rootCidStr] = retVal
     return retVal
   }
 
-  public save (task: RandomArtTask): void {
+  public save (task: RandomArtTaskRequest): void {
     const cid = task.cid
     this._storeCache[cid] = task
   }
 
-  public getByCid (cid: string | CID): RandomArtTask {
+  public getByCid (cid: string | CID): RandomArtTaskRequest {
     let cidObj: CID
     let cidStr: string
     if (cid instanceof CID) {
@@ -111,7 +111,7 @@ export class OldRandomArtTaskRepository implements IRandomArtTaskRepository {
     const prefixBits: Uint8Array = this._loadFileByCid(assets.prefixFile)
     const suffixBits: Uint8Array = this._loadFileByCid(assets.suffixFile)
 
-    const retVal = new RandomArtTask(
+    const retVal = new RandomArtTaskRequest(
       cidStr,
       prefixBits,
       assets.prefixFile,
@@ -124,7 +124,7 @@ export class OldRandomArtTaskRepository implements IRandomArtTaskRepository {
     return retVal
   }
 
-  public getAll (): RandomArtTask[] {
+  public getAll (): RandomArtTaskRequest[] {
     return Object.values(this._storeCache)
   }
 

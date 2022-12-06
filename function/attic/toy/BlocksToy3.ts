@@ -1,4 +1,3 @@
-/// <reference path="../painting/components/genjs6.d.ts"/>
 import * as codec from "@ipld/dag-cbor"
 import { Inject, Injectable, Module } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
@@ -12,7 +11,7 @@ import { IpfsModule } from "../ipfs/di/IpfsModule.js"
 import { IpfsModuleTypes } from "../ipfs/di/typez.js"
 import { CanvasPixelPainter } from "../painting/components/CanvasPixelPainter.js"
 import * as pkg from "../painting/components/genjs6.js"
-import { GenModelPlotter } from "../painting/components/GenModelPlotter.js"
+import { GenModelArtist } from "../painting/components/GenModelArtist.js"
 import { IRegionPlotter } from "../painting/interface/IRegionPlotter.js"
 import { IpldRegionMapRepository } from "../plotting/components/IpldRegionMapRepository.js"
 import { PlottingModule } from "../plotting/di/PlottingModule.js"
@@ -21,6 +20,7 @@ import { PBufAdapter } from "../plotting/protobuf/PBufAdapter.js"
 import { PBufRegionMap } from "../plotting/protobuf/PBufRegionMap.js"
 import { PointPlotData, PointPlotDocument, RefPoint } from "../plotting/protobuf/plot_mapping_pb"
 
+/// <reference path="../painting/components/genjs6.d.ts"/>
 const { newPicture } = pkg
 
 class LoggingPlotter implements IRegionPlotter {
@@ -91,8 +91,8 @@ export class AppService {
     let canvas: Canvas = new Canvas(1024, 1024)
     let painter1 = new CanvasPixelPainter(canvas, fs.createWriteStream("./famine1.png"))
     // let painter2 = new CanvasPixelPainter(canvas, fs.createWriteStream("./falcon2.png"))
-    let plotter1 = new GenModelPlotter(genModel, painter1)
-    // let plotter2 = new GenModelPlotter(genModel, painter2)
+    let plotter1 = new GenModelArtist(genModel, painter1)
+    // let plotter2 = new GenModelArtist(genModel, painter2)
 
     console.log("Starting first plot!")
     // pbRegionMap.drive(plotter2)
@@ -104,8 +104,8 @@ export class AppService {
     genModel = newPicture(prefix2, suffix)
     painter1 = new CanvasPixelPainter(canvas, fs.createWriteStream("./manon1.png"))
     // painter2 = new CanvasPixelPainter(canvas, fs.createWriteStream("./manon2.png"))
-    plotter1 = new GenModelPlotter(genModel, painter1)
-    // plotter2 = new GenModelPlotter(genModel, painter2)
+    plotter1 = new GenModelArtist(genModel, painter1)
+    // plotter2 = new GenModelArtist(genModel, painter2)
     // pbRegionMap.drive(plotter2)
     // console.log("Plotted fpoon2.png")
     regionMap.drive(plotter1)

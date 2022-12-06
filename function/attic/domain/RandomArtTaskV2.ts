@@ -5,7 +5,7 @@
 // import { SeededGenModelEvent } from "../../interface/events/SeededGenModelEvent.js"
 // import { LinkedPlotMapEvent } from "../../interface/events/LinkedPlotMapEvent.js"
 
-export class RandomArtTaskRequest {
+export class RandomArtTaskV2 {
   // extends AggregateRoot<IRandomArtTaskEvent> {
   constructor (
     public readonly cid: string,
