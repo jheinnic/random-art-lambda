@@ -10,13 +10,10 @@ import { ImportCandidate } from "ipfs-unixfs-importer/types/src/types"
 import { CID } from "multiformats"
 import * as Block from "multiformats/block"
 
-import { IpfsModule } from "../ipfs/di/IpfsModule.js"
-import { SharedArtBlockstoreModule } from "../ipfs/di/SharedArtBlockstoreModule.js"
-import { SharedArtBlockstoreModuleTypes } from "../ipfs/di/typez.js"
+import { IpfsModule, SharedArtBlockstoresModule, SharedArtBlockstoresModuleTypes } from "../ipfs/di/index.js"
 import { CanvasPixelPainter } from "../painting/components/CanvasPixelPainter.js"
 import { newPicture } from "../painting/components/genjs6.js"
-import { GenModelPlotter } from "../painting/components/GenModelPlotter.js"
-import { IRegionPlotter } from "../painting/interface/index.js"
+import { GenModelArtist } from "../painting/components/GenModelArtist.js"
 import { IpldRegionMapRepository } from "../plotting/components/IpldRegionMapRepository.js"
 import { PlottingModule, PlottingModuleTypes } from "../plotting/di/index.js"
 import { PBufAdapter } from "../plotting/protobuf/PBufAdapter.js"
@@ -67,7 +64,7 @@ export class AppService {
     const suffix = [...Buffer.from("37 Bone Coloured Stars")]
     let genModel = newPicture(prefix, suffix)
     let painter1 = new CanvasPixelPainter(canvas, fs.createWriteStream("./woodoo.png"))
-    let plotter1 = new GenModelPlotter(genModel, painter1)
+    let plotter1 = new GenModelArtist(genModel, painter1)
     regionMap.drive(plotter1)
     console.log("Plotted woodoo.png")
 
@@ -76,14 +73,14 @@ export class AppService {
     const suffix2 = [...Buffer.from("we are floating in space")]
     genModel = newPicture(prefix2, suffix2)
     painter1 = new CanvasPixelPainter(canvas, fs.createWriteStream("./spirit.png"))
-    plotter1 = new GenModelPlotter(genModel, painter1)
+    plotter1 = new GenModelArtist(genModel, painter1)
     regionMap.drive(plotter1)
     console.log("Plotted spirit.png")
   }
 }
 
 @Module({
-  imports: [SharedArtBlockstoreModule, PlottingModule],
+  imports: [SharedBlockstoresModule, PlottingModule],
   providers: [AppService],
   exports: []
   })
