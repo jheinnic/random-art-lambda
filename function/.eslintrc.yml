@@ -8,6 +8,9 @@ parserOptions:
   project: /home/ionadmin/Git/lambdas/random-art-lambda/function/tsconfig.json
   sourceType: module
 rules:
+  comma-dangle: 
+    - error
+    - always-multiline
   quotes: off
   "@typescript-eslint/quotes":
     - error
@@ -16,6 +19,6 @@ rules:
   no-unused-vars: off
   "@typescript-eslint/no-unused-vars":
     - warn
-    - vars: all
+    - vars: always
       args: after-used
       ignoreRestSiblings: false
