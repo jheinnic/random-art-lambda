@@ -6,7 +6,7 @@ import { ICompleteObserver } from "../interface/index.js"
 export class CanvasPersister implements ICompleteObserver {
   public constructor (
     private readonly canvas: Canvas,
-    private readonly streamOut: fs.WriteStream
+    private readonly streamOut: fs.WriteStream,
   ) {
     this.streamOut.on("end", () => {
       console.log(`Wrote out png with ${this.streamOut.bytesWritten} bytes`)

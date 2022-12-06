@@ -6,7 +6,7 @@ import { ModuleExportConfiguration } from "./ModuleExportConfiguration.js"
 
 export const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN, OPTIONS_TYPE, ASYNC_OPTIONS_TYPE } =
   new ConfigurableModuleBuilder<FsBlockstoreConfiguration, typeof REGISTER_METHOD_KEY, typeof FACTORY_METHOD_KEY, ModuleExportConfiguration>({
-    optionsInjectionToken: IpfsModuleTypes.FsBlockstoreConfiguration, alwaysTransient: true
+    optionsInjectionToken: IpfsModuleTypes.FsBlockstoreConfiguration, alwaysTransient: true,
   })
     .setClassMethodName(REGISTER_METHOD_KEY)
     .setFactoryMethodName(FACTORY_METHOD_KEY)
