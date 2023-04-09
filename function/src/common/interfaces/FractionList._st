@@ -1,0 +1,6 @@
+import { FractionLists } from "./FractionLists.js"
+
+export type FractionList = {
+    N: number[]
+    D: number[]
+}

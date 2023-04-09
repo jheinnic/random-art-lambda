@@ -1,0 +1,5 @@
+import { StringKeys } from "simplytyped"
+
+export type StringKeysByType<O extends object, T> = {
+    [E in keyof O]-?: O[E] extends T ? E : never
+}[StringKeys<O>]

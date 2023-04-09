@@ -1,24 +1,14 @@
 import { CID } from "multiformats"
+import { CombineObjects, StringKeys } from "simplytyped"
+
+// import { Fractions } from "../../common/interfaces/index.js"
 
 export interface PixelSize {
   pixelWidth: number
   pixelHeight: number
 }
 
-type NorD = "N" | "D"
-
-export type StrKeyOf<T> = keyof T & string
-
-type SomeNumbers<P extends string, A extends string> = P extends A ? number[] : number
-
-export type Fractioned<K extends string = string, A extends K = never> =
-  { [ P in K as `${P}N` | `${P}D` ]: SomeNumbers<P, A> }
-  // { [ P in K as `${P}${NorD}` ]: P extends A ? number[] : number }
-
-export type Numeric<K extends string = string, A extends K = never> =
-  { [ P in K ]: SomeNumbers<P, A> }
-
-// export type Fractioned<K extends string = string, A extends K = never> = Numeric<`${K}${NorD}`, `${A}${NorD}`>
+// type NorD = "N" | "D"
 
 export interface RegionBoundaries {
   top: number
@@ -27,7 +17,18 @@ export interface RegionBoundaries {
   right: number
 }
 
-export type RegionBoundaryFractions = Fractioned<StrKeyOf<RegionBoundaries>>
+type Fractions<K extends string> = {
+    [P in K as `${P}N` | `${P}D`]: number
+}
+
+export type RegionBoundaryFractions = Fractions<StringKeys<RegionBoundaries>>
+
+export type WordSizes = Fractions<"top" | "bottom">
+
+export interface FractionList {
+  N: number[]
+  D: number[]
+}
 
 export const NO_BYTES: Uint8Array = Uint8Array.of()
 
@@ -62,9 +63,16 @@ export interface RegionMap {
   data: CID[]
 }
 
-export type Fractions = Fractioned<"", "">
-
 export interface ModelEnvelope {
   version: string
   model: any
 }
+
+/*
+export type Fractioned<K extends string = never, A extends string = never> =
+  K extends never ? (
+    A extends never ? never : FractionLists<A>
+  ) : (
+    A extends never ? Fractions<K> : ( Fractions<K> & FractionLists<A> )
+  )
+  */

@@ -13,15 +13,16 @@ import { IRegionMapSchemaDsl } from "../interface/IRegionMapSchemaDsl.js"
 import {
   DataBlock,
   EMPTY_DIMENSION,
-  Fractioned,
+  FractionList,
   PaletteMaybe,
   RegionBoundaries,
   RegionBoundaryFractions,
   RegionMap,
+  WordSizes,
 } from "../interface/RegionMapSchemaTypes.js"
 import { AbstractRegionMap } from "./AbstractRegionMap.js"
 import { IpldRegionMap } from "./IpldRegionMap.js"
-import { blockify, fractionify, paletteMaybe, rationalize, stats } from "./RegionMapUtils.js"
+import { blockify, fractionifyBounds, fractionifyList, paletteMaybe, rationalize, stats } from "./RegionMapUtils.js"
 
 @Injectable()
 export class IpldRegionMapRepository implements IRegionMapRepository {
@@ -121,7 +122,7 @@ class RegionMapBuilder implements IRegionMapBuilder {
   public regionBoundary (boundary: RegionBoundaryFractions): RegionMapBuilder
   public regionBoundary (boundary: RegionBoundaries | RegionBoundaryFractions): RegionMapBuilder {
     if (Object.keys(boundary).includes("top")) {
-      this._regionBoundary = fractionify<"top" | "left" | "right" | "bottom">((boundary as RegionBoundaries), 0, ["top", "bottom", "left", "right"])
+      this._regionBoundary = fractionifyBounds((boundary as RegionBoundaries))
       // this._regionBoundary = fractionify<StrKeyOf<RegionBoundaries>>(boundary, 0, ["top", "bottom", "left", "right"])
     } else {
       this._regionBoundary = { ...(boundary as RegionBoundaryFractions) }
@@ -165,14 +166,14 @@ class RegionMapBuilder implements IRegionMapBuilder {
     if (this._regionBoundary.leftN < 0) {
       leftOffset = (this._regionBoundary.leftN / this._regionBoundary.leftD)
     }
-    const _rows = fractionify<"", "">({ "": this._rowOrderX }, leftOffset, [""])
+    const _rows: FractionList = fractionifyList(this._rowOrderX, leftOffset)
     stats(this._rowOrderX, rationalize(_rows, leftOffset))
 
     let bottomOffset = 0
     if (this._regionBoundary.bottomN < 0) {
       bottomOffset = (this._regionBoundary.bottomN / this._regionBoundary.bottomD)
     }
-    const _cols = fractionify<"", "">({ "": this._rowOrderY }, bottomOffset, [""])
+    const _cols: FractionList = fractionifyList(this._rowOrderY, bottomOffset)
     stats(this._rowOrderY, rationalize(_cols, bottomOffset))
 
     // logFractions("ipldFractionWrites.dat", _rows, _cols, this._regionBoundary)
@@ -180,7 +181,7 @@ class RegionMapBuilder implements IRegionMapBuilder {
     this._paletteMaybeRowsD = paletteMaybe(_rows.D)
     this._paletteMaybeColsN = paletteMaybe(_cols.N)
     this._paletteMaybeColsD = paletteMaybe(_cols.D)
-    const wordSizes: Fractioned<"row" | "col"> = {
+    const wordSizes: WordSizes = {
       rowN: this._paletteMaybeRowsN.paletteWordLen,
       rowD: this._paletteMaybeRowsD.paletteWordLen,
       colN: this._paletteMaybeColsN.paletteWordLen,
