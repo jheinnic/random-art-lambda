@@ -1,13 +1,8 @@
-import { Inject, Injectable } from "@nestjs/common"
+import { Injectable } from "@nestjs/common"
 import * as fs from "fs"
-import { CID } from "multiformats/cid"
 
-import { IpldRegionMapRepository } from "../components/IpldRegionMapRepository.js"
-import { PlottingModuleTypes } from "../di/index.js"
-import { IRegionMapBuilder } from "../interface/index.js"
-import { Numeric, RegionBoundaries } from "../interface/RegionMapSchemaTypes.js"
 import { PBufAdapter } from "./PBufAdapter.js"
-import { PointPlotData, PointPlotDocument, RefPoint } from "./PBufUtil.mjs"
+import { PointPlotDocument } from "./PBufUtil.mjs"
 
 @Injectable()
 export class PBufAdapterFactory {
