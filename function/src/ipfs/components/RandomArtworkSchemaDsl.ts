@@ -16,11 +16,13 @@ const schemaDsl = `type ModelEnvelope union {
   contentKey "model"
 }
 
-type Prefix Bytes
+type Prefix bytes
+
+type Suffix bytes
 
 type RandomArtworkSpec struct {
-  prefix Bytes
-  suffix Bytes
+  prefix Prefix
+  suffix Suffix
   regionMap Link
   engineVersion String
 } representation tuple

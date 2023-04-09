@@ -2,40 +2,62 @@ import { BitInputStream, BitOutputStream } from "@thi.ng/bitstream"
 import Fraction from "fraction.js"
 import * as fs from "fs"
 
-import {
-  DataBlock,
-  Fractioned,
-  Fractions,
-  NO_BYTES,
-  Numeric,
-  PaletteMaybe,
-  RegionBoundaries,
-  RegionBoundaryFractions,
-} from "../interface/RegionMapSchemaTypes.js"
+import { DataBlock, FractionList, NO_BYTES, PaletteMaybe, RegionBoundaries, RegionBoundaryFractions, WordSizes } from "../interface/RegionMapSchemaTypes.js"
 
-export function fractionify<K extends string = string, A extends K = never> (source: Numeric<K, A>, offset: number, fields: K[]): Fractioned<K, A> {
-  const retVal: Fractioned<K, A> = {} as any as Fractioned<K, A>
+export function fractionifyBounds( bounds: RegionBoundaries ): RegionBoundaryFactions {
+  const top: Fraction = new Fraction( bounds.top )
+  const bottom: Fraction = new Fraction( bounds.bottom )
+  const left: Fraction = new Fraction( bounds.left )
+  const right: Fraction = new Fraction( bounds.right )
+  return {
+    topN: ( top.n * top.s ),
+    topD: top.D,
+    bottomN: ( bottom.n * bottom.s ),
+    bottomD: bottom.D,
+    leftN: ( left.n * left.s ),
+    leftD: left.D,
+    rightN: ( right.n * right.s ),
+    rightD: right.D
+  }
+}
+
+export function fractionifyList( source: number[], offset: number ): FractionList {
+  const fractions = source.map( ( x: number ) => new Fraction( x - offset ) )
+  return { 
+    N: fractions.map( ( f: Fraction ) => ( f.n * f.s ) ),
+    D: fractions.map( (f: Fraction) => f.d )
+  }
+}
+
+/*
+export function fractionify<K extends string = never, A extends string = never>( source: Record<K, number> & Record<A, number[]>, offset: number, kFields: K[], aFields: A[] = [] ): Fractioned<K, A>{
+  const retVal: Partial<Fractioned<K, A>> = {} // as any as Fractioned<K, A>
   let k: K
-  for (k of fields) {
-    const src = source[k]
-    if (typeof src === "number") {
-      const frac = new Fraction(src - offset)
-      retVal[`${k}N`] = (frac.n * frac.s) as Fractioned<K, A>[`${K}N`]
-      retVal[`${k}D`] = frac.d as Fractioned<K, A>[`${K}D`]
-    } else {
-      const a: A = k as A
-      const fractions = src.map(
-        (x: number) => new Fraction(x - offset))
-      retVal[`${a}N`] = fractions.map((x: Fraction) => x.n * x.s) as Fractioned<K, A>[`${A}N`]
-      retVal[`${a}D`] = fractions.map((x: Fraction) => x.d) as Fractioned<K, A>[`${A}D`]
-    }
+  for (k of kFields) {
+    const src: number = source[k] as number
+    const frac = new Fraction(src - offset)
+    retVal[`${k}N`] = (frac.n * frac.s) as Fractioned<K, A>[`${K}N`]
+    retVal[`${k}D`] = frac.d as Fractioned<K, A>[`${K}D`]
     console.log(k)
     console.dir(source[k], { depth: Infinity })
     console.dir(retVal[`${k}N`], { depth: Infinity })
     console.dir(retVal[`${k}D`], { depth: Infinity })
   }
-  return retVal
+  let a: A
+  for (a of aFields) {
+    const src: number[] = source[a] as number[]
+    const fractions = src.map(
+      (x: number) => new Fraction(x - offset))
+      retVal[`${a}N`] = fractions.map((x: Fraction) => x.n * x.s) as Fractioned<K, A>[`${A}N`]
+      retVal[`${a}D`] = fractions.map((x: Fraction) => x.d) as Fractioned<K, A>[`${A}D`]
+    console.log(a)
+    console.dir(source[a], { depth: Infinity })
+    console.dir(retVal[`${a}N`], { depth: Infinity })
+    console.dir(retVal[`${a}D`], { depth: Infinity })
+  }
+  return retVal as Fractioned<K, A>
 }
+*/
 
 export function paletteMaybe (src: number[]): PaletteMaybe {
   const asSet = new Set(src)
@@ -59,8 +81,8 @@ export function paletteMaybe (src: number[]): PaletteMaybe {
 }
 
 export function blockify (
-  rows: Fractions, cols: Fractions, chunkHeight: number,
-  pixelWidth: number, pixelHeight: number, wordSizes: Fractioned<"row" | "col">
+  rows: FractionList, cols: FractionList, chunkHeight: number,
+  pixelWidth: number, pixelHeight: number, wordSizes: WordSizes
 ): DataBlock[] {
   const chunkCount = Math.ceil(1.0 * pixelHeight / chunkHeight)
   const chunkSize = chunkHeight * pixelWidth
@@ -104,7 +126,7 @@ export function hydrate (bytes: Uint8Array, palette: number[], wordSize: number)
   return unpacked
 }
 
-export function rationalize (fractions: Fractions, offset: number): number[] {
+export function rationalize (fractions: FractionList, offset: number): number[] {
   const len = fractions.N.length
   const retval = new Array<number>(len)
   let idx = 0
@@ -119,7 +141,7 @@ export function rationalize (fractions: Fractions, offset: number): number[] {
   return retval
 }
 
-export function logFractions (fileName: string, rows: Fractions, cols: Fractions, region: RegionBoundaryFractions): void {
+export function logFractions (fileName: string, rows: FractionList, cols: FractionList, region: RegionBoundaryFractions): void {
   let bottomOffset = 0
   if (region.bottomN < 0) {
     bottomOffset = region.bottomN / region.bottomD
