@@ -1,10 +1,6 @@
-import { CID } from "multiformats/cid"
-
-import { IpldRegionMapRepository } from "../components/IpldRegionMapRepository.js"
-import { PlottingModuleTypes } from "../di/index.js"
-import { IRegionMap, IRegionMapBuilder, Numeric, RegionBoundaries } from "../interface/index.js"
+import { IRegionMap, IRegionMapBuilder } from "../interface/index.js"
 import { PBufRegionMap } from "../protobuf/PBufRegionMap.js"
-import { PointPlotData, PointPlotDocument, RefPoint } from "./PBufUtil.mjs"
+import { PointPlotData, RefPoint } from "./PBufUtil.mjs"
 
 export class PBufAdapter {
   public constructor (private readonly source: PointPlotData) { }
