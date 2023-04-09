@@ -62,13 +62,6 @@ type DataBlock struct {
 } representation tuple
 `
 
-// const modelBuf = fs.readFileSync("./fdoc.proto")
-// const plotDocument = PointPlotDocument.deserializeBinary(modelBuf)
-// const plotData = plotDocument.getData()
-// if (plotData === undefined || plotData === null) {
-// throw new Error("Plot Data subunit must be defined!")
-// }
-
 @Injectable()
 export class IpldRegionMapSchemaDsl implements IRegionMapSchemaDsl {
   private readonly schemaDmt = fromDSL(schemaDsl)
