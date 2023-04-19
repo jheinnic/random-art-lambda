@@ -10,10 +10,10 @@ declare module "./genjs6.js" {
     genModel: GenModel,
     x: number,
     y: number
-  ): [red: number, green: number, blue: number]
+  ): [number, number, number]  // { red: number, green: number, blue: number }
   export function phraseToSeed (
     phrase: string
-  ): [prefix: number[], suffix: number[]]
+  ): [number[], number[]] // [prefix: number[], suffix: number[]]
   export function fullEval (fn: Function): Function
   export function partialEval (fn: Function): Function
 }
