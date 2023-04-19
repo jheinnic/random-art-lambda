@@ -57,5 +57,8 @@
     },
     "cSpell.words": [
         "Blockstores"
-    ]
+    ],
+    "typescript.tsserver.watchOptions": {
+    
+    }
 }

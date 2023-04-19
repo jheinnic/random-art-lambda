@@ -8,8 +8,21 @@
 			"problemMatcher": [
 				"$tsc-watch"
 			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"label": "tsc: watch - function/tsconfig.json",
+			"detail": "/Users/john.heinnickel/Git/lambdas/random-art-lambda/function/node_modules/typescript/bin/tsc"
+		},
+		{
+			"type": "typescript",
+			"tsconfig": "function/tsconfig.json",
+			"problemMatcher": [
+				"$tsc"
+			],
 			"group": "build",
-			"label": "tsc: watch - function/tsconfig.json"
+			"label": "tsc: build - function/tsconfig.json"
 		}
 	]
 }
