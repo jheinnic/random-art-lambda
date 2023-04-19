@@ -1,0 +1,27 @@
+import { CombineObjects, KeysByType } from "simplytyped"
+
+type KeysByTypeAndKind<O extends object, T, K extends keyof any = keyof any> = {
+    [E in Extract<K, keyof O>]-?: O[E] extends T ? E : never;
+}[keyof O]
+
+export type Fractions<K extends string> = {
+    [P in K as `${P}N` | `${P}D`]: number
+}
+
+export type FractionLists<T extends string> = {
+    [P in K as `${P}N` | `${P}D`]: number[]
+}
+
+export type RB = {
+    top: number
+    left: number
+    right: number
+    bottom: number
+}
+
+export type RBF = Fractions<KeysByTypeAndKind<RB, number, string>>
+
+const a: RB = { top: 0, left: 0, right: 0, bottom: 0 } 
+const a: RBF = { topN: 0, topD: 0, leftN: 0, leftD: 0, rightN: 0, rightD: 0, bottomN: 0, bottomD: 0 };
+
+  
