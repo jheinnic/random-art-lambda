@@ -1,14 +1,10 @@
 import { CID } from "multiformats"
 import { CombineObjects, StringKeys } from "simplytyped"
 
-// import { Fractions } from "../../common/interfaces/index.js"
-
 export interface PixelSize {
   pixelWidth: number
   pixelHeight: number
 }
-
-// type NorD = "N" | "D"
 
 export interface RegionBoundaries {
   top: number
@@ -23,7 +19,7 @@ type Fractions<K extends string> = {
 
 export type RegionBoundaryFractions = Fractions<StringKeys<RegionBoundaries>>
 
-export type WordSizes = Fractions<"top" | "bottom">
+export type WordSizes = Fractions<"row" | "col">
 
 export interface FractionList {
   N: number[]
