@@ -1,22 +1,46 @@
 import { CombineObjects, UnionizeProperties } from "simplytyped"
+import { CID } from "multiformats"
 
-import { Prefix } from "./Prefix"
+import { Prefix } from "./Prefix.js"
+import { Suffix } from "./Suffix.js"
 import { RandomArtworkSpec } from "./RandomArtworkSpec.js"
 
-export type UnionAsEnvelope<T extends object, Discriminant extends string, Record extends string> = UnionizeProperties<{
-    [K in keyof T]: CombineObjects<{ [ D in Discriminant ]: K }, { [R in Record]: T[K] }>
+export type UnionMap<Representation, DomainModel> = [Representation, DomainModel];
+
+export type UnionedTypeSpec = {
+    [ K in string ]: { rep: unknown, domain: unknown }
+}
+
+export type UnionAsDomain<
+    T extends UnionedTypeSpec
+> = {
+    [K in (string & keyof T)]?: T[K]['domain'] extends infer I ? I : never
+}
+ 
+export type UnionAsEnvelope<
+    T extends UnionedTypeSpec,
+    Discriminant extends string = "version",
+    Model extends string = "model"
+> = UnionizeProperties<{
+    [K in keyof T]: T[K]['rep'] extends infer I
+        ? CombineObjects<{ [D in Discriminant]: K }, { [R in Model]: I }>
+        : never
 }>
 
-interface DemoTypes {
-    "RandomArtworkSpec_0.1.0": [Prefix, Suffix, CID, string],
-    "Prefix_0.1.0": Prefix
+type DemoTypes = {
+    "RandomArtworkSpec_0.1.0": { rep: [ Prefix, Suffix, CID, string ], domain: RandomArtworkSpec },
+    "Prefix_0.1.0": { rep: number | Uint8Array, domain: Prefix }
 }
-type Demo = EnvelopeRepresentation<DemoTypes, "repoVersion", "model">
 
-let test: Demo = {
+let test: UnionAsEnvelope<DemoTypes, "repoVersion", "model"> = {
     repoVersion: "RandomArtworkSpec_0.1.0",
-    model: new RandomArtworkSpec()
+    model: [ Uint8Array.of(19), Uint8Array.of(173), CID.asCID(1)!, "strop" ]
 }
-test.model = false
-test.repoVersion = "Prefix_0.1.0"
-test.repoVersion = 43
+// test.model = false
+// test.repoVersion = "Prefix_0.1.0"
+// test.model = 43
+test = { repoVersion: "Prefix_0.1.0", model: Uint8Array.of(63) }
+
+let test2: UnionAsDomain<DemoTypes> = {
+    "RandomArtworkSpec_0.1.0": { prefix: Uint8Array.of(45), suffix: Uint8Array.of(95), regionMap: CID.asCID(1)!, engineVersion: "strop" }
+}

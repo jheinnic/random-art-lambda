@@ -5,6 +5,6 @@ import { RandomArtTaskRequest } from "./RandomArtTaskRequest.js"
 
 export interface IRandomArtTask {
   readonly spec: RandomArtTaskRequest
-  done: boolean
+  // done: boolean
   readonly artwork: Promise<IRandomArtwork>
 }

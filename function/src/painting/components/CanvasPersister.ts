@@ -1,9 +1,9 @@
 import { Canvas } from "canvas"
 import * as fs from "fs"
 
-import { ICompleteObserver } from "../interface/index.js"
+// import { ICompleteObserver } from "../interface/index.js"
 
-export class CanvasPersister implements ICompleteObserver {
+export class CanvasPersister { // implements ICompleteObserver {
   public constructor (
     private readonly canvas: Canvas,
     private readonly streamOut: fs.WriteStream,

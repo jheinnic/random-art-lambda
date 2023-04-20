@@ -6,11 +6,12 @@ import { Block, encode } from "multiformats/block"
 import { sha256 as hasher } from "multiformats/hashes/sha2"
 
 import { create, createValidate, fromDSL } from "../../plotting/components/IpldSchemaTools.mjs"
-import { IRandomArtworkSchemaDsl, ModelEnvelope, RandomArtworkSpec } from "../interface/index.js"
+import { IRandomArtworkSchemaSerdes, ModelEnvelope, RandomArtworkSpec } from "../interface/index.js"
 
 const schemaDsl = `type ModelEnvelope union {
   | RandomArtworkSpec "RandomArtworkSpec_0.1.0"
   | Prefix "Prefix_0.0.1"
+  | Suffix "Suffix_0.0.1"
 } representation envelope {
   discriminantKey "repoVersion"
   contentKey "model"
@@ -29,7 +30,7 @@ type RandomArtworkSpec struct {
 `
 
 @Injectable()
-export class RandomArtworkSchemaDsl implements IRandomArtworkSchemaDsl {
+export class RandomArtworkSchemaSerdes implements IRandomArtworkSchemaSerdes {
   // parse schema
   private readonly schemaDmt = fromDSL(schemaDsl)
 

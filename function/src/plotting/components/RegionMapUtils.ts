@@ -4,20 +4,20 @@ import * as fs from "fs"
 
 import { DataBlock, FractionList, NO_BYTES, PaletteMaybe, RegionBoundaries, RegionBoundaryFractions, WordSizes } from "../interface/RegionMapSchemaTypes.js"
 
-export function fractionifyBounds( bounds: RegionBoundaries ): RegionBoundaryFactions {
+export function fractionifyBounds( bounds: RegionBoundaries ): RegionBoundaryFractions {
   const top: Fraction = new Fraction( bounds.top )
   const bottom: Fraction = new Fraction( bounds.bottom )
   const left: Fraction = new Fraction( bounds.left )
   const right: Fraction = new Fraction( bounds.right )
   return {
     topN: ( top.n * top.s ),
-    topD: top.D,
+    topD: top.d,
     bottomN: ( bottom.n * bottom.s ),
-    bottomD: bottom.D,
+    bottomD: bottom.d,
     leftN: ( left.n * left.s ),
-    leftD: left.D,
+    leftD: left.d,
     rightN: ( right.n * right.s ),
-    rightD: right.D
+    rightD: right.d
   }
 }
 

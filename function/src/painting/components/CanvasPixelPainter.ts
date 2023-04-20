@@ -1,6 +1,6 @@
 import { Canvas, CanvasRenderingContext2D } from "canvas"
 
-import { ICompleteObserver, IPixelPainter } from "../interface/index.js"
+import { IPixelPainter } from "../interface/index.js"
 
 export class CanvasPixelPainter implements IPixelPainter {
   private readonly context: CanvasRenderingContext2D

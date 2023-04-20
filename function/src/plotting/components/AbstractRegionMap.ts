@@ -38,7 +38,7 @@ export abstract class AbstractRegionMap implements IRegionMap {
         }
       }
     }
-    plotter.finish()
+    // plotter.finish()
   }
 
   public director (plotter: IRegionPlotBuilder): void {
@@ -64,7 +64,7 @@ export abstract class AbstractRegionMap implements IRegionMap {
         setTimeout(loopForX, 0, nextX)
       } else {
         console.log("Done looping")
-        plotter.finish()
+        // plotter.finish()
       }
     }
     loopForX(0)
@@ -85,7 +85,7 @@ export abstract class AbstractRegionMap implements IRegionMap {
         setTimeout(loopForXI, 0, nextX, ii)
       } else {
         console.log("Done looping")
-        plotter.finish()
+        // plotter.finish()
       }
     }
     loopForXI(0, 0)

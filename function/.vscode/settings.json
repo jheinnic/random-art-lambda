@@ -19,7 +19,7 @@
     "typescript.tsserver.maxTsServerMemory": 8192,
     "typescript.tsserver.experimental.enableProjectDiagnostics": true,
     "typescript.tsserver.enableTracing": true,
-    "typescript.tsdk": "/home/ionadmin/Git/lambdas/random-art-lambda/function/node_modules/typescript/lib",
+    "typescript.tsdk": "node_modules/typescript/lib",
     "typescript.suggest.completeFunctionCalls": true,
     "typescript.referencesCodeLens.showOnAllFunctions": true,
     "typescript.referencesCodeLens.enabled": true,
@@ -58,7 +58,5 @@
     "cSpell.words": [
         "Blockstores"
     ],
-    "typescript.tsserver.watchOptions": {
-    
-    }
+    "typescript.tsserver.watchOptions": {}
 }
