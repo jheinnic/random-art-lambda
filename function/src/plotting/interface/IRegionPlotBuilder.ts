@@ -7,6 +7,6 @@ export interface IRegionPlotBuilder {
 
   /**
    * Builder method that indicates all pixels have been plotted.
-   */
   finish: () => void
+   */
 }
