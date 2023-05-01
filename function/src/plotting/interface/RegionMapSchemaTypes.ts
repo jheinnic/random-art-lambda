@@ -1,5 +1,17 @@
 import { CID } from "multiformats"
-import { CombineObjects, StringKeys } from "simplytyped"
+import { StringKeys } from "simplytyped"
+
+export const NO_BYTES: Uint8Array = Uint8Array.of()
+
+export const EMPTY_DIMENSION: number[] = []
+
+export type Palette = Uint8Array
+
+export interface PaletteMaybe {
+  palette: Palette
+  paletteWordLen: number
+  baseWordLen: number
+}
 
 export interface PixelSize {
   pixelWidth: number
@@ -14,30 +26,24 @@ export interface RegionBoundaries {
 }
 
 type Fractions<K extends string> = {
-    [P in K as `${P}N` | `${P}D`]: number
+  [ P in K as `${ P }N` | `${ P }D` ]: number
 }
 
 export type RegionBoundaryFractions = Fractions<StringKeys<RegionBoundaries>>
 
 export type WordSizes = Fractions<"row" | "col">
 
+export interface DimensionLayouts {
+  rowsN: PaletteMaybe
+  rowsD: PaletteMaybe
+  colsN: PaletteMaybe
+  colsD: PaletteMaybe
+}
+
 export interface FractionList {
   N: number[]
   D: number[]
 }
-
-export const NO_BYTES: Uint8Array = Uint8Array.of()
-
-export const EMPTY_DIMENSION: number[] = []
-
-export type Palette = Uint8Array
-
-export interface PaletteMaybe {
-  palette: Palette
-  paletteWordLen: number
-  baseWordLen: number
-}
-
 export interface DataBlock {
   height: number
   rowsN: Uint8Array
@@ -50,12 +56,9 @@ export interface RegionMap {
   pixelRef: "Center" | "TopLeft"
   imageSize: PixelSize
   chunkHeight: number
+  interpolated: boolean
   regionBoundary: RegionBoundaryFractions
-  projected: boolean
-  rowsN: PaletteMaybe
-  rowsD: PaletteMaybe
-  colsN: PaletteMaybe
-  colsD: PaletteMaybe
+  palettes: DimensionLayouts
   data: CID[]
 }
 

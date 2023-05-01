@@ -19,10 +19,6 @@ type RegionMap struct {
   chunkHeight Int
   regionBoundary RegionBoundary
   projected Bool
-  rowsN BitLayout
-  rowsD BitLayout
-  colsN BitLayout
-  colsD BitLayout
   data [&DataBlock]
 } representation tuple
 
@@ -30,6 +26,13 @@ type BitLayout struct {
   palette Bytes
   paletteWordLen Int
   baseWordLen Int
+} representation tuple
+
+type DimensionLayouts struct {
+  rowsN BitLayout
+  rowsD BitLayout
+  colsN BitLayout
+  colsD BitLayout
 } representation tuple
 
 type RegionBoundary struct {
@@ -71,24 +74,24 @@ type DataBlock struct {
 
 @Injectable()
 export class IpldRegionMapSchemaDsl implements IRegionMapSchemaDsl {
-  private readonly schemaDmt = fromDSL(schemaDsl)
-  private readonly rootTyped = create(this.schemaDmt, "ModelEnvelope")
-  private readonly dataTyped = create(this.schemaDmt, "DataBlock")
-  private readonly validate = createValidate(this.schemaDmt)
+  private readonly schemaDmt = fromDSL( schemaDsl )
+  private readonly rootTyped = create( this.schemaDmt, "ModelEnvelope" )
+  private readonly dataTyped = create( this.schemaDmt, "DataBlock" )
+  private readonly validate = createValidate( this.schemaDmt )
 
-  public toRegionMapRepresentation (typed: RegionMap): unknown {
-    return this.rootTyped.toRepresentation(typed)
+  public toRegionMapRepresentation( typed: RegionMap ): unknown {
+    return this.rootTyped.toRepresentation( typed )
   }
 
-  public toRegionMapTyped (representation: unknown): RegionMap {
-    return this.rootTyped.toTyped(representation)
+  public toRegionMapTyped( representation: unknown ): RegionMap {
+    return this.rootTyped.toTyped( representation )
   }
 
-  public toDataBlockRepresentation (typed: DataBlock): unknown {
-    return this.dataTyped.toRepresentation(typed)
+  public toDataBlockRepresentation( typed: DataBlock ): unknown {
+    return this.dataTyped.toRepresentation( typed )
   }
 
-  public toDataBlockTyped (representation: unknown): DataBlock {
-    return this.dataTyped.toTyped(representation)
+  public toDataBlockTyped( representation: unknown ): DataBlock {
+    return this.dataTyped.toTyped( representation )
   }
 }
