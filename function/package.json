@@ -67,6 +67,7 @@
         "multiformats": "^9.7.1",
         "pngjs": "^6.0.0",
         "proper-lockfile": "^4.1.2",
+        "ramda": "^0.29.0",
         "reflect-metadata": "^0.1.13",
         "rxjs": "7.5.5",
         "short-unique-id": "^4.4.4",
