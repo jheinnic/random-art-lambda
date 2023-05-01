@@ -1,9 +1,27 @@
 import { Block, ByteView } from "multiformats/block.js"
 
-import { ModelEnvelope } from "./ModelEnvelope.js"
-import { RandomArtworkSpec } from "./RandomArtworkSpec.js"
+export interface ISchemaSerdes<Representation, DomainModel> {
+  /**
+   * Transform-to-representation and Encode
+   */
+  encodeModel: ( model: DomainModel ) => Promise<Block<Representation>>
 
-export interface ISchemaSerdes<Representation,DomainModel> {
-  encode: (model: DomainModel) => ByteView<Representation>
-  decode: (bytes: ByteView<Representation>) => DomainModel
+  /**
+   * Decode
+   * @param bytes 
+   * @returns Decoded Block
+   */
+  bytesToBlock: ( bytes: ByteView<Representation> ) => Promise<Block<Representation>>
+  /**
+   * Decode and Transform-to-domain
+   * @param bytes 
+   * @returns Domain model from a decoded block
+   */
+  bytesToDomain: ( bytes: ByteView<Representation> ) => Promise<DomainModel>
+  /**
+   * Transform-to-domain
+   * @param block 
+   * @returns Domain model
+   */
+  blockToDomain: ( block: Block<Representation> ) => Promise<DomainModel>
 }
