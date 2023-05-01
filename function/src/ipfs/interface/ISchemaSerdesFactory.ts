@@ -1,5 +1,5 @@
 import { ISchemaSerdes } from "./ISchemaSerdes.js"
 
 export interface ISchemaSerdesFactory {
-    parseDsl<Representation, DomainModel>(schema: String): ISchemaSerdes<Representation, DomainModel>
+    parseDsl<Representation, DomainModel>( schemaDsl: string, rootProduction: string ): ISchemaSerdes<Representation, DomainModel>
 }
