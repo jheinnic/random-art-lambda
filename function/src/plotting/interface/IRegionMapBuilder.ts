@@ -1,4 +1,4 @@
-import { RegionBoundaries, RegionBoundaryFractions } from "./RegionMapSchemaTypes.js"
+import { RegionBoundaries, RegionBoundaryFractions } from "../ipldmodel/index.js"
 
 export interface IRegionMapBuilder {
   pixelRef: ( pixelRef: "Center" | "TopLeft" ) => IRegionMapBuilder

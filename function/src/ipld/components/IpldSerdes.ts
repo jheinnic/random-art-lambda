@@ -1,27 +1,28 @@
-import * as codec from "@ipld/dag-cbor"
 import { Injectable } from "@nestjs/common"
-import { ByteView, Block, encode, decode } from "multiformats/block"
+import { ByteView, BlockView } from "multiformats"
+import { encode, decode } from "multiformats/block"
 import { sha256 as hasher } from "multiformats/hashes/sha2"
+import * as codec from "@ipld/dag-cbor"
 
-import { ISchemaSerdes } from "../interface/index.js"
+import { RepresentDomainPair, ISerdes } from "../interface/index.js"
 
 @Injectable()
-export class IpldSchemaSerdes<Representation, DomainModel> implements ISchemaSerdes<Representation, DomainModel> {
+export class IpldSerdes<RDP extends RepresentDomainPair> implements ISerdes<RDP> {
   constructor (
-    private toRepresentation: ( source: DomainModel ) => Representation,
-    private toDomainModel: ( source: Representation ) => DomainModel
+    private toRepresentation: ( source: RDP[ 1 ] ) => RDP[ 0 ],
+    private toDomainModel: ( source: RDP[ 0 ] ) => RDP[ 1 ]
     // private validate: () => true
   ) { }
 
   /**
      * Transform-to-representation and Encode
      */
-  public async encodeModel( typed: DomainModel ): Promise<Block<Representation>> {
+  public async encodeModel( typed: RDP[ 1 ] ): Promise<BlockView<RDP[ 0 ]>> {
     const specData = this.toRepresentation( typed )
     if ( specData === undefined ) {
       throw new TypeError( "Invalid typed form, does not match schema" )
     }
-    const block: Block<Representation> = await encode<Representation, 113, 18>(
+    const block: BlockView<RDP[ 0 ]> = await encode<RDP[ 0 ], 113, 18>(
       { codec, hasher, value: specData } )
     return block
   }
@@ -31,8 +32,8 @@ export class IpldSchemaSerdes<Representation, DomainModel> implements ISchemaSer
    * @param bytes 
    * @returns Decoded Block
    */
-  public async bytesToBlock( bytes: ByteView<Representation> ): Promise<Block<Representation>> {
-    const block = await decode<Representation, 113, 18>( { codec, hasher, bytes } )
+  public async bytesToBlock( bytes: ByteView<RDP[ 0 ]> ): Promise<BlockView<RDP[ 0 ]>> {
+    const block = await decode<RDP[ 0 ], 113, 18>( { codec, hasher, bytes } )
     return block
   }
 
@@ -41,7 +42,7 @@ export class IpldSchemaSerdes<Representation, DomainModel> implements ISchemaSer
    * @param bytes 
    * @returns Domain model from a decoded block
    */
-  public async bytesToDomain( bytes: ByteView<Representation> ): Promise<DomainModel> {
+  public async bytesToDomain( bytes: ByteView<RDP[ 0 ]> ): Promise<RDP[ 1 ]> {
     const domainModel = await this.blockToDomain(
       await this.bytesToBlock( bytes ) )
     return domainModel
@@ -52,7 +53,7 @@ export class IpldSchemaSerdes<Representation, DomainModel> implements ISchemaSer
    * @param block 
    * @returns Domain model
    */
-  public async blockToDomain( block: Block<Representation> ): Promise<DomainModel> {
+  public async blockToDomain( block: BlockView<RDP[ 0 ]> ): Promise<RDP[ 1 ]> {
     const domainModel = this.toDomainModel( block.value )
     if ( domainModel === undefined ) {
       throw new TypeError( "Invalid representation form, does not match schema" )
