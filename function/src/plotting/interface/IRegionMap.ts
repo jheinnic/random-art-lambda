@@ -1,3 +1,7 @@
-import { IRegionPlotBuilder } from "./IRegionPlotBuilder.js"
+import { IRegionPlotter } from "./IRegionPlotter.js"
 
-export type IRegionMap = ( plotter: IRegionPlotBuilder ) => void
+export interface IRegionMap {
+    get pixelHeight(): number
+    get pixelWidth(): number
+    director( plotter: IRegionPlotter ): void
+}

@@ -1,25 +1,27 @@
 import { DynamicModule, Module } from "@nestjs/common"
 import { Blockstore } from "interface-blockstore"
 
+import { IpldModule, IpldModuleTypes } from "../../ipld/di/index.js"
 import { IpfsModule, IpfsModuleTypes } from "../../ipfs/di/index.js"
 import { IpldRegionMapRepository } from "../components/IpldRegionMapRepository.js"
-import { IpldRegionMapSchemaDsl } from "../components/IpldRegionMapSchemaDsl.js"
 import { PBufAdapterFactory } from "../protobuf/PBufAdapterFactory.js"
 import { PlottingModuleAsyncOptions } from "./PlottingModuleAsyncOptions.js"
 import { PlottingModuleConfiguration } from "./PlottingModuleConfiguration.js"
 import { ConfigurableModuleClass } from "./PlottingModuleDefinition.js"
 import { PlottingModuleTypes } from "./PlottingModuleTypes.js"
+import { configProvider } from "./IpldRegionMapSchemaDsl.js"
 
 @Module( {
+  imports: [ IpldModule.register( configProvider ) ],
   providers: [
     {
       provide: PlottingModuleTypes.IRegionMapRepository,
       useClass: IpldRegionMapRepository
     },
-    {
-      provide: PlottingModuleTypes.IRegionMapSchemaSerdes,
+    /*{
+      provide: PlottingModuleTypes.IModelEnvelopeSerdes,
       useClass: IpldRegionMapSchemaDsl
-    },
+    },*/
     {
       provide: PlottingModuleTypes.ProtoBufAdapterFactory,
       useClass: PBufAdapterFactory
@@ -32,7 +34,7 @@ import { PlottingModuleTypes } from "./PlottingModuleTypes.js"
       inject: [ PlottingModuleTypes.PlottingModuleConfiguration ]
     }
   ],
-  exports: [ PlottingModuleTypes.IRegionMapRepository, PlottingModuleTypes.ProtoBufAdapterFactory ]
+  exports: [ PlottingModuleTypes.IRegionMapRepository, PlottingModuleTypes.ProtoBufAdapterFactory, IpldModule ]
 } )
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class, @typescript-eslint/no-unused-vars
 export class PlottingModule extends ConfigurableModuleClass {
