@@ -12,7 +12,7 @@ import {
   IRandomArtwork,
   IRandomArtworkRepository,
   IRandomArtworkSchemaDsl,
-  ModelEnvelope,
+  ModelEnvelopeRepresentation,
   RandomArtworkSpec,
 } from "../interface/index.js"
 
@@ -21,7 +21,7 @@ export class RandomArtworkRepository implements IRandomArtworkRepository {
   constructor (
     @Inject( SharedBlockstoresModuleTypes.SharedArtBlockstore )
     private readonly blockStore: Blockstore,
-    @Inject( PaintingModuleTypes.IRandomArtworkSchemaDsl)
+    @Inject( PaintingModuleTypes.IRandomArtworkSchemaDsl )
     private readonly schemaDsl: IRandomArtworkSchemaDsl
   ) { }
 
@@ -35,18 +35,18 @@ export class RandomArtworkRepository implements IRandomArtworkRepository {
       engineVersion: `${ RELEASE_VERSION }.${ BUILD_VERSION }`
     }
     // Encode
-    const rootBlock = await this.schemaDsl.toBlock(sourceData)
+    const rootBlock = await this.schemaDsl.toBlock( sourceData )
     // Store
-    await this.blockStore.put(rootBlock.cid, rootBlock.bytes, {})
+    await this.blockStore.put( rootBlock.cid, rootBlock.bytes, {} )
     return rootBlock.cid
   }
 
-  public async load (cid: CID): Promise<IRandomArtwork> {
-    const bytes = await this.blockStore.get(cid)
-    const rootBlock = await decode<ModelEnvelope, 113, 18> ({ codec, hasher, bytes })
-    const typedData = this.schemaDsl.fromBlock(rootBlock)
-    console.dir(typedData, { depth: Infinity })
-    console.log(typedData.constructor.name)
+  public async load( cid: CID ): Promise<IRandomArtwork> {
+    const bytes = await this.blockStore.get( cid )
+    const rootBlock = await decode<ModelEnvelopeRepresentation, 113, 18>( { codec, hasher, bytes } )
+    const typedData = this.schemaDsl.fromBlock( rootBlock )
+    console.dir( typedData, { depth: Infinity } )
+    console.log( typedData.constructor.name )
 
     return typedData as IRandomArtwork
   }

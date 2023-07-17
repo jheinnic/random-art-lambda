@@ -1,17 +1,16 @@
 import { IRegionMap, IRegionPlotter } from "../interface/index.js"
 import { partial } from "ramda"
-
-type UnaryTailIter = ( number ) => void
-type BinaryTailIter = ( number, number ) => void
+type UnaryTailIter = ( arg:number ) => void
+type BinaryTailIter = ( arg1:number, arg2:number ) => void
 
 // import { TupleOfLength } from "@jchptf/tupletypes"
 function director(
   isUniform: boolean, xMax: number, yMax: number, xCols: number[], yCols: number[], plotter: IRegionPlotter
 ): void {
-  if ( this.isUniform ) {
-    this.uniformDirector( xMax, yMax, xCols, yCols, plotter )
+  if ( isUniform ) {
+    uniformDirector( xMax, yMax, xCols, yCols, plotter )
   } else {
-    this.variableDirector( xMax, yMax, xCols, yCols, plotter )
+    variableDirector( xMax, yMax, xCols, yCols, plotter )
   }
 }
 
@@ -32,7 +31,7 @@ function uniformDirector(
     }
   }
 
-  iterNext = R.partial( setTimeout, loopForX, 0 )
+  iterNext = partial( setTimeout, [ loopForX, 0 ] )
   iterNext = loopForX
 
   iterNext( 0 )
@@ -55,7 +54,7 @@ function variableDirector(
     }
   }
 
-  iterNext = R.partial( setTimeout, loopForXI, 0 )
+  iterNext = partial( setTimeout, [ loopForXI, 0 ] )
   iterNext = loopForXI
 
   iterNext( 0, 0 )

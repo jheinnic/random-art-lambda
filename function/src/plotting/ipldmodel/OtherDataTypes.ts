@@ -1,5 +1,6 @@
 import { CID } from "multiformats"
 import { StringKeys } from "simplytyped"
+import { RepresentUnionPair, UnionAsDomainModel, UnionAsRepresentation } from "../../ipld/interface/index.js"
 
 export const NO_BYTES: Uint8Array = Uint8Array.of()
 
@@ -31,7 +32,7 @@ type Fractions<K extends string> = {
 
 export type RegionBoundaryFractions = Fractions<StringKeys<RegionBoundaries>>
 
-export type WordSizes = Fractions<"row" | "col">
+export type WordSizes = Fractions<"rows" | "cols">
 
 export interface DimensionLayouts {
   rowsN: PaletteMaybe
@@ -44,28 +45,10 @@ export interface FractionList {
   N: number[]
   D: number[]
 }
-export interface DataBlock {
-  height: number
-  rowsN: Uint8Array
-  rowsD: Uint8Array
-  colsN: Uint8Array
-  colsD: Uint8Array
-}
 
-export interface RegionMap {
-  pixelRef: "Center" | "TopLeft"
-  imageSize: PixelSize
-  chunkHeight: number
-  interpolated: boolean
-  regionBoundary: RegionBoundaryFractions
-  palettes: DimensionLayouts
-  data: CID[]
-}
 
-export interface ModelEnvelope {
-  version: string
-  model: any
-}
+
+
 
 /*
 export type Fractioned<K extends string = never, A extends string = never> =

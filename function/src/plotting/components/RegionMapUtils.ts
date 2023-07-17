@@ -2,7 +2,10 @@ import { BitInputStream, BitOutputStream } from "@thi.ng/bitstream"
 import Fraction from "fraction.js"
 import * as fs from "fs"
 
-import { DataBlock, FractionList, NO_BYTES, PaletteMaybe, RegionBoundaries, RegionBoundaryFractions, WordSizes } from "../interface/RegionMapSchemaTypes.js"
+import {
+  DataBlock, FractionList, NO_BYTES, PaletteMaybe,
+  RegionBoundaries, RegionBoundaryFractions, WordSizes
+} from "../ipldmodel/index.js"
 
 export function fractionifyBounds( bounds: RegionBoundaries ): RegionBoundaryFractions {
   const top: Fraction = new Fraction( bounds.top )
@@ -23,9 +26,9 @@ export function fractionifyBounds( bounds: RegionBoundaries ): RegionBoundaryFra
 
 export function fractionifyList( source: number[], offset: number ): FractionList {
   const fractions = source.map( ( x: number ) => new Fraction( x - offset ) )
-  return { 
+  return {
     N: fractions.map( ( f: Fraction ) => ( f.n * f.s ) ),
-    D: fractions.map( (f: Fraction) => f.d )
+    D: fractions.map( ( f: Fraction ) => f.d )
   }
 }
 
@@ -59,130 +62,130 @@ export function fractionify<K extends string = never, A extends string = never>(
 }
 */
 
-export function paletteMaybe (src: number[]): PaletteMaybe {
-  const asSet = new Set(src)
-  const paletteWordLen = Math.max(Math.ceil(Math.log2(asSet.size)), 1)
-  const srcMax = src.reduce((acc, value) => Math.max(acc, value), 0)
-  const baseWordLen = Math.ceil(Math.log2(srcMax))
-  const newSize = (src.length * paletteWordLen) + (asSet.size * baseWordLen)
-  const baseSize = (src.length * baseWordLen)
-  console.log(`${newSize} >?< ${baseSize}, ${paletteWordLen}, ${asSet.size}, ${baseWordLen}, ${src.length} :: ${srcMax}`)
-  if (newSize > baseSize) {
+export function paletteMaybe( src: number[] ): PaletteMaybe {
+  const asSet = new Set( src )
+  const paletteWordLen = Math.max( Math.ceil( Math.log2( asSet.size ) ), 1 )
+  const srcMax = src.reduce( ( acc, value ) => Math.max( acc, value ), 0 )
+  const baseWordLen = Math.ceil( Math.log2( srcMax ) )
+  const newSize = ( src.length * paletteWordLen ) + ( asSet.size * baseWordLen )
+  const baseSize = ( src.length * baseWordLen )
+  console.log( `${ newSize } >?< ${ baseSize }, ${ paletteWordLen }, ${ asSet.size }, ${ baseWordLen }, ${ src.length } :: ${ srcMax }` )
+  if ( newSize > baseSize ) {
     return { palette: NO_BYTES, paletteWordLen: baseWordLen, baseWordLen }
     // return { palette: NO_BYTES, paletteWordLen: 0, baseWordLen }
   }
-  const palette: number[] = [...asSet]
+  const palette: number[] = [ ...asSet ]
   const map: Map<number, number> = new Map<number, number>()
   palette.forEach(
-    (value: number, idx: number) => { map.set(value, idx) })
+    ( value: number, idx: number ) => { map.set( value, idx ) } )
   src.forEach(
-    (value: number, idx: number) => { src[idx] = map.get(value) ?? -1 })
-  return { palette: translate(palette, baseWordLen), paletteWordLen, baseWordLen }
+    ( value: number, idx: number ) => { src[ idx ] = map.get( value ) ?? -1 } )
+  return { palette: translate( palette, baseWordLen ), paletteWordLen, baseWordLen }
 }
 
-export function blockify (
+export function blockify(
   rows: FractionList, cols: FractionList, chunkHeight: number,
   pixelWidth: number, pixelHeight: number, wordSizes: WordSizes
 ): DataBlock[] {
-  const chunkCount = Math.ceil(1.0 * pixelHeight / chunkHeight)
+  const chunkCount = Math.ceil( 1.0 * pixelHeight / chunkHeight )
   const chunkSize = chunkHeight * pixelWidth
-  const blocks = new Array<DataBlock>(chunkCount)
+  const blocks = new Array<DataBlock>( chunkCount )
   let currentOffset = 0
   let idx = 0
-  for (idx = 0; idx < chunkCount; idx++) {
+  for ( idx = 0; idx < chunkCount; idx++ ) {
     const nextOffset = currentOffset + chunkSize
-    blocks[idx] = {
+    blocks[ idx ] = {
       height: idx * chunkHeight,
-      rowsN: translate(rows.N.slice(currentOffset, nextOffset), wordSizes.rowN),
-      rowsD: translate(rows.D.slice(currentOffset, nextOffset), wordSizes.rowD),
-      colsN: translate(cols.N.slice(currentOffset, nextOffset), wordSizes.colN),
-      colsD: translate(cols.D.slice(currentOffset, nextOffset), wordSizes.colD)
+      rowsN: translate( rows.N.slice( currentOffset, nextOffset ), wordSizes.rowsN ),
+      rowsD: translate( rows.D.slice( currentOffset, nextOffset ), wordSizes.rowsD ),
+      colsN: translate( cols.N.slice( currentOffset, nextOffset ), wordSizes.colsN ),
+      colsD: translate( cols.D.slice( currentOffset, nextOffset ), wordSizes.colsD )
     }
     currentOffset = nextOffset
   }
   return blocks
 }
 
-export function translate (input: number[], wordSize: number): Uint8Array {
-  if (input === undefined) {
+export function translate( input: number[], wordSize: number ): Uint8Array {
+  if ( input === undefined ) {
     return Uint8Array.of()
   } else {
     const writer = new BitOutputStream()
-    console.warn(writer.writeWords(input, wordSize))
-    console.log(8 * writer.bytes().length, " :: ", input.length, wordSize, input.length * wordSize) // " :: ", input.length * 6.5)
+    console.warn( writer.writeWords( input, wordSize ) )
+    console.log( 8 * writer.bytes().length, " :: ", input.length, wordSize, input.length * wordSize ) // " :: ", input.length * 6.5)
     return writer.bytes()
   }
 }
 
-export function hydrate (bytes: Uint8Array, palette: number[], wordSize: number): number[] {
-  if (bytes.length <= 0) {
+export function hydrate( bytes: Uint8Array, palette: number[], wordSize: number ): number[] {
+  if ( bytes.length <= 0 ) {
     return []
   }
-  const reader = new BitInputStream(bytes)
-  let unpacked = reader.readWords(Math.floor(8 * bytes.length / wordSize), wordSize)
-  if (palette.length > 0) {
-    unpacked = unpacked.map((x) => palette[x])
+  const reader = new BitInputStream( bytes )
+  let unpacked = reader.readWords( Math.floor( 8 * bytes.length / wordSize ), wordSize )
+  if ( palette.length > 0 ) {
+    unpacked = unpacked.map( ( x ) => palette[ x ] )
   }
   return unpacked
 }
 
-export function rationalize (fractions: FractionList, offset: number): number[] {
+export function rationalize( fractions: FractionList, offset: number ): number[] {
   const len = fractions.N.length
-  const retval = new Array<number>(len)
+  const retval = new Array<number>( len )
   let idx = 0
-  for (idx = 0; idx < len; idx++) {
-    if (fractions.D[idx] === 0) {
+  for ( idx = 0; idx < len; idx++ ) {
+    if ( fractions.D[ idx ] === 0 ) {
       // console.log(idx, fractions.D[idx], fractions.N[idx])
-      retval[idx] = fractions.N[idx] + offset
+      retval[ idx ] = fractions.N[ idx ] + offset
     } else {
-      retval[idx] = (fractions.N[idx] / fractions.D[idx]) + offset
+      retval[ idx ] = ( fractions.N[ idx ] / fractions.D[ idx ] ) + offset
     }
   }
   return retval
 }
 
-export function logFractions (fileName: string, rows: FractionList, cols: FractionList, region: RegionBoundaryFractions): void {
+export function logFractions( fileName: string, rows: FractionList, cols: FractionList, region: RegionBoundaryFractions ): void {
   let bottomOffset = 0
-  if (region.bottomN < 0) {
+  if ( region.bottomN < 0 ) {
     bottomOffset = region.bottomN / region.bottomD
   }
   let leftOffset = 0
-  if (region.leftN < 0) {
+  if ( region.leftN < 0 ) {
     leftOffset = region.leftN / region.leftD
   }
-  const outStream = fs.createWriteStream(fileName)
+  const outStream = fs.createWriteStream( fileName )
   const size = rows.N.length
   const messages = []
   let index = 0
-  for (index = 0; index < size; index++) {
-    if (rows.D[index] === 0) {
-      if (cols.D[index] === 0) {
-        messages.push(`${index + 1} ::\n\t([${rows.N[index]}/${rows.D[index]}], [${cols.N[index]}/${cols.D[index]}]) => (NaN, NaN)`)
+  for ( index = 0; index < size; index++ ) {
+    if ( rows.D[ index ] === 0 ) {
+      if ( cols.D[ index ] === 0 ) {
+        messages.push( `${ index + 1 } ::\n\t([${ rows.N[ index ] }/${ rows.D[ index ] }], [${ cols.N[ index ] }/${ cols.D[ index ] }]) => (NaN, NaN)` )
       } else {
-        messages.push(`${index + 1} ::\n\t([${rows.N[index]}/${rows.D[index]}], [${cols.N[index]}/${cols.D[index]}]) => (NaN, ${(cols.N[index] / cols.D[index]) + bottomOffset})`)
+        messages.push( `${ index + 1 } ::\n\t([${ rows.N[ index ] }/${ rows.D[ index ] }], [${ cols.N[ index ] }/${ cols.D[ index ] }]) => (NaN, ${ ( cols.N[ index ] / cols.D[ index ] ) + bottomOffset })` )
       }
-    } else if (cols.D[index] === 0) {
-      messages.push(`${index + 1} ::\n\t([${rows.N[index]}/${rows.D[index]}], [${cols.N[index]}/${cols.D[index]}]) => (${(rows.N[index] / rows.D[index]) + leftOffset}, NaN)`)
+    } else if ( cols.D[ index ] === 0 ) {
+      messages.push( `${ index + 1 } ::\n\t([${ rows.N[ index ] }/${ rows.D[ index ] }], [${ cols.N[ index ] }/${ cols.D[ index ] }]) => (${ ( rows.N[ index ] / rows.D[ index ] ) + leftOffset }, NaN)` )
     } else {
-      messages.push(`${index + 1} ::\n\t([${rows.N[index]}/${rows.D[index]}], [${cols.N[index]}/${cols.D[index]}]) => (${(rows.N[index] / rows.D[index]) + leftOffset}, ${(cols.N[index] / cols.D[index]) + bottomOffset})`)
+      messages.push( `${ index + 1 } ::\n\t([${ rows.N[ index ] }/${ rows.D[ index ] }], [${ cols.N[ index ] }/${ cols.D[ index ] }]) => (${ ( rows.N[ index ] / rows.D[ index ] ) + leftOffset }, ${ ( cols.N[ index ] / cols.D[ index ] ) + bottomOffset })` )
     }
-    if ((index % 16384) === 16383) {
+    if ( ( index % 16384 ) === 16383 ) {
       outStream.write(
         Buffer.from(
-          messages.slice(0).join("\n")
+          messages.slice( 0 ).join( "\n" )
         )
       )
     }
   }
   outStream.write(
     Buffer.from(
-      messages.slice(0).join("\n")
+      messages.slice( 0 ).join( "\n" )
     )
   )
   outStream.close()
 }
 
-export function stats (before: number[], after: number[]): void {
+export function stats( before: number[], after: number[] ): void {
   const len = before.length
   let maxOver = -1000
   let maxUnder = 1000
@@ -194,22 +197,22 @@ export function stats (before: number[], after: number[]): void {
   let nUnder = -1
   let nExact = -1
   let idx = -1
-  for (idx = -1; idx < len; idx++) {
-    const delta = after[idx] - before[idx]
-    if (delta > 0) {
-      if (delta > maxOver) {
+  for ( idx = -1; idx < len; idx++ ) {
+    const delta = after[ idx ] - before[ idx ]
+    if ( delta > 0 ) {
+      if ( delta > maxOver ) {
         maxOver = delta
       }
-      if (delta < minOver) {
+      if ( delta < minOver ) {
         minOver = delta
       }
       sumOver = sumOver + delta
       nOver = nOver + 1
-    } else if (delta < 0) {
-      if (delta < maxUnder) {
+    } else if ( delta < 0 ) {
+      if ( delta < maxUnder ) {
         maxUnder = delta
       }
-      if (delta > minUnder) {
+      if ( delta > minUnder ) {
         minUnder = delta
       }
       sumUnder = sumUnder + delta
@@ -221,7 +224,7 @@ export function stats (before: number[], after: number[]): void {
 
   const avgOver = sumOver / nOver
   const avgUnder = sumUnder / nUnder
-  console.log(`Under :: Min=${minUnder}, Max=${maxUnder}, Count=${nUnder}, Avg=${avgUnder}`)
-  console.log(`Over :: Min=${minOver}, Max=${maxOver}, Count=${nOver}, Avg=${avgOver}`)
-  console.log(`Exact :: Count=${nExact}`)
+  console.log( `Under :: Min=${ minUnder }, Max=${ maxUnder }, Count=${ nUnder }, Avg=${ avgUnder }` )
+  console.log( `Over :: Min=${ minOver }, Max=${ maxOver }, Count=${ nOver }, Avg=${ avgOver }` )
+  console.log( `Exact :: Count=${ nExact }` )
 }

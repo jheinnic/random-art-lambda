@@ -6,33 +6,34 @@ export class CanvasPixelPainter implements IPixelPainter {
   private readonly context: CanvasRenderingContext2D
   private finished: boolean = false
 
-  public constructor (private readonly canvas: Canvas) {
-    this.context = canvas.getContext("2d")
-    if (this.context === null) {
-      throw new Error("Canvas failed to return a 2D context object?")
+  public constructor ( private readonly canvas: Canvas ) {
+    this.context = canvas.getContext( "2d", { alpha: false, pixelFormat: 'RGB24' } )
+    if ( this.context === null ) {
+      throw new Error( "Canvas failed to return a 2D context object?" )
     }
   }
 
-  public paint (pixelX: number, pixelY: number, color: string): void {
-    if (this.finished) {
-      throw new Error("Already done painting")
+  public paint( pixelX: number, pixelY: number, color: string ): void {
+    if ( this.finished ) {
+      throw new Error( "Already done painting" )
     }
     this.context.fillStyle = color
-    this.context.fillRect(pixelX, pixelY, 1, 1)
+    this.context.fillRect( pixelX, pixelY, 1, 1 )
   }
 
-  public finish (): void {
+  public finish(): void {
     this.finished = true
   }
 
-  public isDone (): boolean {
+  public isDone(): boolean {
     return this.finished
   }
 
-  public getCanvas (): Canvas {
-    if (!this.finished) {
-      throw new Error("Not finished painting yet.  Try again later.")
+  public getCanvas(): Canvas {
+    if ( !this.finished ) {
+      throw new Error( "Not finished painting yet.  Try again later." )
     }
+    this.canvas.toBuffer()
     return this.canvas
   }
 }

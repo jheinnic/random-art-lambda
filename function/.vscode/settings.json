@@ -55,6 +55,17 @@
     "editor.defaultFormatter": "vscode.typescript-language-features",
     "typescript.suggest.enabled": true
   },
-  "cSpell.words": ["Blockstores", "Serdes"],
+  "cSpell.words": [
+    "Blockstores",
+    "cbor",
+    "fdoc",
+    "ipldmodel",
+    "Pixelheight",
+    "Pixelref",
+    "Pixelwidth",
+    "Serdes",
+    "sprintf",
+    "strv"
+  ],
   "typescript.tsserver.watchOptions": {}
 }
