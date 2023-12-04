@@ -1,7 +1,7 @@
-import { ISerdes } from '../../ipld/interface/index.js'
+import { ISerdes } from '../../ipld/interface'
 import { CID } from 'multiformats/cid'
 import { RandomArtworkSpec } from './RandomArtworkSpec.js'
-import { UnionAsRepresentation, UnionAsDomainModel } from '../../ipld/interface/index.js'
+import { UnionAsRepresentation, UnionAsDomainModel } from '../../ipld/interface'
 
 type RandomArtworkSpecUnion = {
     [ "RandomArtworkSpec_0.1.0" ]: [ [ Uint8Array, Uint8Array, CID, string ], RandomArtworkSpec ]
