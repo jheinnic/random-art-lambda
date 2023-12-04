@@ -1,9 +1,13 @@
 import { CombineObjects, UnionizeProperties } from "simplytyped"
 import { RepresentDomainPair } from "./RepresentDomainPair.js"
 
-export type UnionDefinition = {
-    [ K in string ]: RepresentDomainPair
-}
+// export type UnionDefinition<Keys = string, Representation = Record<Keys, unknown>, DomainModel = Record<Keys, unknown>> = {
+    // [ K in Keys ]: RepresentDomainPair<Representation[K], DomainModel[K]>
+// }
+// export type UnionDefinition<Union extends Record<string, RepresentDomainPair> = Record<string, RepresentDomainPair>> = {
+    // [ K in keyof Union ]: Union[K]
+// }
+export type UnionDefinition = Record<string, RepresentDomainPair>;
 
 export type UnionAsDomainModel<T extends UnionDefinition> = UnionizeProperties<{
     [ K in keyof T ]: T[ K ][ 1 ] extends infer I
