@@ -1,25 +1,23 @@
 import { CID } from "multiformats"
-import { DataBlock } from "./DataBlock.js"
-import {
-    RegionBoundaries, RegionBoundaryFractions, DimensionLayouts,
-    PixelSize, Palette, PaletteMaybe, EMPTY_DIMENSION, NO_BYTES
-} from "./OtherDataTypes.js"
+import { RegionBoundaryFractions, DimensionCodings, PixelSize } from "./OtherDataTypes.js"
 
 
 export interface RegionMap {
     pixelRef: "Center" | "TopLeft"
     imageSize: PixelSize
-    chunkHeight: number
+    // chunkHeight: number
     projected: boolean
     regionBoundary: RegionBoundaryFractions
-    palettes: DimensionLayouts
+    codings: DimensionCodings
+    palettes: CID[]
     data: CID[]
 }
 
 export type RegionMapRepresentation = [
-    string, [ number, number ], number, boolean,
+    string, [ number, number ], boolean,
     [ [ number, number ], [ number, number ], [ number, number ], [ number, number ] ],
-    [ [ Uint8Array, number, number ], [ Uint8Array, number, number ], [ Uint8Array, number, number ], [ Uint8Array, number, number ] ],
+    [ [ number, number ], [ number, number ], [ number, number ], [ number, number ] ],
+    string[],
     string[]
 ]
 
