@@ -3,7 +3,7 @@ import { CID } from "multiformats"
 
 import { PaintingModuleTypes } from "../../painting/di/index.js"
 import { PlottingModuleTypes } from "../../plotting/di/index.js"
-import { IRandomArtworkRepository } from "../../painting/interface/index.js"
+import { IRandomArtworkRepository, IRandomArtTaskEngine } from "../../painting/interface/index.js"
 import { IRegionMapRepository, IRegionMap } from "../../plotting/interface/index.js"
 import * as fs from "fs"
 
@@ -14,8 +14,8 @@ export class AppServiceTwo {
   public constructor (
     @Inject( PlottingModuleTypes.IRegionMapRepository )
     private readonly mapRepo: IRegionMapRepository,
-    // @Inject( PaintingModuleTypes.IRandomArtworkRepository )
-    // private readonly taskRepo: IRandomArtworkRepository,
+    @Inject( PaintingModuleTypes.IRandomArtTaskEngine )
+    private readonly taskRepo: IRandomArtTaskEngine,
   ) { }
 
   public async testRepo( cid: CID, prefix: Uint8Array, suffix: Uint8Array ): Promise<void> {
@@ -27,14 +27,14 @@ export class AppServiceTwo {
       } )
     }
     const resourceMap = this.cidCache.get( cid )
-    const artTask = this.taskRepo.save( {
-      cid: cid,
+    const artTask = this.taskRepo.beginTask( {
+      // cid: cid,
       prefix: Uint8Array.from( [ 84, 81, 81, 190 ] ),
       suffix: Uint8Array.from( [ 182, 81, 143, 94, 88, 104 ] ),
-      regionMap: cid,
-      engineVersion: '0.0.1',
-      buffer: Buffer.from( [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ] ),
-      stream: fs.createReadStream( 'fdoc.proto' )
+      regionMap: cid
+      // engineVersion: '0.0.1',
+      // buffer: Buffer.from( [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ] ),
+      // stream: fs.createReadStream( 'fdoc.proto' )
     } )
     console.log( "Finished execute!" )
   }

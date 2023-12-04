@@ -3,6 +3,7 @@ import { Inject, Injectable } from "@nestjs/common"
 import { PlottingModuleTypes } from "../../plotting/di/index.js"
 import { PaintingModuleTypes } from "../../painting/di/index.js"
 import { IRandomArtTaskEngine, IRandomArtworkRepository } from "../../painting/interface/index.js"
+import { IRegionMapRepository } from "../../plotting/interface"
 
 @Injectable()
 export class AppService {
