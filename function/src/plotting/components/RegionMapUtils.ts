@@ -3,9 +3,8 @@ import Fraction from "fraction.js"
 import * as fs from "fs"
 
 import {
-  DataBlock, FractionList, NO_BYTES, PaletteMaybe,
-  RegionBoundaries, RegionBoundaryFractions, WordSizes
-} from "../ipldmodel/index.js"
+  DataBlock, FractionList, NO_BYTES, RowColRecord, RegionBoundaries, RegionBoundaryFractions, DimensionCoding, EMPTY_DIMENSION
+} from "../ipldmodel"
 
 export function fractionifyBounds( bounds: RegionBoundaries ): RegionBoundaryFractions {
   const top: Fraction = new Fraction( bounds.top )
@@ -62,6 +61,14 @@ export function fractionify<K extends string = never, A extends string = never>(
 }
 */
 
+export type Palette = number[]
+
+export interface PaletteMaybe {
+  palette: Palette
+  paletteWordLen: number
+  baseWordLen: number
+}
+
 export function paletteMaybe( src: number[] ): PaletteMaybe {
   const asSet = new Set( src )
   const paletteWordLen = Math.max( Math.ceil( Math.log2( asSet.size ) ), 1 )
@@ -71,74 +78,141 @@ export function paletteMaybe( src: number[] ): PaletteMaybe {
   const baseSize = ( src.length * baseWordLen )
   console.log( `${ newSize } >?< ${ baseSize }, ${ paletteWordLen }, ${ asSet.size }, ${ baseWordLen }, ${ src.length } :: ${ srcMax }` )
   if ( newSize > baseSize ) {
-    return { palette: NO_BYTES, paletteWordLen: baseWordLen, baseWordLen }
+    return { palette: EMPTY_DIMENSION, paletteWordLen: 0, baseWordLen }
     // return { palette: NO_BYTES, paletteWordLen: 0, baseWordLen }
   }
   const palette: number[] = [ ...asSet ]
   const map: Map<number, number> = new Map<number, number>()
   palette.forEach(
-    ( value: number, idx: number ) => { map.set( value, idx ) } )
+    (value: number, idx: number) => { map.set(value, idx) })
   src.forEach(
-    ( value: number, idx: number ) => { src[ idx ] = map.get( value ) ?? -1 } )
-  return { palette: translate( palette, baseWordLen ), paletteWordLen, baseWordLen }
+    (value: number, idx: number) => { src[idx] = map.get(value) ?? -1 })
+  // return { palette: translate( palette, baseWordLen ), paletteWordLen, baseWordLen }
+  return { palette, paletteWordLen: baseWordLen, baseWordLen: paletteWordLen }
+}
+
+export type WordSizes = RowColRecord<number>
+const BLOCK_OVERHEAD = 16;
+const NO_DATA_BLOCKS: ReadonlyArray<DataBlock> = [];
+
+function measureSize( name: string, numbers: number[], wordSize: number ) {
+  if ( numbers.length > 0 ) {
+    if ( wordSize <= 0 ) {
+      throw `Word size for ${ name } must be positive since its array has data`
+    }
+  } else if ( wordSize != 0 ) {
+    throw `Word size for ${ name } must be 0 since its array is empty`
+  }
+
+  return wordSize * numbers.length;
 }
 
 export function blockify(
-  rows: FractionList, cols: FractionList, chunkHeight: number,
-  pixelWidth: number, pixelHeight: number, wordSizes: WordSizes
-): DataBlock[] {
-  const chunkCount = Math.ceil( 1.0 * pixelHeight / chunkHeight )
-  const chunkSize = chunkHeight * pixelWidth
-  const blocks = new Array<DataBlock>( chunkCount )
-  let currentOffset = 0
-  let idx = 0
-  for ( idx = 0; idx < chunkCount; idx++ ) {
-    const nextOffset = currentOffset + chunkSize
-    blocks[ idx ] = {
-      height: idx * chunkHeight,
-      rowsN: translate( rows.N.slice( currentOffset, nextOffset ), wordSizes.rowsN ),
-      rowsD: translate( rows.D.slice( currentOffset, nextOffset ), wordSizes.rowsD ),
-      colsN: translate( cols.N.slice( currentOffset, nextOffset ), wordSizes.colsN ),
-      colsD: translate( cols.D.slice( currentOffset, nextOffset ), wordSizes.colsD )
-    }
-    currentOffset = nextOffset
+  rows: FractionList, cols: FractionList, chunkSize: number, wordSizes: WordSizes
+): ReadonlyArray<DataBlock> {
+  const rowsNSize = measureSize( "rowsN", rows.N, wordSizes.rowsN )
+  const rowsDSize = measureSize( "rowsD", rows.D, wordSizes.rowsD ) 
+  const colsNSize = measureSize( "colsN", cols.N, wordSizes.colsN )
+  const colsDSize = measureSize( "colsD", cols.D, wordSizes.colsD ) 
+  const totalSize = rowsNSize + rowsDSize + colsNSize + colsDSize;
+
+  if ( totalSize == 0 ) {
+    return NO_DATA_BLOCKS;
   }
-  return blocks
+
+  // const chunkCount = Math.ceil( 1.0 * pixelHeight / chunkHeight )
+  const minBlockCount = Math.ceil( 1.0 * ( totalSize / (chunkSize - BLOCK_OVERHEAD) ) );
+  const blockCount = ( minBlockCount > 1 ) ? (minBlockCount + 1) : minBlockCount;
+  const blocks = new Array<DataBlock>( blockCount )
+
+  const rowsNChunk = Math.max(
+    Math.round( 1.0 * rows.N.length / minBlockCount ),
+    Math.ceil( 1.0 * rows.N.length / blockCount )
+  );
+  const rowsDChunk = Math.max(
+    Math.round( 1.0 * rows.D.length / minBlockCount ),
+    Math.ceil( 1.0 * rows.D.length / blockCount )
+  );
+  const colsNChunk = Math.max(
+    Math.round( 1.0 * cols.N.length / minBlockCount ),
+    Math.ceil( 1.0 * cols.N.length / blockCount )
+  );
+  const colsDChunk = Math.max(
+    Math.round( 1.0 * cols.D.length / minBlockCount ),
+    Math.ceil( 1.0 * cols.D.length / blockCount )
+  );
+
+  let idx = 0
+  let rowsNIdx = 0
+  let rowsDIdx = 0
+  let colsNIdx = 0
+  let colsDIdx = 0
+  for ( idx = 0; idx < blockCount; idx++ ) {
+    const nextRowsNIdx = rowsNIdx + rowsNChunk
+    const nextRowsDIdx = rowsDIdx + rowsDChunk
+    const nextColsNIdx = colsNIdx + colsNChunk
+    const nextColsDIdx = colsDIdx + colsDChunk
+    blocks[idx] = {
+      // height: idx * chunkHeight,
+      rowsN: translate(rows.N.slice(rowsNIdx, nextRowsNIdx), wordSizes.rowsN),
+      rowsD: translate(rows.D.slice(rowsDIdx, nextRowsDIdx), wordSizes.rowsD),
+      colsN: translate(cols.N.slice(colsNIdx, nextColsNIdx), wordSizes.colsN),
+      colsD: translate(cols.D.slice(colsDIdx, nextColsNIdx), wordSizes.colsD)
+    }
+    rowsNIdx = nextRowsNIdx
+    rowsDIdx = nextRowsDIdx
+    colsNIdx = nextColsNIdx
+    colsDIdx = nextColsDIdx
+  }
+  return blocks as ReadonlyArray<DataBlock>
+}
+
+export function unblockify(
+  dataBlocks: ReadonlyArray<DataBlock>, paletteBlocks: ReadonlyArray<DataBlock>,
+  selector: ( x: Readonly<DataBlock> ) => Uint8Array, coding: DimensionCoding
+): number[] {
+  const dataBytes: Buffer = Buffer.concat(dataBlocks.map(selector))
+  const paletteBytes: Buffer = Buffer.concat(paletteBlocks.map(selector))
+  let paletteArray: number[] = EMPTY_DIMENSION;
+  if ( coding.paletteWordLen > 0 ) {
+    paletteArray = hydrate(paletteBytes, EMPTY_DIMENSION, coding.paletteWordLen)
+  }
+  return hydrate(dataBytes, paletteArray, coding.baseWordLen)
 }
 
 export function translate( input: number[], wordSize: number ): Uint8Array {
-  if ( input === undefined ) {
-    return Uint8Array.of()
+  if ( (input === undefined) || (input.length == 0) || (wordSize == 0) ) {
+    return NO_BYTES
   } else {
     const writer = new BitOutputStream()
     console.warn( writer.writeWords( input, wordSize ) )
-    console.log( 8 * writer.bytes().length, " :: ", input.length, wordSize, input.length * wordSize ) // " :: ", input.length * 6.5)
+    console.log( 8 * writer.bytes().length, ' ==> ', input.length, ' * ', wordSize, ' = ', input.length * wordSize ) // ' :: ', input.length * 6.5)
     return writer.bytes()
   }
 }
 
 export function hydrate( bytes: Uint8Array, palette: number[], wordSize: number ): number[] {
-  if ( bytes.length <= 0 ) {
-    return []
+  if ( (bytes.length == 0) || (wordSize == 0) ) {
+    return EMPTY_DIMENSION
   }
-  const reader = new BitInputStream( bytes )
-  let unpacked = reader.readWords( Math.floor( 8 * bytes.length / wordSize ), wordSize )
-  if ( palette.length > 0 ) {
-    unpacked = unpacked.map( ( x ) => palette[ x ] )
+  const reader = new BitInputStream(bytes)
+  let unpacked = reader.readWords(Math.floor(8 * bytes.length / wordSize), wordSize)
+  if (palette.length > 0) {
+    unpacked = unpacked.map( (x: number) => palette[x] )
   }
   return unpacked
 }
 
 export function rationalize( fractions: FractionList, offset: number ): number[] {
   const len = fractions.N.length
-  const retval = new Array<number>( len )
+  const retval = new Array<number>(len)
   let idx = 0
   for ( idx = 0; idx < len; idx++ ) {
-    if ( fractions.D[ idx ] === 0 ) {
+    if ( fractions.D[idx] === 0 ) {
       // console.log(idx, fractions.D[idx], fractions.N[idx])
-      retval[ idx ] = fractions.N[ idx ] + offset
+      retval[idx] = fractions.N[idx] + offset
     } else {
-      retval[ idx ] = ( fractions.N[ idx ] / fractions.D[ idx ] ) + offset
+      retval[idx] = (fractions.N[idx] / fractions.D[idx]) + offset
     }
   }
   return retval
@@ -154,8 +228,8 @@ export function logFractions( fileName: string, rows: FractionList, cols: Fracti
     leftOffset = region.leftN / region.leftD
   }
   const outStream = fs.createWriteStream( fileName )
-  const size = rows.N.length
-  const messages = []
+  const size: number = rows.N.length
+  const messages: string[] = []
   let index = 0
   for ( index = 0; index < size; index++ ) {
     if ( rows.D[ index ] === 0 ) {
@@ -172,14 +246,14 @@ export function logFractions( fileName: string, rows: FractionList, cols: Fracti
     if ( ( index % 16384 ) === 16383 ) {
       outStream.write(
         Buffer.from(
-          messages.slice( 0 ).join( "\n" )
+          messages.splice( 0 ).join( "\n" )
         )
       )
     }
   }
   outStream.write(
     Buffer.from(
-      messages.slice( 0 ).join( "\n" )
+      messages.splice( 0 ).join( "\n" )
     )
   )
   outStream.close()

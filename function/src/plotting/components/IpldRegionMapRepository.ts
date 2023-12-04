@@ -13,7 +13,6 @@ import {
   DataBlock,
   DataBlockRepresentation,
   IDataBlockSerdes,
-  DimensionLayouts,
   EMPTY_DIMENSION,
   FractionList,
   ModelEnvelope,
@@ -22,11 +21,12 @@ import {
   RegionBoundaries,
   RegionBoundaryFractions,
   RegionMap,
-  WordSizes,
-} from "../ipldmodel/index.js"
+} from "../ipldmodel"
 import { AbstractRegionMap } from "./AbstractRegionMap.js"
 import { IpldRegionMap } from "./IpldRegionMap.js"
-import { blockify, fractionifyBounds, fractionifyList, paletteMaybe, rationalize, stats } from "./RegionMapUtils.js"
+import {
+  blockify, fractionifyBounds, fractionifyList, paletteMaybe, rationalize, stats, WordSizes, PaletteMaybe, Palette
+} from "./RegionMapUtils.js"
 
 
 function isCoarse( boundary: RegionBoundaries | RegionBoundaryFractions ): boundary is RegionBoundaries {
@@ -45,12 +45,15 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
     console.log( blockStore.constructor.name )
     this.RegionMapModelBuilder = class implements IRegionMapBuilder {
       private _pixelRef: "Center" | "TopLeft" = "Center"
-      private _chunkHeight: number = -1
+      // private _chunkHeight: number = -1
       private _pixelWidth: number = -1
       private _pixelHeight: number = -1
       private _regionBoundary: RegionBoundaryFractions = { topN: 0, topD: 0, bottomN: 0, bottomD: 0, leftN: 0, leftD: 0, rightN: 0, rightD: 0 }
       private _rowOrderX: number[] = EMPTY_DIMENSION
       private _rowOrderY: number[] = EMPTY_DIMENSION
+
+      // TODO: This ought to be configurable/discoverable and shared
+      private _blockWriteSize: number = 4096
 
       constructor ( private self: IpldRegionMapRepository ) { }
 
@@ -65,10 +68,10 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
         return this
       }
 
-      public chunkHeight( chunkHeight: number ): IRegionMapBuilder {
-        this._chunkHeight = chunkHeight
-        return this
-      }
+      // public chunkHeight( chunkHeight: number ): IRegionMapBuilder {
+        // this._chunkHeight = chunkHeight
+        // return this
+      // }
 
       // public regionBoundary( boundary: RegionBoundaries ): IRegionMapBuilder
       // public regionBoundary( boundary: RegionBoundaryFractions ): IRegionMapBuilder
@@ -128,28 +131,57 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
         stats( this._rowOrderY, rationalize( _cols, bottomOffset ) )
 
         // logFractions("ipldFractionWrites.dat", _rows, _cols, this._regionBoundary)
-        const dimensionLayouts: DimensionLayouts = {
+        const paletteMaybes = {
           rowsN: paletteMaybe( _rows.N ),
           rowsD: paletteMaybe( _rows.D ),
           colsN: paletteMaybe( _cols.N ),
           colsD: paletteMaybe( _cols.D ),
         }
-        const wordSizes: WordSizes = {
-          rowsN: dimensionLayouts.rowsN.paletteWordLen,
-          rowsD: dimensionLayouts.rowsD.paletteWordLen,
-          colsN: dimensionLayouts.colsN.paletteWordLen,
-          colsD: dimensionLayouts.colsD.paletteWordLen,
+        const paletteWordSizes: WordSizes = {
+          rowsN: paletteMaybes.rowsN.paletteWordLen,
+          rowsD: paletteMaybes.rowsD.paletteWordLen,
+          colsN: paletteMaybes.colsN.paletteWordLen,
+          colsD: paletteMaybes.colsD.paletteWordLen,
         }
-        const chunkHeight: number = this._chunkHeight > -1 ? this._chunkHeight : this._pixelHeight
-        const dataBlocks: DataBlock[] = blockify( _rows, _cols, chunkHeight, this._pixelWidth, this._pixelHeight, wordSizes )
+        const dataWordSizes: WordSizes = {
+          rowsN: paletteMaybes.rowsN.baseWordLen,
+          rowsD: paletteMaybes.rowsD.baseWordLen,
+          colsN: paletteMaybes.colsN.baseWordLen,
+          colsD: paletteMaybes.colsD.baseWordLen,
+        }
+        // const chunkHeight: number = this._chunkHeight > -1 ? this._chunkHeight : this._pixelHeight
+        const paletteBlocks: ReadonlyArray<DataBlock> = blockify(
+          { N: paletteMaybes.rowsN.palette, D: paletteMaybes.rowsD.palette },
+          { N: paletteMaybes.colsN.palette, D: paletteMaybes.colsD.palette },
+          this._blockWriteSize, paletteWordSizes
+        )
+        const dataBlocks: ReadonlyArray<DataBlock> = blockify( _rows, _cols, this._blockWriteSize, dataWordSizes )
 
         const regionMap: RegionMap = {
           pixelRef: this._pixelRef,
           imageSize: { pixelWidth: this._pixelWidth, pixelHeight: this._pixelHeight },
           projected: this.isProjected(),
-          chunkHeight: chunkHeight,
-          palettes: dimensionLayouts,
+          // chunkHeight: chunkHeight,
           regionBoundary: this._regionBoundary,
+          codings: {
+            rowsN: {
+              paletteWordLen: paletteMaybes.rowsN.paletteWordLen,
+              baseWordLen: paletteMaybes.rowsN.baseWordLen
+            },
+            rowsD: {
+              paletteWordLen: paletteMaybes.rowsD.paletteWordLen,
+              baseWordLen: paletteMaybes.rowsD.baseWordLen
+            },
+            colsN: {
+              paletteWordLen: paletteMaybes.colsN.paletteWordLen,
+              baseWordLen: paletteMaybes.colsN.baseWordLen
+            },
+            colsD: {
+              paletteWordLen: paletteMaybes.colsD.paletteWordLen,
+              baseWordLen: paletteMaybes.colsD.baseWordLen
+            }
+          },
+          palettes: await this.self.commitData( paletteBlocks ),
           data: await this.self.commitData( dataBlocks ),
         }
         const rootCid: CID = await this.self.commitRoot( regionMap )
@@ -170,7 +202,7 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
     return rootCid
   }
 
-  private async commitData( data: DataBlock[] ): Promise<CID[]> {
+  private async commitData( data: ReadonlyArray<DataBlock> ): Promise<CID[]> {
     const retVal: CID[] = await Promise.all(
       data.map( async ( dataBlock: DataBlock ) => {
         const value: BlockView<DataBlockRepresentation> =
@@ -198,7 +230,16 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
       throw new TypeError( "Invalid deserialized representation, did follow from schema" )
     }
     const rootObject: RegionMap = modelEnvelope[ 'RegionMap_1.0.0' ]
-    const dataBlocks: DataBlock[] = await Promise.all(
+    const paletteBlocks: ReadonlyArray<DataBlock> = await Promise.all(
+      rootObject.palettes.map( async ( cidLink: CID ) => {
+        const dataEncodingBytes: ByteView<DataBlockRepresentation> =
+          await this.blockStore.get( cidLink )
+        // const decodedDataBlock: BlockView<DataBlockRepresentation> =
+        // await decode( { codec, hasher, bytes: dataEncodingBytes } )
+        return this.dataBlockSerdes.bytesToDomain( dataEncodingBytes )
+      } ),
+    )
+    const dataBlocks: ReadonlyArray<DataBlock> = await Promise.all(
       rootObject.data.map( async ( cidLink: CID ) => {
         const dataEncodingBytes: ByteView<DataBlockRepresentation> =
           await this.blockStore.get( cidLink )
@@ -207,7 +248,7 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
         return this.dataBlockSerdes.bytesToDomain( dataEncodingBytes )
       } ),
     )
-    return new IpldRegionMap( rootObject, dataBlocks )
+    return new IpldRegionMap( rootObject, paletteBlocks, dataBlocks )
   }
 
   public async import( director: ( builder: IRegionMapBuilder ) => void ): Promise<CID> {

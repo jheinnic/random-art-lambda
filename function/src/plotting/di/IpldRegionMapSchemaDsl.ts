@@ -3,7 +3,7 @@
 // import { DataBlock, RegionMap } from "../interface/RegionMapSchemaTypes.js"
 // import { create, createValidate, fromDSL } from "./IpldSchemaTools.mjs"
 // import { create, fromDsl } from "./IpldSchemaTools.mjs"
-import { IpldModuleTypes, SchemaDslConfiguration, SerdesTokenConfiguration } from "../../ipld/di/index.js"
+import { IpldModuleTypes, SchemaDslConfiguration, SerdesTokenConfiguration } from "../../ipld/di"
 import { PlottingModuleTypes } from "./PlottingModuleTypes.js"
 
 export const schemaDsl = `type ModelEnvelope union {
