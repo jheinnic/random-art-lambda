@@ -65,7 +65,8 @@
     "Pixelwidth",
     "Serdes",
     "sprintf",
-    "strv"
+    "strv",
+    "unblockify"
   ],
   "typescript.tsserver.watchOptions": {}
 }
