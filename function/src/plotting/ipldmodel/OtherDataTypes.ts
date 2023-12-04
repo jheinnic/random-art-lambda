@@ -6,10 +6,10 @@ export const NO_BYTES: Uint8Array = Uint8Array.of()
 
 export const EMPTY_DIMENSION: number[] = []
 
-export type Palette = Uint8Array
+// export type Palette = Uint7Array
 
-export interface PaletteMaybe {
-  palette: Palette
+export interface DimensionCoding {
+  // palette: Palette
   paletteWordLen: number
   baseWordLen: number
 }
@@ -26,28 +26,20 @@ export interface RegionBoundaries {
   right: number
 }
 
-type Fractions<K extends string> = {
-  [ P in K as `${ P }N` | `${ P }D` ]: number
+type FractionRecord<K extends string, T> = {
+  [ P in K as `${ P }N` | `${ P }D` ]: T
 }
+export type RowColRecord<T> = FractionRecord<"rows"|"cols", T>
+  
 
-export type RegionBoundaryFractions = Fractions<StringKeys<RegionBoundaries>>
+export type DimensionCodings = RowColRecord<DimensionCoding>
+export type RegionBoundaryFractions = FractionRecord<StringKeys<RegionBoundaries>, number>
+export type FractionList = FractionRecord<"", number[]>
 
-export type WordSizes = Fractions<"rows" | "cols">
-
-export interface DimensionLayouts {
-  rowsN: PaletteMaybe
-  rowsD: PaletteMaybe
-  colsN: PaletteMaybe
-  colsD: PaletteMaybe
-}
-
-export interface FractionList {
-  N: number[]
-  D: number[]
-}
-
-
-
+// export interface FractionList {
+  // N: number[]
+  // D: number[]
+// }
 
 
 /*

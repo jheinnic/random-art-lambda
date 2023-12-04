@@ -1,39 +1,29 @@
-import { DataBlock, RegionMap } from "../ipldmodel/index.js"
+import { DataBlock, RegionMap, DimensionCodings, RegionBoundaryFractions } from "../ipldmodel"
 import { AbstractRegionMap } from "./AbstractRegionMap.js"
-import { hydrate, rationalize } from "./RegionMapUtils.js"
+import { unblockify, rationalize } from "./RegionMapUtils.js"
 
 export class IpldRegionMap extends AbstractRegionMap {
   private readonly rowList: number[]
   private readonly colList: number[]
 
-  constructor ( private readonly regionMap: RegionMap, private readonly dataBlocks: DataBlock[] ) {
+  constructor (
+    private readonly regionMap: RegionMap,
+    private readonly paletteBlocks: DataBlock[],
+    private readonly dataBlocks: DataBlock[]
+  ) {
     super()
-    const boundary = regionMap.regionBoundary
-    const palettes = regionMap.palettes
+    const boundary: RegionBoundaryFractions = regionMap.regionBoundary
+    const codings: DimensionCodings = regionMap.codings
 
-    const rowNBytes = Buffer.concat( dataBlocks.map( ( dataBlock ) => dataBlock.rowsN ) )
-    const rowNMap = palettes.rowsN
-    const rowNPalette = hydrate( rowNMap.palette, [], rowNMap.baseWordLen )
-    const rowN = hydrate( rowNBytes, rowNPalette, rowNMap.paletteWordLen )
-
-    const rowDBytes = Buffer.concat( dataBlocks.map( ( dataBlock ) => dataBlock.rowsD ) )
-    const rowDMap = palettes.rowsD
-    const rowDPalette = hydrate( rowDMap.palette, [], rowDMap.baseWordLen )
-    const rowD = hydrate( rowDBytes, rowDPalette, rowDMap.paletteWordLen )
-
+    const rowsN = unblockify(dataBlocks, paletteBlocks, (x) => x.rowsN, codings.rowsN );
+    const rowsD = unblockify(dataBlocks, paletteBlocks, (x) => x.rowsD, codings.rowsD );
+    const colsN = unblockify(dataBlocks, paletteBlocks, (x) => x.colsN, codings.colsN );
+    const colsD = unblockify(dataBlocks, paletteBlocks, (x) => x.colsD, codings.colsD );
     const leftOffset = ( boundary.leftN < 0 ) ? ( boundary.leftN / boundary.leftD ) : 0
-    this.rowList = rationalize( { N: rowN, D: rowD }, leftOffset )
-
-    const colNBytes = Buffer.concat( dataBlocks.map( ( dataBlock ) => dataBlock.colsN ) )
-    const colNPalette = hydrate( palettes.colsN.palette, [], palettes.colsN.baseWordLen )
-    const colN = hydrate( colNBytes, colNPalette, palettes.colsN.paletteWordLen )
-
-    const colDBytes = Buffer.concat( dataBlocks.map( ( dataBlock ) => dataBlock.colsD ) )
-    const colDPalette = hydrate( palettes.colsD.palette, [], palettes.colsD.baseWordLen )
-    const colD = hydrate( colDBytes, colDPalette, palettes.colsD.paletteWordLen )
-    // logFractions("ipldFractionReads.dat", rows, cols, regionMap.regionBoundary)
     const bottomOffset = ( boundary.bottomN < 0 ) ? ( boundary.bottomN / boundary.bottomD ) : 0
-    this.colList = rationalize( { N: colN, D: colD }, bottomOffset )
+    this.rowList = rationalize( { N: rowsN, D: rowsD }, leftOffset )
+    this.colList = rationalize( { N: colsN, D: colsD }, bottomOffset )
+    //logFractions("ipldFractionReads.dat", rows, cols, boundary)
   }
 
   public get columnOrderedXCoordinates(): number[] {
