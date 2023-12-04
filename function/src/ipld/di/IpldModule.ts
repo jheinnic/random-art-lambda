@@ -1,6 +1,5 @@
 import { DynamicModule, Module } from "@nestjs/common"
 
-import { IpfsModuleTypes } from "../../ipfs/di/IpfsModuleTypes.js"
 import { IpldModuleTypes } from "./IpldModuleTypes.js"
 import { ASYNC_OPTIONS_TYPE, ConfigurableModuleClass, OPTIONS_TYPE } from "./IpldModuleDefinition.js"
 
@@ -20,8 +19,6 @@ import { IpldSerdesFactory, curryRootProduction } from "../components/IpldSerdes
   exports: [ IpldModuleTypes.SerdesFactory ]
 } )
 export class IpldModule extends ConfigurableModuleClass {
-  // static module = initializer(IpfsModule)
-
   static register( config: typeof OPTIONS_TYPE ): DynamicModule {
     return super.register( config )
   }
