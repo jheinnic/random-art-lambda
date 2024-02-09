@@ -1,6 +1,7 @@
 import { ISerdesFactory } from "./ISerdesFactory.js"
 import { RepresentDomainPair } from "./RepresentDomainPair.js"
+import { ISchemaSignature } from "./ISchemaSignature.js"
 
 export interface ISchemaParser {
-    parseDsl<RDS extends Record<string, RepresentDomainPair>>( schemaDsl: string ): ISerdesFactory<RDS>
+    parseDsl<RDS extends ISchemaSignature>( schemaDsl: string ): ISerdesFactory<RDS>
 }

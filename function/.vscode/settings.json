@@ -60,6 +60,7 @@
     "cbor",
     "fdoc",
     "ipldmodel",
+    "Multihash",
     "Pixelheight",
     "Pixelref",
     "Pixelwidth",
