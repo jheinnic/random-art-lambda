@@ -8,8 +8,8 @@ export class IpldRegionMap extends AbstractRegionMap {
 
   constructor (
     private readonly regionMap: RegionMap,
-    private readonly paletteBlocks: DataBlock[],
-    private readonly dataBlocks: DataBlock[]
+    private readonly paletteBlocks: ReadonlyArray<DataBlock>,
+    private readonly dataBlocks: ReadonlyArray<DataBlock>
   ) {
     super()
     const boundary: RegionBoundaryFractions = regionMap.regionBoundary

@@ -3,20 +3,13 @@ import { DynamicModule, Module } from "@nestjs/common"
 import { IpldModuleTypes } from "./IpldModuleTypes.js"
 import { ASYNC_OPTIONS_TYPE, ConfigurableModuleClass, OPTIONS_TYPE } from "./IpldModuleDefinition.js"
 
-import { IpldSchemaParser, parseSchemaDsl } from "../components/IpldSchemaParser.js"
-import { IpldSerdesFactory, curryRootProduction } from "../components/IpldSerdesFactory.js"
+// import { IpldSchemaParser, parseSchemaDsl } from "../components/IpldSchemaParser.js"
+// import { IpldSerdesFactory, curryRootProduction } from "../components/IpldSerdesFactory.js"
 
 
 @Module( {
-  providers: [
-    {
-      provide: IpldModuleTypes.SerdesFactory,
-      useFactory: parseSchemaDsl,
-      inject: [ IpldModuleTypes.SchemaParser, IpldModuleTypes.SchemaDslConfig ]
-    },
-    { provide: IpldModuleTypes.SchemaParser, useClass: IpldSchemaParser }
-  ],
-  exports: [ IpldModuleTypes.SerdesFactory ]
+  providers: [ ],
+  exports: [ ]
 } )
 export class IpldModule extends ConfigurableModuleClass {
   static register( config: typeof OPTIONS_TYPE ): DynamicModule {
