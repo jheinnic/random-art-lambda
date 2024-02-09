@@ -10,7 +10,7 @@ import { RepresentDomainPair } from "./RepresentDomainPair.js"
 export type UnionDefinition = Record<string, RepresentDomainPair>;
 
 export type UnionAsDomainModel<T extends UnionDefinition> = UnionizeProperties<{
-    [ K in keyof T ]: T[ K ][ 1 ] extends infer I
+    [ K in keyof T ]: T[K][1] extends infer I
     ? { [ P in K ]: I }
     : never
 }>

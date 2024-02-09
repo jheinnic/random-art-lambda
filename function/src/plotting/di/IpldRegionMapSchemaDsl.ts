@@ -3,8 +3,11 @@
 // import { DataBlock, RegionMap } from "../interface/RegionMapSchemaTypes.js"
 // import { create, createValidate, fromDSL } from "./IpldSchemaTools.mjs"
 // import { create, fromDsl } from "./IpldSchemaTools.mjs"
-import { IpldModuleTypes, SchemaDslConfiguration, SerdesTokenConfiguration } from "../../ipld/di"
+import { IpldModuleTypes, SerdesConfiguration } from "../../ipld/di"
+import { RepresentModelEnvelopePair, RepresentDataBlockPair } from "../ipldmodel"
 import { PlottingModuleTypes } from "./PlottingModuleTypes.js"
+import { sha256 as hasher } from "multiformats/hashes/sha2"
+import * as codec from "@ipld/dag-cbor"
 
 export const schemaDsl = `type ModelEnvelope union {
   | RegionMap "RegionMap_1.0.0"
@@ -65,13 +68,22 @@ type DataBlock struct {
 } representation tuple
 `
 
-export const configProvider: SchemaDslConfiguration & Partial<SerdesTokenConfiguration> = {
-  schemaDsl: schemaDsl,
-  rootProductionTokens: {
+export type ISerdesTypes = {
+  ModelEnvelope: RepresentModelEnvelopePair,
+  DataBlock: RepresentDataBlockPair
+} 
+
+export const configProvider: SerdesConfiguration = new SerdesConfiguration(
+  schemaDsl,
+  {
     "ModelEnvelope": PlottingModuleTypes.IModelEnvelopeSerdes,
     "DataBlock": PlottingModuleTypes.IDataBlockSerdes
-  }
-}
+  },
+  113,
+  codec,
+  18,
+  hasher
+)
 
 // const modelBuf = fs.readFileSync("./fdoc.proto")
 // const plotDocument = PointPlotDocument.deserializeBinary(modelBuf)
