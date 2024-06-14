@@ -1,7 +1,7 @@
 import { IRegionMap, IRegionMapBuilder } from "../interface/index.js"
 import { PBufRegionMap } from "../protobuf/PBufRegionMap.js"
-// import { PointPlotData, RefPoint } from "./PBufUtil.mjs"
-import { PointPlotData, RefPoint } from "./plot_mapping_pb.mjs"
+import { PointPlotData, RefPoint } from "./PBufUtil.js"
+// import { PointPlotData, RefPoint } from "./plot_mapping_pb.js"
 
 export class PBufAdapter {
   public constructor ( private readonly source: PointPlotData ) { }
@@ -28,4 +28,5 @@ export class PBufAdapter {
   public asRegionMap(): IRegionMap {
     return new PBufRegionMap( this.source )
   }
+
 }

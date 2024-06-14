@@ -1,6 +1,6 @@
 import { AbstractRegionMap } from "../components/AbstractRegionMap.js"
-// import { PointPlotData } from "./PBufUtil.mjs"
-import { PointPlotData } from "./plot_mapping_pb.mjs"
+import { PointPlotData } from "./PBufUtil.js"
+// import { PointPlotData } from "./plot_mapping_pb.js"
 
 // <reference path="./plot_mapping_pb.d.ts"/>
 export class PBufRegionMap extends AbstractRegionMap {
