@@ -6,7 +6,8 @@
     "type": "module",
     "scripts": {
         "prebuild": "rimraf dist",
-        "build": "nest build",
+        "brokeBuild": "nest build",
+        "build": "tsc -b && cp build/plotting/protobuf/plot_mapping_pb.mjs build/plotting/protobuf/plot_mapping_pb.js",
         "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
         "start": "nest start",
         "start:dev": "nest start --watch",
