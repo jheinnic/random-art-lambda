@@ -3,8 +3,8 @@ import { AbstractRegionMap } from "./AbstractRegionMap.js"
 import { unblockify, rationalize } from "./RegionMapUtils.js"
 
 export class IpldRegionMap extends AbstractRegionMap {
-  private readonly rowList: number[]
-  private readonly colList: number[]
+  private readonly rowList: readonly number[]
+  private readonly colList: readonly number[]
 
   constructor (
     private readonly regionMap: RegionMap,
@@ -26,12 +26,12 @@ export class IpldRegionMap extends AbstractRegionMap {
     //logFractions("ipldFractionReads.dat", rows, cols, boundary)
   }
 
-  public get columnOrderedXCoordinates(): number[] {
-    return this.rowList
+  public get columnOrderedXCoordinates(): readonly number[] {
+    return [ ...this.rowList ]
   }
 
-  public get columnOrderedYCoordinates(): number[] {
-    return this.colList
+  public get columnOrderedYCoordinates(): readonly number[] {
+    return [ ...this.colList ]
   }
 
   public get pixelHeight(): number {

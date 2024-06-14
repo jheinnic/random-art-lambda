@@ -7,17 +7,17 @@ export abstract class AbstractRegionMap implements IRegionMap {
 
   abstract get pixelWidth(): number
 
-  abstract get columnOrderedXCoordinates(): number[]
+  abstract get columnOrderedXCoordinates(): readonly number[]
 
-  abstract get columnOrderedYCoordinates(): number[]
+  abstract get columnOrderedYCoordinates(): readonly number[]
 
   abstract get isUniform(): boolean
 
   public oldDirector( plotter: IRegionPlotter ): void {
     const xMax: number = this.pixelWidth
     const yMax: number = this.pixelHeight
-    const xCols: number[] = this.columnOrderedXCoordinates
-    const yCols: number[] = this.columnOrderedYCoordinates
+    const xCols: readonly number[] = this.columnOrderedXCoordinates
+    const yCols: readonly number[] = this.columnOrderedYCoordinates
 
     if ( this.isUniform ) {
       let nextX: number = -1
@@ -52,8 +52,8 @@ export abstract class AbstractRegionMap implements IRegionMap {
   private directUniform( plotter: IRegionPlotter ): void {
     const xMax: number = this.pixelWidth
     const yMax: number = this.pixelHeight
-    const xCols: number[] = this.columnOrderedXCoordinates
-    const yCols: number[] = this.columnOrderedYCoordinates
+    const xCols: readonly number[] = this.columnOrderedXCoordinates
+    const yCols: readonly number[] = this.columnOrderedYCoordinates
 
     function loopForX( nextX: number ): void {
       let nextY: number = -1
@@ -73,8 +73,8 @@ export abstract class AbstractRegionMap implements IRegionMap {
   private directVariable( plotter: IRegionPlotter ): void {
     const xMax: number = this.pixelWidth
     const yMax: number = this.pixelHeight
-    const xCols: number[] = this.columnOrderedXCoordinates
-    const yCols: number[] = this.columnOrderedYCoordinates
+    const xCols: readonly number[] = this.columnOrderedXCoordinates
+    const yCols: readonly number[] = this.columnOrderedYCoordinates
 
     function loopForXI( nextX: number, ii: number ): void {
       let nextY = -1
