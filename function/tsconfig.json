@@ -47,7 +47,7 @@
     // },                           /* A series of entries which re-map imports to lookup locations relative to the 'baseUrl'. */
     "rootDirs": [
       "./src",
-      "../bazel-bin/protobuf"
+      // "../bazel-bin/protobuf"
     ]/* List of root folders whose combined content represents the structure of the project at runtime. */,
     "typeRoots": [
       "../layers/canvas/nodejs/node_modules/@types",
@@ -70,6 +70,10 @@
     "experimentalDecorators": true /* Enables experimental support for ES7 decorators. */,
     "emitDecoratorMetadata": true /* Enables experimental support for emitting type metadata for decorators. */
   },
-  "include": ["./src", "../bazel-bin/protobuf/"],
+  "include": [
+    "./src/**/*.ts",
+    "./src/plotting/protobuf/*.mjs",
+    // "../bazel-bin/protobuf/*"
+  ],
   "exclude": ["node_modules", "attic", "build", "dist", "**/*.spec.ts", "../.history", ".history"]
 }
