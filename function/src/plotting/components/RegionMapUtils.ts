@@ -3,8 +3,8 @@ import Fraction from "fraction.js"
 import * as fs from "fs"
 
 import {
-  DataBlock, FractionList, NO_BYTES, RowColRecord, RegionBoundaries, RegionBoundaryFractions, DimensionCoding, EMPTY_DIMENSION
-} from "../ipldmodel"
+  DataBlock, FractionList, FractionPalette, NO_BYTES, RowColRecord, RegionBoundaries, RegionBoundaryFractions, DimensionCoding, EMPTY_DIMENSION
+} from "../ipldmodel/index.js"
 
 export function fractionifyBounds( bounds: RegionBoundaries ): RegionBoundaryFractions {
   const top: Fraction = new Fraction( bounds.top )
@@ -23,7 +23,7 @@ export function fractionifyBounds( bounds: RegionBoundaries ): RegionBoundaryFra
   }
 }
 
-export function fractionifyList( source: number[], offset: number ): FractionList {
+export function fractionifyList( source: readonly number[], offset: number ): FractionList {
   const fractions = source.map( ( x: number ) => new Fraction( x - offset ) )
   return {
     N: fractions.map( ( f: Fraction ) => ( f.n * f.s ) ),
@@ -61,7 +61,7 @@ export function fractionify<K extends string = never, A extends string = never>(
 }
 */
 
-export type Palette = number[]
+export type Palette = readonly number[]
 
 export interface PaletteMaybe {
   palette: Palette
@@ -70,9 +70,14 @@ export interface PaletteMaybe {
 }
 
 export function paletteMaybe( src: number[] ): PaletteMaybe {
-  const asSet = new Set( src )
+  const { asSet, srcMax } = src.reduce(
+    ( acc: { asSet: Set<number>, srcMax: number }, value: number ) => {
+      if ( acc.asSet.has( value ) ) {
+        return acc
+      }
+      return { asSet: acc.asSet.add( value ), srcMax: Math.max( acc.srcMax, value ) }
+    }, { asSet: new Set<number>(), srcMax: 0 } )
   const paletteWordLen = Math.max( Math.ceil( Math.log2( asSet.size ) ), 1 )
-  const srcMax = src.reduce( ( acc, value ) => Math.max( acc, value ), 0 )
   const baseWordLen = Math.ceil( Math.log2( srcMax ) )
   const newSize = ( src.length * paletteWordLen ) + ( asSet.size * baseWordLen )
   const baseSize = ( src.length * baseWordLen )
@@ -95,7 +100,7 @@ export type WordSizes = RowColRecord<number>
 const BLOCK_OVERHEAD = 16;
 const NO_DATA_BLOCKS: ReadonlyArray<DataBlock> = [];
 
-function measureSize( name: string, numbers: number[], wordSize: number ) {
+function measureSize( name: string, numbers: readonly number[], wordSize: number ) {
   if ( numbers.length > 0 ) {
     if ( wordSize <= 0 ) {
       throw `Word size for ${ name } must be positive since its array has data`
@@ -108,7 +113,7 @@ function measureSize( name: string, numbers: number[], wordSize: number ) {
 }
 
 export function blockify(
-  rows: FractionList, cols: FractionList, chunkSize: number, wordSizes: WordSizes
+  rows: FractionPalette, cols: FractionPalette, chunkSize: number, wordSizes: WordSizes
 ): ReadonlyArray<DataBlock> {
   const rowsNSize = measureSize( "rowsN", rows.N, wordSizes.rowsN )
   const rowsDSize = measureSize( "rowsD", rows.D, wordSizes.rowsD ) 
@@ -170,10 +175,10 @@ export function blockify(
 export function unblockify(
   dataBlocks: ReadonlyArray<DataBlock>, paletteBlocks: ReadonlyArray<DataBlock>,
   selector: ( x: Readonly<DataBlock> ) => Uint8Array, coding: DimensionCoding
-): number[] {
+): Palette {
   const dataBytes: Buffer = Buffer.concat(dataBlocks.map(selector))
   const paletteBytes: Buffer = Buffer.concat(paletteBlocks.map(selector))
-  let paletteArray: number[] = EMPTY_DIMENSION;
+  let paletteArray: Palette = EMPTY_DIMENSION;
   if ( coding.paletteWordLen > 0 ) {
     paletteArray = hydrate(paletteBytes, EMPTY_DIMENSION, coding.paletteWordLen)
   }
@@ -191,7 +196,7 @@ export function translate( input: number[], wordSize: number ): Uint8Array {
   }
 }
 
-export function hydrate( bytes: Uint8Array, palette: number[], wordSize: number ): number[] {
+export function hydrate( bytes: Uint8Array, palette: Palette, wordSize: number ): Palette {
   if ( (bytes.length == 0) || (wordSize == 0) ) {
     return EMPTY_DIMENSION
   }
@@ -203,7 +208,7 @@ export function hydrate( bytes: Uint8Array, palette: number[], wordSize: number 
   return unpacked
 }
 
-export function rationalize( fractions: FractionList, offset: number ): number[] {
+export function rationalize( fractions: FractionPalette, offset: number ): Palette {
   const len = fractions.N.length
   const retval = new Array<number>(len)
   let idx = 0
@@ -218,7 +223,7 @@ export function rationalize( fractions: FractionList, offset: number ): number[]
   return retval
 }
 
-export function logFractions( fileName: string, rows: FractionList, cols: FractionList, region: RegionBoundaryFractions ): void {
+export function logFractions( fileName: string, rows: FractionPalette, cols: FractionPalette, region: RegionBoundaryFractions ): void {
   let bottomOffset = 0
   if ( region.bottomN < 0 ) {
     bottomOffset = region.bottomN / region.bottomD
@@ -259,7 +264,7 @@ export function logFractions( fileName: string, rows: FractionList, cols: Fracti
   outStream.close()
 }
 
-export function stats( before: number[], after: number[] ): void {
+export function stats( before: readonly number[], after: readonly number[] ): void {
   const len = before.length
   let maxOver = -1000
   let maxUnder = 1000

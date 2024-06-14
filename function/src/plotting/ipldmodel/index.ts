@@ -2,6 +2,6 @@ export { IDataBlockSerdes, DataBlock, DataBlockRepresentation, RepresentDataBloc
 export { IModelEnvelopeSerdes, ModelEnvelope, ModelEnvelopeRepresentation, RepresentModelEnvelopePair } from "./ModelEnvelope.js"
 export { RegionMap, RegionMapRepresentation } from "./RegionMap.js"
 export {
-  FractionList, PixelSize, RowColRecord, DimensionCodings, DimensionCoding,
+  FractionList, FractionPalette, PixelSize, RowColRecord, DimensionCodings, DimensionCoding,
   RegionBoundaries, RegionBoundaryFractions, EMPTY_DIMENSION, NO_BYTES
 } from "./OtherDataTypes.js"

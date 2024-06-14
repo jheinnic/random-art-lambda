@@ -2,9 +2,11 @@ import "./genjs6.js"
 
 declare module "./genjs6.js" {
   export type GenModel = object
+  export type Prefix = readonly number[]
+  export type Suffix = readonly number[]                                                                                                                                                                                                                                                                                                                                                                                                                                            
 
-  export function newNewPicture (prefix: number[], suffix: number[]): GenModel
-  export function newPicture (prefix: number[], suffix: number[]): GenModel
+  export function newNewPicture( prefix: Prefix, suffix: Suffix ): GenModel
+  export function newPicture( prefix: Prefix, suffix: Suffix ): GenModel
   export function oldPicture (phrase: string): GenModel
   export function computePixel (
     genModel: GenModel,

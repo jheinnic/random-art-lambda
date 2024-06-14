@@ -21,7 +21,7 @@ import {
   RegionBoundaries,
   RegionBoundaryFractions,
   RegionMap,
-} from "../ipldmodel"
+} from "../ipldmodel/index.js"
 import { AbstractRegionMap } from "./AbstractRegionMap.js"
 import { IpldRegionMap } from "./IpldRegionMap.js"
 import {
@@ -49,8 +49,8 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
       private _pixelWidth: number = -1
       private _pixelHeight: number = -1
       private _regionBoundary: RegionBoundaryFractions = { topN: 0, topD: 0, bottomN: 0, bottomD: 0, leftN: 0, leftD: 0, rightN: 0, rightD: 0 }
-      private _rowOrderX: number[] = EMPTY_DIMENSION
-      private _rowOrderY: number[] = EMPTY_DIMENSION
+      private _rowOrderX: readonly number[] = EMPTY_DIMENSION
+      private _rowOrderY: readonly number[] = EMPTY_DIMENSION
 
       // TODO: This ought to be configurable/discoverable and shared
       private _blockWriteSize: number = 4096
@@ -73,8 +73,8 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
         // return this
       // }
 
-      // public regionBoundary( boundary: RegionBoundaries ): IRegionMapBuilder
-      // public regionBoundary( boundary: RegionBoundaryFractions ): IRegionMapBuilder
+      public regionBoundary( boundary: RegionBoundaries ): IRegionMapBuilder
+      public regionBoundary( boundary: RegionBoundaryFractions ): IRegionMapBuilder
       public regionBoundary( boundary: RegionBoundaries | RegionBoundaryFractions ): IRegionMapBuilder {
         if ( isCoarse( boundary ) ) {
           this._regionBoundary = fractionifyBounds( boundary )
