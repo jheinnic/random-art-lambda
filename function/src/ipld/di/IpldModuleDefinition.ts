@@ -31,7 +31,7 @@ export const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN, OPTIONS_TYPE, ASYN
           module.providers.push(
             {
               provide: extras.rootProductionTokens[rootProduction],
-              useExisting: serdesFactory.getProduction(rootProduction)
+              useValue: serdesFactory.getProduction( rootProduction )
             }
           )
         }
