@@ -10,10 +10,10 @@ export class AppService {
   public constructor (
     @Inject( PlottingModuleTypes.IRegionMapRepository )
     private readonly mapRepo: IRegionMapRepository,
-    @Inject( PaintingModuleTypes.IRandomArtTaskEngine )
-    private readonly engine: IRandomArtTaskEngine,
-    // @Inject( PaintingModuleTypes.IRandomArtworkRepository )
-    // private readonly repository: IRandomArtworkRepository,
+    // @Inject( PaintingModuleTypes.IRandomArtTaskEngine )
+    // private readonly engine: IRandomArtTaskEngine,
+    // @Inject( PaintingModuleTypes.IRandomArtworkRepositoryworkRepository )
+    // private readonly repository: IRandomArt,
     // @Inject( PaintingModuleTypes.IRandomArtPainterFactory )
     // private readonly factory: IRandomArtTaskEngine,
   ) { }
