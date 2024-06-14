@@ -12,3 +12,8 @@ export interface IRandomArtwork {
   readonly buffer: Buffer,
   readonly stream: Readable
 }
+
+export interface MinimalResonse {
+  readonly cid: CID,
+  readonly engineVersion: string,
+}
