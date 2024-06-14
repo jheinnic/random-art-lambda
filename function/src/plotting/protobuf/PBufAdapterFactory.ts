@@ -2,8 +2,8 @@ import { Injectable } from "@nestjs/common"
 import * as fs from "fs"
 
 import { PBufAdapter } from "./PBufAdapter.js"
-// import { PointPlotDocument } from "./PBufUtil.mjs"
-import { PointPlotDocument, PointPlotData } from "./plot_mapping_pb.mjs"
+import { PointPlotDocument, PointPlotData } from "./PBufUtil.js"
+// import { PointPlotDocument, PointPlotData } from "./plot_mapping_pb.js"
 
 @Injectable()
 export class PBufAdapterFactory {
