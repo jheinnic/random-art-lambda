@@ -4,7 +4,7 @@ import { RepresentUnionPair, UnionAsDomainModel, UnionAsRepresentation } from ".
 
 export const NO_BYTES: Uint8Array = Uint8Array.of()
 
-export const EMPTY_DIMENSION: number[] = []
+export const EMPTY_DIMENSION: readonly number[] = []
 
 // export type Palette = Uint7Array
 
@@ -26,27 +26,15 @@ export interface RegionBoundaries {
   right: number
 }
 
-type FractionRecord<K extends string, T> = {
-  [ P in K as `${ P }N` | `${ P }D` ]: T
+type NumeratorDenominator = "N" | "D"
+
+type PrefixSuffixRecord<Prefix extends string, Suffix extends string, T> = {
+  [ K in Prefix as `${ K }${ Suffix }` ]: T
 }
-export type RowColRecord<T> = FractionRecord<"rows"|"cols", T>
-  
+type FractionRecord<Prefix extends string, T> = PrefixSuffixRecord<Prefix, NumeratorDenominator, T>
+export type FractionList = Record<NumeratorDenominator, number[]>
+export type FractionPalette = Record<NumeratorDenominator, readonly number[]>
 
-export type DimensionCodings = RowColRecord<DimensionCoding>
 export type RegionBoundaryFractions = FractionRecord<StringKeys<RegionBoundaries>, number>
-export type FractionList = FractionRecord<"", number[]>
-
-// export interface FractionList {
-  // N: number[]
-  // D: number[]
-// }
-
-
-/*
-export type Fractioned<K extends string = never, A extends string = never> =
-  K extends never ? (
-    A extends never ? never : FractionLists<A>
-  ) : (
-    A extends never ? Fractions<K> : ( Fractions<K> & FractionLists<A> )
-  )
-  */
+export type RowColRecord<T> = FractionRecord<"rows" | "cols", T>
+export type DimensionCodings = RowColRecord<DimensionCoding>
