@@ -7,6 +7,7 @@ import { CID } from "multiformats"
 import { base58btc } from "multiformats/bases/base58"
 
 import { mkdir, readFile, stat, unlink, writeFile } from "fs/promises"
+import { mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "fs"
 import { Stats } from "fs"
 import { dirname, join } from "path"
 
@@ -36,23 +37,15 @@ export class FsBlockstore extends BaseBlockstore {
     super()
     this.rootPath = config.rootPath
     console.log( "New FsBlockstore constructor call" )
-  }
-
-  async open(): Promise<void> {
-    if ( this.openState === OpenState.OPEN ) {
-      return
-    }
-    if ( this.openState !== OpenState.CLOSED ) {
-      throw new Error( `${ this.openState } transition in progress` )
-    }
 
     this.openState = OpenState.OPENING
     let rootStat: Stats
     try {
-      rootStat = await stat( this.rootPath )
+      rootStat = statSync( this.rootPath )
     } catch {
-      await mkdir( this.rootPath )
-      rootStat = await stat( this.rootPath )
+      // TODO: mkdir may throw!
+      mkdirSync( this.rootPath )
+      rootStat = statSync( this.rootPath )
     }
     if ( !rootStat.isDirectory() ) {
       this.openState = OpenState.CLOSED
@@ -60,33 +53,62 @@ export class FsBlockstore extends BaseBlockstore {
         `Root path, ${ this.rootPath }, must be a directory to open FsBlockStore!`,
       )
     }
-    this.lockRelease = await lockfile.lock( this.rootPath, {
+    lockfile.lockSync( this.rootPath, {
       lockfilePath: join( this.rootPath, ".lock" ),
     } )
     console.log( "Lock acquired!" )
     this.openState = OpenState.OPEN
   }
 
+  // async open(): Promise<void> {
+  //   if ( this.openState === OpenState.OPEN ) {
+  //     return
+  //   }
+  //   if ( this.openState !== OpenState.CLOSED ) {
+  //     throw new Error( `${ this.openState } transition in progress` )
+  //   }
+
+  //   this.openState = OpenState.OPENING
+  //   let rootStat: Stats
+  //   try {
+  //     rootStat = await stat( this.rootPath )
+  //   } catch {
+  //     await mkdir( this.rootPath )
+  //     rootStat = await stat( this.rootPath )
+  //   }
+  //   if ( !rootStat.isDirectory() ) {
+  //     this.openState = OpenState.CLOSED
+  //     throw new Error(
+  //       `Root path, ${ this.rootPath }, must be a directory to open FsBlockStore!`,
+  //     )
+  //   }
+  //   this.lockRelease = await lockfile.lock( this.rootPath, {
+  //     lockfilePath: join( this.rootPath, ".lock" ),
+  //   } )
+  //   console.log( "Lock acquired!" )
+  //   this.openState = OpenState.OPEN
+  // }
+
   /**
    * @returns {Promise<void>}
    */
-  async close(): Promise<void> {
-    if ( this.openState === OpenState.CLOSED ) {
-      return
-    }
-    if ( this.openState !== OpenState.OPEN ) {
-      throw Error( `${ this.openState } transition in progress` )
-    }
-    this.openState = OpenState.CLOSING
-    const releaseHandle = await this.lockRelease()
-    console.log( "Repository lock release initiated" )
-    const released = await releaseHandle
-    console.log( released )
-    console.log( releaseHandle )
-    console.log( "Repository lock released" )
-    this.lockRelease = FsBlockstore.NO_OP_RELEASE
-    this.openState = OpenState.CLOSED
-  }
+  // async close(): Promise<void> {
+  //   if ( this.openState === OpenState.CLOSED ) {
+  //     return
+  //   }
+  //   if ( this.openState !== OpenState.OPEN ) {
+  //     throw Error( `${ this.openState } transition in progress` )
+  //   }
+  //   this.openState = OpenState.CLOSING
+  //   const releaseHandle = await this.lockRelease()
+  //   console.log( "Repository lock release initiated" )
+  //   const released = await releaseHandle
+  //   console.log( released )
+  //   console.log( releaseHandle )
+  //   console.log( "Repository lock released" )
+  //   this.lockRelease = FsBlockstore.NO_OP_RELEASE
+  //   this.openState = OpenState.CLOSED
+  // }
 
   /**
    * @param {CID} key
@@ -221,14 +243,18 @@ function fromCidToPath( rootPath: string, key: string | CID ): string {
   )
 }
 
-async function fetchMethod(
-  cidStr: string,
-  staleValue: Uint8Array | undefined,
-  { signal, context }: { signal: AbortSignal, context: string },
-): Promise<Uint8Array> {
-  const blockPath = fromCidToPath( context, cidStr )
-  const readBuf: Buffer = await readFile( blockPath, { signal } )
-  return Uint8Array.from( readBuf )
+function curryFetchMethod( rootPath: string ) {
+  async function fetchMethod(
+    cidStr: string,
+    staleValue: Uint8Array | undefined,
+    { signal, context }: { signal: AbortSignal, context: string },
+  ): Promise<Uint8Array> {
+    console.log( rootPath, cidStr )
+    const blockPath = fromCidToPath( rootPath, cidStr )
+    const readBuf: Buffer = await readFile( blockPath, { signal } )
+    return Uint8Array.from( readBuf )
+  }
+  return fetchMethod
 }
 
 export function buildLruCache(
@@ -236,7 +262,7 @@ export function buildLruCache(
 ): LRUCache<string, Uint8Array, string> {
   return new LRUCache<string, Uint8Array, string>( {
     max: config.cacheSize,
-    // fetchContext: config.rootPath,
-    fetchMethod,
+    // context: config.rootPath,
+    fetchMethod: curryFetchMethod( config.rootPath ),
   } )
 }
