@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common"
 import { Blockstore } from "interface-blockstore"
 
 import { IpfsModule, IpfsModuleTypes } from "../../ipfs/di/index.js"
-import { PlottingModule, PlottingModuleConfiguration, PlottingModuleConfigurationFactory } from "../../plotting/di/index.js"
+import { PlottingModule, PlottingModuleConfiguration } from "../../plotting/di/index.js"
 import { PaintingModule } from "../../painting/di/index.js"
 import { AppService } from "../components/AppService.js"
 import { AppServiceTwo } from "../components/AppServiceTwo.js"
