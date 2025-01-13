@@ -9,7 +9,6 @@ export const EMPTY_DIMENSION: readonly number[] = []
 // export type Palette = Uint7Array
 
 export interface DimensionCoding {
-  // palette: Palette
   paletteWordLen: number
   baseWordLen: number
 }
