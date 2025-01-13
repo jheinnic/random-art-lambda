@@ -1,9 +1,9 @@
-import * as codec from "@ipld/dag-cbor"
+// import * as codec from "@ipld/dag-cbor"
 import { Inject, Injectable, Module } from "@nestjs/common"
 import { Blockstore } from "interface-blockstore"
 import { BlockView, ByteView, CID } from "multiformats"
-import { decode, encode } from "multiformats/block"
-import { sha256 as hasher } from "multiformats/hashes/sha2"
+// import { decode, encode } from "multiformats/block"
+// import { sha256 as hasher } from "multiformats/hashes/sha2"
 import { Optional } from "simplytyped"
 
 import { PlottingModuleTypes } from "../di/PlottingModuleTypes.js"
@@ -48,7 +48,7 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
       // private _chunkHeight: number = -1
       private _pixelWidth: number = -1
       private _pixelHeight: number = -1
-      private _regionBoundary: RegionBoundaryFractions = { topN: 0, topD: 0, bottomN: 0, bottomD: 0, leftN: 0, leftD: 0, rightN: 0, rightD: 0 }
+      private _regionBoundaryFractions: RegionBoundaryFractions = { topN: 0, topD: 0, bottomN: 0, bottomD: 0, leftN: 0, leftD: 0, rightN: 0, rightD: 0 }
       private _rowOrderX: readonly number[] = EMPTY_DIMENSION
       private _rowOrderY: readonly number[] = EMPTY_DIMENSION
 
@@ -69,17 +69,17 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
       }
 
       // public chunkHeight( chunkHeight: number ): IRegionMapBuilder {
-        // this._chunkHeight = chunkHeight
-        // return this
+      // this._chunkHeight = chunkHeight
+      // return this
       // }
 
       public regionBoundary( boundary: RegionBoundaries ): IRegionMapBuilder
       public regionBoundary( boundary: RegionBoundaryFractions ): IRegionMapBuilder
       public regionBoundary( boundary: RegionBoundaries | RegionBoundaryFractions ): IRegionMapBuilder {
         if ( isCoarse( boundary ) ) {
-          this._regionBoundary = fractionifyBounds( boundary )
+          this._regionBoundaryFractions = fractionifyBounds( boundary )
         } else {
-          this._regionBoundary = { ...boundary }
+          this._regionBoundaryFractions = { ...boundary }
         }
         return this
       }
@@ -117,15 +117,15 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
 
       async commit(): Promise<CID> {
         let leftOffset = 0
-        if ( this._regionBoundary.leftN < 0 ) {
-          leftOffset = ( this._regionBoundary.leftN / this._regionBoundary.leftD )
+        if ( this._regionBoundaryFractions.leftN < 0 ) {
+          leftOffset = ( this._regionBoundaryFractions.leftN / this._regionBoundaryFractions.leftD )
         }
         const _rows: FractionList = fractionifyList( this._rowOrderX, leftOffset )
         stats( this._rowOrderX, rationalize( _rows, leftOffset ) )
 
         let bottomOffset = 0
-        if ( this._regionBoundary.bottomN < 0 ) {
-          bottomOffset = ( this._regionBoundary.bottomN / this._regionBoundary.bottomD )
+        if ( this._regionBoundaryFractions.bottomN < 0 ) {
+          bottomOffset = ( this._regionBoundaryFractions.bottomN / this._regionBoundaryFractions.bottomD )
         }
         const _cols: FractionList = fractionifyList( this._rowOrderY, bottomOffset )
         stats( this._rowOrderY, rationalize( _cols, bottomOffset ) )
@@ -161,8 +161,7 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
           pixelRef: this._pixelRef,
           imageSize: { pixelWidth: this._pixelWidth, pixelHeight: this._pixelHeight },
           projected: this.isProjected(),
-          // chunkHeight: chunkHeight,
-          regionBoundary: this._regionBoundary,
+          regionBoundary: this._regionBoundaryFractions,
           codings: {
             rowsN: {
               paletteWordLen: paletteMaybes.rowsN.paletteWordLen,
@@ -192,13 +191,15 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
 
   private async commitRoot( source: RegionMap ): Promise<CID> {
     // validate and transform
-    const value = this.modelEnvelopeSerdes.encodeModel( { "RegionMap_1.0.0": source } )
+    const value: BlockView<ModelEnvelopeRepresentation> =
+      await this.modelEnvelopeSerdes.encodeModel( { "RegionMap_1.0.0": source } )
     if ( value === undefined ) {
       throw new TypeError( "Invalid typed form, does not match schema" )
     }
-    const rootBlock = await encode( { codec, hasher, value } )
-    const rootCid: CID = rootBlock.cid
-    await this.blockStore.put( rootCid, rootBlock.bytes, {} )
+    // const rootBlock = await encode( { codec, hasher, value } )
+    const rootCid: CID = value.cid // rootBlock.cid;
+    // await this.blockStore.put( rootCid, rootBlock.bytes, {} )
+    await this.blockStore.put( rootCid, value.bytes, {} )
     return rootCid
   }
 
@@ -210,9 +211,9 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
         if ( value === undefined ) {
           throw new TypeError( "Invalid typed form, does not match schema" )
         }
-        const encodedBlock = await encode( { codec, hasher, value } )
-        const blockCid: CID = encodedBlock.cid
-        await this.blockStore.put( blockCid, encodedBlock.bytes, {} )
+        // const encodedBlock = await encode( { codec, hasher, value } )
+        const blockCid: CID = value.cid  // encodedBlock.cid
+        await this.blockStore.put( blockCid, value.bytes, {} )
         return blockCid
       } ),
     )

@@ -5,7 +5,6 @@ import { RegionBoundaryFractions, DimensionCodings, PixelSize } from "./OtherDat
 export interface RegionMap {
     pixelRef: "Center" | "TopLeft"
     imageSize: PixelSize
-    // chunkHeight: number
     projected: boolean
     regionBoundary: RegionBoundaryFractions
     codings: DimensionCodings
@@ -15,7 +14,7 @@ export interface RegionMap {
 
 export type RegionMapRepresentation = [
     string, [ number, number ], boolean,
-    [ [ number, number ], [ number, number ], [ number, number ], [ number, number ] ],
+    [ number, number, number, number, number, number, number, number ],
     [ [ number, number ], [ number, number ], [ number, number ], [ number, number ] ],
     string[],
     string[]
