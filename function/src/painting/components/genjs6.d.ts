@@ -3,7 +3,7 @@ import "./genjs6.js"
 declare module "./genjs6.js" {
   export type GenModel = object
   export type Prefix = readonly number[]
-  export type Suffix = readonly number[]                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  export type Suffix = readonly number[]
 
   export function newNewPicture( prefix: Prefix, suffix: Suffix ): GenModel
   export function newPicture( prefix: Prefix, suffix: Suffix ): GenModel
@@ -15,7 +15,7 @@ declare module "./genjs6.js" {
   ): [number, number, number]  // { red: number, green: number, blue: number }
   export function phraseToSeed (
     phrase: string
-  ): [number[], number[]] // [prefix: number[], suffix: number[]]
+  ): [Prefix, Suffix] // [prefix: number[], suffix: number[]]
   export function fullEval (fn: Function): Function
   export function partialEval (fn: Function): Function
 }
