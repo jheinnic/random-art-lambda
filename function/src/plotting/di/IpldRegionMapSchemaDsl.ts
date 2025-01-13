@@ -19,14 +19,14 @@ export const schemaDsl = `type ModelEnvelope union {
 type RegionMap struct {
   pixelRef RefPoint
   imageSize ImageSize
-  chunkHeight Int
-  regionBoundary RegionBoundary
   projected Bool
+  regionBoundary RegionBoundaryFractions
+  codings DimensionLayouts
+  palettes [&DataBlock]
   data [&DataBlock]
 } representation tuple
 
 type BitLayout struct {
-  palette Bytes
   paletteWordLen Int
   baseWordLen Int
 } representation tuple
@@ -38,7 +38,7 @@ type DimensionLayouts struct {
   colD BitLayout
 } representation tuple
 
-type RegionBoundary struct {
+type RegionBoundaryFractions struct {
   topN Int
   topD Int
   bottomN Int
@@ -60,7 +60,6 @@ type RefPoint enum {
 } representation int
 
 type DataBlock struct {
-  height Int
   rowsN Bytes
   rowsD Bytes
   colsN Bytes
@@ -71,7 +70,7 @@ type DataBlock struct {
 export type ISerdesTypes = {
   ModelEnvelope: RepresentModelEnvelopePair,
   DataBlock: RepresentDataBlockPair
-} 
+}
 
 export const configProvider: SerdesConfiguration = new SerdesConfiguration(
   schemaDsl,
