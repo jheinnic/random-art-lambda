@@ -18,7 +18,7 @@
   "typescript.tsserver.useSyntaxServer": "always",
   "typescript.tsserver.maxTsServerMemory": 8192,
   "typescript.tsserver.experimental.enableProjectDiagnostics": true,
-  "typescript.tsserver.enableTracing": true,
+  "typescript.tsserver.enableTracing": false,
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.suggest.completeFunctionCalls": true,
   "typescript.referencesCodeLens.showOnAllFunctions": true,
@@ -69,5 +69,6 @@
     "strv",
     "unblockify"
   ],
-  "typescript.tsserver.watchOptions": {}
+  "typescript.tsserver.watchOptions": {},
+  "typescript.tsserver.log": "verbose"
 }
