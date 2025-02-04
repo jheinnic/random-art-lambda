@@ -18,9 +18,9 @@ class PixelReference(Enum):
 class PlotStrategy(Record):
     name = String();
     displayName = String();
-    pixelRef = String(); // TODO: PixelReference
+    pixelRef = String(); # TODO: PixelReference
 
-class PlotStrategyVersion(Record);
+class PlotStrategyVersion(Record):
     name = String();
     strategyName = String();
     version = VersionId();
@@ -30,7 +30,7 @@ class PlotStrategyVersion(Record);
     availableAt = Datetime();
     removedAt = Datetime();
 
-class RandomArtPainterVersion(Record);
+class RandomArtPainterVersion(Record):
     name = String();
     version = Version();
     location = GitBuildId();
@@ -39,7 +39,7 @@ class RandomArtPainterVersion(Record);
     availableAt = Datetime();
     removedAt = Datetime();
 
-class ReleaseVersion(Record);
+class ReleaseVersion(Record):
     name = String();
     gitTag = String();
     gitRepo = String();
@@ -73,7 +73,6 @@ class CanvasSize(Record):
 class PointMapPlot(Record):
     name = String();
     displayName = String();
-}
 
 class AspectMatching(Enum):
     SHAPE_PIXEL = "shape";
@@ -113,9 +112,10 @@ class ExperimentRunProtocol(Record):
 
 producer = client.create_producer(
                     topic='info.jchein.services.PointMapPlot-v1',
-                    schema=AvroSchema(Example); )
+                    schema=AvroSchema(Example)
+           )
 
-producer.send(Example(a='Hello', b=1);)
+producer.send(Example(a='Hello', b=1))
 
 Copy
 
