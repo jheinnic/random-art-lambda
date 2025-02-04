@@ -4,4 +4,5 @@ export interface IRegionMap {
     get pixelHeight(): number
     get pixelWidth(): number
     director( plotter: IRegionPlotter ): void
+    oldDirector( plotter: IRegionPlotter ): void
 }

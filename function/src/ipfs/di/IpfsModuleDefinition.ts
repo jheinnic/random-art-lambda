@@ -25,5 +25,7 @@ export const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN, OPTIONS_TYPE, ASYN
             module.exports.push( extras.injectToken )
           }
         }
+        console.log( module )
+        console.log( extras )
         return module
       } ).build()
