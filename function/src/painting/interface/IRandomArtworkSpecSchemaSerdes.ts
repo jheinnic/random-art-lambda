@@ -4,7 +4,7 @@ import { RandomArtworkSpec } from './RandomArtworkSpec.js'
 import { UnionAsRepresentation, UnionAsDomainModel } from '../../ipld/interface'
 
 type RandomArtworkSpecUnion = {
-    [ "RandomArtworkSpec_0.1.0" ]: [ [ Uint8Array, Uint8Array, CID, string ], RandomArtworkSpec ]
+    [ "RandomArtworkSpec_0.1.0" ]: [ "RandomArtworkSpec", [ Uint8Array, Uint8Array, CID, string ], RandomArtworkSpec ]
 }
 export type ModelEnvelopeRepresentation = UnionAsRepresentation<RandomArtworkSpecUnion, "repoVersion", "model">
 export type ModelEnvelope = UnionAsDomainModel<RandomArtworkSpecUnion>

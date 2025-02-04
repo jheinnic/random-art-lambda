@@ -149,6 +149,9 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
           colsN: paletteMaybes.colsN.baseWordLen,
           colsD: paletteMaybes.colsD.baseWordLen,
         }
+	console.log(paletteMaybes);
+	console.log(paletteWordSizes);
+	console.log(dataWordSizes);
         // const chunkHeight: number = this._chunkHeight > -1 ? this._chunkHeight : this._pixelHeight
         const paletteBlocks: ReadonlyArray<DataBlock> = blockify(
           { N: paletteMaybes.rowsN.palette, D: paletteMaybes.rowsD.palette },
@@ -192,10 +195,8 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
   private async commitRoot( source: RegionMap ): Promise<CID> {
     // validate and transform
     const value: BlockView<ModelEnvelopeRepresentation> =
-      await this.modelEnvelopeSerdes.encodeModel( { "RegionMap_1.0.0": source } )
-    if ( value === undefined ) {
-      throw new TypeError( "Invalid typed form, does not match schema" )
-    }
+      await this.modelEnvelopeSerdes.encodeModel( { "RegionMap": source } )
+
     // const rootBlock = await encode( { codec, hasher, value } )
     const rootCid: CID = value.cid // rootBlock.cid;
     // await this.blockStore.put( rootCid, rootBlock.bytes, {} )
@@ -208,10 +209,6 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
       data.map( async ( dataBlock: DataBlock ) => {
         const value: BlockView<DataBlockRepresentation> =
           await this.dataBlockSerdes.encodeModel( dataBlock )
-        if ( value === undefined ) {
-          throw new TypeError( "Invalid typed form, does not match schema" )
-        }
-        // const encodedBlock = await encode( { codec, hasher, value } )
         const blockCid: CID = value.cid  // encodedBlock.cid
         await this.blockStore.put( blockCid, value.bytes, {} )
         return blockCid
@@ -230,7 +227,9 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
     if ( modelEnvelope === undefined ) {
       throw new TypeError( "Invalid deserialized representation, did follow from schema" )
     }
-    const rootObject: RegionMap = modelEnvelope[ 'RegionMap_1.0.0' ]
+    console.log( modelEnvelope )
+    const rootObject: RegionMap = modelEnvelope[ 'RegionMap' ]
+    console.log( rootObject )
     const paletteBlocks: ReadonlyArray<DataBlock> = await Promise.all(
       rootObject.palettes.map( async ( cidLink: CID ) => {
         const dataEncodingBytes: ByteView<DataBlockRepresentation> =

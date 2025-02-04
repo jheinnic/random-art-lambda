@@ -20,4 +20,4 @@ export type RegionMapRepresentation = [
     string[]
 ]
 
-export type RepresentRegionMapPair = [ RegionMapRepresentation, RegionMap ]
+export type RepresentRegionMapPair = [ "RegionMap", RegionMapRepresentation, RegionMap ]

@@ -3,7 +3,7 @@ import { UnionDefinition, UnionAsDomainModel, UnionAsRepresentation, RepresentUn
 import { RepresentRegionMapPair } from "./RegionMap.js"
 
 export type ModelEnvelopeUnion = {
-    [ "RegionMap_1.0.0" ]: RepresentRegionMapPair
+    [ "RegionMap" ]: RepresentRegionMapPair
 }
 
 export type ModelEnvelope = UnionAsDomainModel<ModelEnvelopeUnion>

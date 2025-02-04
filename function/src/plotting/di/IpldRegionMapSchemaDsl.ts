@@ -32,10 +32,10 @@ type BitLayout struct {
 } representation tuple
 
 type DimensionLayouts struct {
-  rowN BitLayout
-  rowD BitLayout
-  colN BitLayout
-  colD BitLayout
+  rowsN BitLayout
+  rowsD BitLayout
+  colsN BitLayout
+  colsD BitLayout
 } representation tuple
 
 type RegionBoundaryFractions struct {
