@@ -1,5 +1,5 @@
 import { CombineObjects, UnionizeProperties } from "simplytyped"
-import { RepresentDomainPair } from "./RepresentDomainPair.js"
+import { NamedRepresentDomainPair, RepresentDomainPair } from "./RepresentDomainPair.js"
 
 // export type UnionDefinition<Keys = string, Representation = Record<Keys, unknown>, DomainModel = Record<Keys, unknown>> = {
 // [ K in Keys ]: RepresentDomainPair<Representation[K], DomainModel[K]>
@@ -7,14 +7,14 @@ import { RepresentDomainPair } from "./RepresentDomainPair.js"
 // export type UnionDefinition<Union extends Record<string, RepresentDomainPair> = Record<string, RepresentDomainPair>> = {
 // [ K in keyof Union ]: Union[K]
 // }
-export type UnionDefinition = Record<string, RepresentDomainPair>
+export type UnionDefinition = Record<string, NamedRepresentDomainPair>
 
 // This should an object keyed by the discriminant values, each mapping to its, the element 1 domain from RepDomainPair
 // Unsure why using UnionizeProperties, since there is no property overlap in the union of object types...?
 // See SchemaSignature!!!
 export type UnionAsDomainModel<T extends UnionDefinition> = UnionizeProperties<{
-    [ K in keyof T ]: T[ K ][ 1 ] extends infer I
-    ? { [ P in K ]: I }
+    [ K in keyof T as T[ K ][ 0 ] ]: T[ K ][ 2 ] extends infer I
+    ? { [ P in K as T[ P ][ 0 ] ]: I }
     : never
 }>
 
@@ -29,7 +29,7 @@ export type UnionAsRepresentation<
     Discriminant extends string = "version",
     Model extends string = "model"
 > = UnionizeProperties<{
-    [ K in keyof T ]: T[ K ][ 0 ] extends infer I
+    [ K in keyof T ]: T[ K ][ 1 ] extends infer I
     ? { [ D in Discriminant | Model ]: D extends Discriminant ? K : D extends Model ? I : never }
     : never
 }>

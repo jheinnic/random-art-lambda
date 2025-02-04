@@ -75,7 +75,7 @@ export function paletteMaybe( src: number[] ): PaletteMaybe {
       if ( acc.asSet.has( value ) ) {
         return acc
       }
-      return { asSet: acc.asSet.add( value ), srcMax: Math.max( acc.srcMax, value ) }
+      return { asSet: acc.asSet.add( value ), srcMax: Math.max( acc.srcMax, Math.abs(value) ) }
     }, { asSet: new Set<number>(), srcMax: 0 } )
   const paletteWordLen = Math.max( Math.ceil( Math.log2( asSet.size ) ), 1 )
   const baseWordLen = Math.ceil( Math.log2( srcMax ) )
