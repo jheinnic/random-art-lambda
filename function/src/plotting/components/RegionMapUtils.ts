@@ -24,7 +24,8 @@ export function fractionifyBounds( bounds: RegionBoundaries ): RegionBoundaryFra
 }
 
 export function fractionifyList( source: readonly number[], offset: number ): FractionList {
-  const fractions = source.map( ( x: number ) => new Fraction( x - offset ) )
+  const fractions = source.map(
+    ( x: number ) => new Fraction( x - offset ) )
   return {
     N: fractions.map( ( f: Fraction ) => ( f.n * f.s ) ),
     D: fractions.map( ( f: Fraction ) => f.d )
@@ -69,13 +70,14 @@ export interface PaletteMaybe {
   baseWordLen: number
 }
 
-export function paletteMaybe( src: number[] ): PaletteMaybe {
+export function
+  paletteMaybe( src: number[] ): PaletteMaybe {
   const { asSet, srcMax } = src.reduce(
     ( acc: { asSet: Set<number>, srcMax: number }, value: number ) => {
       if ( acc.asSet.has( value ) ) {
         return acc
       }
-      return { asSet: acc.asSet.add( value ), srcMax: Math.max( acc.srcMax, Math.abs(value) ) }
+      return { asSet: acc.asSet.add( value ), srcMax: Math.max( acc.srcMax, Math.abs( value ) ) }
     }, { asSet: new Set<number>(), srcMax: 0 } )
   const paletteWordLen = Math.max( Math.ceil( Math.log2( asSet.size ) ), 1 )
   const baseWordLen = Math.ceil( Math.log2( srcMax ) )
@@ -86,19 +88,19 @@ export function paletteMaybe( src: number[] ): PaletteMaybe {
     return { palette: EMPTY_DIMENSION, paletteWordLen: 0, baseWordLen }
     // return { palette: NO_BYTES, paletteWordLen: 0, baseWordLen }
   }
-  const palette: number[] = [ ...asSet ]
+  const palette: number[] = [...asSet]
   const map: Map<number, number> = new Map<number, number>()
   palette.forEach(
-    (value: number, idx: number) => { map.set(value, idx) })
+    ( value: number, idx: number ) => { map.set( value, idx ) } )
   src.forEach(
-    (value: number, idx: number) => { src[idx] = map.get(value) ?? -1 })
+    ( value: number, idx: number ) => { src[idx] = map.get( value ) ?? -1 } )
   // return { palette: translate( palette, baseWordLen ), paletteWordLen, baseWordLen }
   return { palette, paletteWordLen: baseWordLen, baseWordLen: paletteWordLen }
 }
 
 export type WordSizes = RowColRecord<number>
-const BLOCK_OVERHEAD = 16;
-const NO_DATA_BLOCKS: ReadonlyArray<DataBlock> = [];
+const BLOCK_OVERHEAD = 16
+const NO_DATA_BLOCKS: ReadonlyArray<DataBlock> = []
 
 function measureSize( name: string, numbers: readonly number[], wordSize: number ) {
   if ( numbers.length > 0 ) {
@@ -109,43 +111,43 @@ function measureSize( name: string, numbers: readonly number[], wordSize: number
     throw `Word size for ${ name } must be 0 since its array is empty`
   }
 
-  return wordSize * numbers.length;
+  return wordSize * numbers.length
 }
 
 export function blockify(
   rows: FractionPalette, cols: FractionPalette, chunkSize: number, wordSizes: WordSizes
 ): ReadonlyArray<DataBlock> {
   const rowsNSize = measureSize( "rowsN", rows.N, wordSizes.rowsN )
-  const rowsDSize = measureSize( "rowsD", rows.D, wordSizes.rowsD ) 
+  const rowsDSize = measureSize( "rowsD", rows.D, wordSizes.rowsD )
   const colsNSize = measureSize( "colsN", cols.N, wordSizes.colsN )
-  const colsDSize = measureSize( "colsD", cols.D, wordSizes.colsD ) 
-  const totalSize = rowsNSize + rowsDSize + colsNSize + colsDSize;
+  const colsDSize = measureSize( "colsD", cols.D, wordSizes.colsD )
+  const totalSize = rowsNSize + rowsDSize + colsNSize + colsDSize
 
   if ( totalSize == 0 ) {
-    return NO_DATA_BLOCKS;
+    return NO_DATA_BLOCKS
   }
 
   // const chunkCount = Math.ceil( 1.0 * pixelHeight / chunkHeight )
-  const minBlockCount = Math.ceil( 1.0 * ( totalSize / (chunkSize - BLOCK_OVERHEAD) ) );
-  const blockCount = ( minBlockCount > 1 ) ? (minBlockCount + 1) : minBlockCount;
+  const minBlockCount = Math.ceil( 1.0 * ( totalSize / ( chunkSize - BLOCK_OVERHEAD ) ) )
+  const blockCount = ( minBlockCount > 1 ) ? ( minBlockCount + 1 ) : minBlockCount
   const blocks = new Array<DataBlock>( blockCount )
 
   const rowsNChunk = Math.max(
     Math.round( 1.0 * rows.N.length / minBlockCount ),
     Math.ceil( 1.0 * rows.N.length / blockCount )
-  );
+  )
   const rowsDChunk = Math.max(
     Math.round( 1.0 * rows.D.length / minBlockCount ),
     Math.ceil( 1.0 * rows.D.length / blockCount )
-  );
+  )
   const colsNChunk = Math.max(
     Math.round( 1.0 * cols.N.length / minBlockCount ),
     Math.ceil( 1.0 * cols.N.length / blockCount )
-  );
+  )
   const colsDChunk = Math.max(
     Math.round( 1.0 * cols.D.length / minBlockCount ),
     Math.ceil( 1.0 * cols.D.length / blockCount )
-  );
+  )
 
   let idx = 0
   let rowsNIdx = 0
@@ -159,10 +161,10 @@ export function blockify(
     const nextColsDIdx = colsDIdx + colsDChunk
     blocks[idx] = {
       // height: idx * chunkHeight,
-      rowsN: translate(rows.N.slice(rowsNIdx, nextRowsNIdx), wordSizes.rowsN),
-      rowsD: translate(rows.D.slice(rowsDIdx, nextRowsDIdx), wordSizes.rowsD),
-      colsN: translate(cols.N.slice(colsNIdx, nextColsNIdx), wordSizes.colsN),
-      colsD: translate(cols.D.slice(colsDIdx, nextColsNIdx), wordSizes.colsD)
+      rowsN: translate( rows.N.slice( rowsNIdx, nextRowsNIdx ), wordSizes.rowsN ),
+      rowsD: translate( rows.D.slice( rowsDIdx, nextRowsDIdx ), wordSizes.rowsD ),
+      colsN: translate( cols.N.slice( colsNIdx, nextColsNIdx ), wordSizes.colsN ),
+      colsD: translate( cols.D.slice( colsDIdx, nextColsNIdx ), wordSizes.colsD )
     }
     rowsNIdx = nextRowsNIdx
     rowsDIdx = nextRowsDIdx
@@ -176,48 +178,48 @@ export function unblockify(
   dataBlocks: ReadonlyArray<DataBlock>, paletteBlocks: ReadonlyArray<DataBlock>,
   selector: ( x: Readonly<DataBlock> ) => Uint8Array, coding: DimensionCoding
 ): Palette {
-  const dataBytes: Buffer = Buffer.concat(dataBlocks.map(selector))
-  const paletteBytes: Buffer = Buffer.concat(paletteBlocks.map(selector))
-  let paletteArray: Palette = EMPTY_DIMENSION;
+  const dataBytes: Buffer = Buffer.concat( dataBlocks.map( selector ) )
+  const paletteBytes: Buffer = Buffer.concat( paletteBlocks.map( selector ) )
+  let paletteArray: Palette = EMPTY_DIMENSION
   if ( coding.paletteWordLen > 0 ) {
-    paletteArray = hydrate(paletteBytes, EMPTY_DIMENSION, coding.paletteWordLen)
+    paletteArray = hydrate( paletteBytes, EMPTY_DIMENSION, coding.paletteWordLen )
   }
-  return hydrate(dataBytes, paletteArray, coding.baseWordLen)
+  return hydrate( dataBytes, paletteArray, coding.baseWordLen )
 }
 
 export function translate( input: number[], wordSize: number ): Uint8Array {
-  if ( (input === undefined) || (input.length == 0) || (wordSize == 0) ) {
+  if ( ( input === undefined ) || ( input.length == 0 ) || ( wordSize == 0 ) ) {
     return NO_BYTES
   } else {
     const writer = new BitOutputStream()
-    console.warn( writer.writeWords( input, wordSize ) )
-    console.log( 8 * writer.bytes().length, ' ==> ', input.length, ' * ', wordSize, ' = ', input.length * wordSize ) // ' :: ', input.length * 6.5)
+    // console.warn( writer.writeWords( input, wordSize ) )
+    // console.log( 8 * writer.bytes().length, ' ==> ', input.length, ' * ', wordSize, ' = ', input.length * wordSize ) // ' :: ', input.length * 6.5)
     return writer.bytes()
   }
 }
 
 export function hydrate( bytes: Uint8Array, palette: Palette, wordSize: number ): Palette {
-  if ( (bytes.length == 0) || (wordSize == 0) ) {
+  if ( ( bytes.length == 0 ) || ( wordSize == 0 ) ) {
     return EMPTY_DIMENSION
   }
-  const reader = new BitInputStream(bytes)
-  let unpacked = reader.readWords(Math.floor(8 * bytes.length / wordSize), wordSize)
-  if (palette.length > 0) {
-    unpacked = unpacked.map( (x: number) => palette[x] )
+  const reader = new BitInputStream( bytes )
+  let unpacked = reader.readWords( Math.floor( 8 * bytes.length / wordSize ), wordSize )
+  if ( palette.length > 0 ) {
+    unpacked = unpacked.map( ( x: number ) => palette[x] )
   }
   return unpacked
 }
 
 export function rationalize( fractions: FractionPalette, offset: number ): Palette {
   const len = fractions.N.length
-  const retval = new Array<number>(len)
+  const retval = new Array<number>( len )
   let idx = 0
   for ( idx = 0; idx < len; idx++ ) {
     if ( fractions.D[idx] === 0 ) {
       // console.log(idx, fractions.D[idx], fractions.N[idx])
       retval[idx] = fractions.N[idx] + offset
     } else {
-      retval[idx] = (fractions.N[idx] / fractions.D[idx]) + offset
+      retval[idx] = ( fractions.N[idx] / fractions.D[idx] ) + offset
     }
   }
   return retval
@@ -237,16 +239,16 @@ export function logFractions( fileName: string, rows: FractionPalette, cols: Fra
   const messages: string[] = []
   let index = 0
   for ( index = 0; index < size; index++ ) {
-    if ( rows.D[ index ] === 0 ) {
-      if ( cols.D[ index ] === 0 ) {
-        messages.push( `${ index + 1 } ::\n\t([${ rows.N[ index ] }/${ rows.D[ index ] }], [${ cols.N[ index ] }/${ cols.D[ index ] }]) => (NaN, NaN)` )
+    if ( rows.D[index] === 0 ) {
+      if ( cols.D[index] === 0 ) {
+        messages.push( `${ index + 1 } ::\n\t([${ rows.N[index] }/${ rows.D[index] }], [${ cols.N[index] }/${ cols.D[index] }]) => (NaN, NaN)` )
       } else {
-        messages.push( `${ index + 1 } ::\n\t([${ rows.N[ index ] }/${ rows.D[ index ] }], [${ cols.N[ index ] }/${ cols.D[ index ] }]) => (NaN, ${ ( cols.N[ index ] / cols.D[ index ] ) + bottomOffset })` )
+        messages.push( `${ index + 1 } ::\n\t([${ rows.N[index] }/${ rows.D[index] }], [${ cols.N[index] }/${ cols.D[index] }]) => (NaN, ${ ( cols.N[index] / cols.D[index] ) + bottomOffset })` )
       }
-    } else if ( cols.D[ index ] === 0 ) {
-      messages.push( `${ index + 1 } ::\n\t([${ rows.N[ index ] }/${ rows.D[ index ] }], [${ cols.N[ index ] }/${ cols.D[ index ] }]) => (${ ( rows.N[ index ] / rows.D[ index ] ) + leftOffset }, NaN)` )
+    } else if ( cols.D[index] === 0 ) {
+      messages.push( `${ index + 1 } ::\n\t([${ rows.N[index] }/${ rows.D[index] }], [${ cols.N[index] }/${ cols.D[index] }]) => (${ ( rows.N[index] / rows.D[index] ) + leftOffset }, NaN)` )
     } else {
-      messages.push( `${ index + 1 } ::\n\t([${ rows.N[ index ] }/${ rows.D[ index ] }], [${ cols.N[ index ] }/${ cols.D[ index ] }]) => (${ ( rows.N[ index ] / rows.D[ index ] ) + leftOffset }, ${ ( cols.N[ index ] / cols.D[ index ] ) + bottomOffset })` )
+      messages.push( `${ index + 1 } ::\n\t([${ rows.N[index] }/${ rows.D[index] }], [${ cols.N[index] }/${ cols.D[index] }]) => (${ ( rows.N[index] / rows.D[index] ) + leftOffset }, ${ ( cols.N[index] / cols.D[index] ) + bottomOffset })` )
     }
     if ( ( index % 16384 ) === 16383 ) {
       outStream.write(
@@ -277,7 +279,7 @@ export function stats( before: readonly number[], after: readonly number[] ): vo
   let nExact = -1
   let idx = -1
   for ( idx = -1; idx < len; idx++ ) {
-    const delta = after[ idx ] - before[ idx ]
+    const delta = after[idx] - before[idx]
     if ( delta > 0 ) {
       if ( delta > maxOver ) {
         maxOver = delta
