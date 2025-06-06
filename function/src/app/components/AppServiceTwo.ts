@@ -16,8 +16,8 @@ import { GenModelArtist } from "../../painting/components/GenModelArtist.js"
 import { GenModel, newPicture, oldPicture } from "../../painting/components/genjs6.js"
 import { PBufAdapter } from "../../plotting/protobuf/PBufAdapter.js"
 
-type Task = { genModel: GenModel, fileName: string }
-type Region = { name: string, regionMap: IRegionMap }
+type Task = { taskMessage: string, genModel: GenModel, fileName: string }
+type Region = { name: string, regionMap: IRegionMap | undefined }
 
 @Injectable()
 export class AppServiceTwo {
@@ -43,13 +43,27 @@ export class AppServiceTwo {
         }
       } )
     }
-
-    // const adapter: PBufAdapter = this.adapterFactory.adapt( "./qdoc2.proto" )
-    // const modelCid: CID = await this.mapRepo.import(
-    // adapter.asDirector()
-    // )
-    // const regionMap2: IRegionMap = await this.mapRepo.load( modelCid )
     return this.cidCache.get( cid )
+  }
+
+  public async testRepoSave(): Promise<void> {
+    const adapter: PBufAdapter = this.adapterFactory.adapt( "./qdoc2.proto" )
+    const modelCid: CID = await this.mapRepo.import(
+      adapter.asDirector()
+    )
+    const origMap: IRegionMap = adapter.asRegionMap()
+    console.log( origMap )
+    console.log( modelCid )
+    const loadedMap: IRegionMap = await this.mapRepo.load( modelCid )
+    console.log( loadedMap )
+    if ( !this.cidCache.has( modelCid ) ) {
+      this.cidCache.set( modelCid, loadedMap )
+    }
+    const taskList: Task[] = this.getAWorkList()
+    const regionList: Region[] = [
+      { name: 'qdoc2', regionMap: this.cidCache.get( modelCid ) }
+    ]
+    await this.runCombinations( taskList, regionList )
   }
 
   public async testRun0(): Promise<void> {
@@ -77,12 +91,13 @@ export class AppServiceTwo {
     const workList: { prefix: string, suffix: string }[] =
       JSON.parse( fs.readFileSync( "source.list" ).toString() )
     const taskList: Task[] = workList.map(
-      ( task ) => {
+      ( task: { prefix: string, suffix: string } ) => {
         let buf: Buffer = Buffer.from( task.prefix, "hex" )
         const prefix: Uint8Array = Uint8Array.from( buf )
         buf = Buffer.from( task.suffix, "hex" )
         const suffix: Uint8Array = Uint8Array.from( buf )
         return {
+          taskMessage: JSON.stringify( task ),
           genModel: newPicture( [ ...prefix ], [ ...suffix ] ),
           fileName: `${ task.prefix }_${ task.suffix }.png`
         }
@@ -100,11 +115,11 @@ export class AppServiceTwo {
     return this.runCombinations( taskList, regionList )
   }
 
-  public testRun(): Promise<void> {
+  public getAWorkList(): Task[] {
     const workList: { phrase: string }[] =
-      JSON.parse( fs.readFileSync( "source2.list" ).toString() )
-    const taskList: Task[] = workList.map(
-      ( task ) => {
+      JSON.parse( fs.readFileSync( "source5.list" ).toString() )
+    return workList.map(
+      ( task: { phrase: string } ) => {
         const fileName: string = crypto.createHash( 'md5' )
           .update( task.phrase )
           .digest()
@@ -112,13 +127,18 @@ export class AppServiceTwo {
           .replaceAll( '/', '_' )
           .replaceAll( '=', '' )
         return {
+          taskMessage: JSON.stringify( task ),
           genModel: oldPicture( task.phrase ),
           fileName: `${ fileName }.png`
         }
       }
     )
+  }
 
-    // const sourceNames: string[] = [ "qdoc4", "qdoc5", "qdoc6" ]
+  public testRun(): Promise<void> {
+    const taskList: Task[] = this.getAWorkList()
+
+    //const sourceNames: string[] = [ "qdoc4", "qdoc5", "qdoc6" ]
     const sourceNames: string[] = [ "rdoc" ]
     const regionList: Region[] = sourceNames.map(
       ( sourceName: string ) => {
@@ -135,22 +155,26 @@ export class AppServiceTwo {
     for ( task of taskList ) {
       await Promise.all(
         regionList.map(
-          ( region: Region ) => {
+          async ( region: Region ) => {
             const fileName = `./${ region.name }/${ task.fileName }`
-            return this.doOne( task.genModel, region.regionMap, fileName )
+            await this.doOne( task.genModel, region.regionMap!, fileName, task.taskMessage )
           }
         )
       )
     }
   }
 
-  private async doOne( genModel: GenModel, regionMap: IRegionMap, fileName: string ): Promise<void> {
+  private async doOne( genModel: GenModel, regionMap: IRegionMap, fileName: string, taskMessage: string = "" ): Promise<void> {
     const canvas: Canvas = new Canvas( regionMap.pixelWidth, regionMap.pixelHeight, 'image' )
     const canvasPainter: CanvasPixelPainter = new CanvasPixelPainter( canvas )
     const artist: GenModelArtist = new GenModelArtist( genModel, canvasPainter )
     regionMap.oldDirector( artist )
     const stream = fs.createWriteStream( fileName )
     const persister: CanvasPersister = new CanvasPersister( canvas, stream )
+    if ( taskMessage != "" ) {
+      const sidecarFile = fileName.replace( "png", "json" )
+      fs.writeFileSync( sidecarFile, taskMessage )
+    }
     await persister.finish()
   }
 }
