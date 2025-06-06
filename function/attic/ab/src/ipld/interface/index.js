@@ -1,0 +1,6 @@
+export * from './RepresentDomainPair.js';
+export * from './RepresentUnionPair.js';
+export * from './ISchemaSignature.js';
+export * from './ISerdes.js';
+export * from './ISerdesFactory.js';
+//# sourceMappingURL=index.js.map

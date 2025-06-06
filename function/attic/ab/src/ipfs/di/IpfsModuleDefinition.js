@@ -1,0 +1,28 @@
+import { ConfigurableModuleBuilder } from "@nestjs/common";
+import { FACTORY_METHOD_KEY, IpfsModuleTypes, REGISTER_METHOD_KEY } from "./IpfsModuleTypes.js";
+import { ModuleExportConfiguration } from "./ModuleExportConfiguration.js";
+export const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN, OPTIONS_TYPE, ASYNC_OPTIONS_TYPE } = new ConfigurableModuleBuilder({
+    optionsInjectionToken: IpfsModuleTypes.FsBlockstoreConfiguration, alwaysTransient: true,
+})
+    .setClassMethodName(REGISTER_METHOD_KEY)
+    .setFactoryMethodName(FACTORY_METHOD_KEY)
+    .setExtras(new ModuleExportConfiguration(IpfsModuleTypes.AbstractBlockstore), (module, extras) => {
+    if (extras.injectToken !== IpfsModuleTypes.AbstractBlockstore) {
+        if (module.providers === undefined) {
+            module.providers = [{ provide: extras.injectToken, useExisting: IpfsModuleTypes.AbstractBlockstore }];
+        }
+        else {
+            module.providers.push({ provide: extras.injectToken, useExisting: IpfsModuleTypes.AbstractBlockstore });
+        }
+        if (module.exports === undefined) {
+            module.exports = [extras.injectToken];
+        }
+        else {
+            module.exports.push(extras.injectToken);
+        }
+    }
+    console.log(module);
+    console.log(extras);
+    return module;
+}).build();
+//# sourceMappingURL=IpfsModuleDefinition.js.map
