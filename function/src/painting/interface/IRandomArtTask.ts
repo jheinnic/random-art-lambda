@@ -1,5 +1,3 @@
-import { Canvas } from "canvas"
-
 import { IRandomArtwork } from "./IRandomArtwork.js"
 import { RandomArtTaskRequest } from "./RandomArtTaskRequest.js"
 
