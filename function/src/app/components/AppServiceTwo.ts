@@ -117,7 +117,7 @@ export class AppServiceTwo {
 
   public getAWorkList(): Task[] {
     const workList: { phrase: string }[] =
-      JSON.parse( fs.readFileSync( "source5.list" ).toString() )
+      JSON.parse( fs.readFileSync( "source5B.list" ).toString() )
     return workList.map(
       ( task: { phrase: string } ) => {
         const fileName: string = crypto.createHash( 'md5' )
@@ -139,7 +139,7 @@ export class AppServiceTwo {
     const taskList: Task[] = this.getAWorkList()
 
     //const sourceNames: string[] = [ "qdoc4", "qdoc5", "qdoc6" ]
-    const sourceNames: string[] = [ "rdoc" ]
+    const sourceNames: string[] = [ "rdoc03" ]
     const regionList: Region[] = sourceNames.map(
       ( sourceName: string ) => {
         const adapter: PBufAdapter = this.adapterFactory.adapt( `./${ sourceName }.proto` )
