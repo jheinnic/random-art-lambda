@@ -57,6 +57,9 @@ def check_proportions(pixel_width, left, right, pixel_height, bottom, top, fix_b
     return bottom, top, left, right
 
 
+"""
+   Compute the coordinates of the cell centers for a grid that divides a region into a specific pixel grid
+"""
 def compute_dimensions(pixel_width, left, right, pixel_height, bottom, top, pixel_unit=1):
     print(left, right, 2*pixel_width//pixel_unit)
     frame_lengths = np.linspace(left, right, 2*pixel_width//pixel_unit, endpoint=False) \
@@ -66,6 +69,27 @@ def compute_dimensions(pixel_width, left, right, pixel_height, bottom, top, pixe
     frame_heights = np.linspace(bottom, top, 2*pixel_height//pixel_unit, endpoint=False) \
         .reshape([pixel_height//pixel_unit, 2]) \
         .transpose([1, 0])[1]
+    pixel_lengths = np.array([*range(0, pixel_width)]) \
+        .reshape(pixel_width//pixel_unit, pixel_unit) \
+        .transpose()[0]
+    pixel_heights = np.array([*range(0, pixel_height)]) \
+        .reshape(pixel_height//pixel_unit, pixel_unit) \
+        .transpose()[0]
+    return pixel_lengths, frame_lengths, pixel_heights, frame_heights
+
+
+"""
+   Compute the coordinates of the top left corner of a grid that divides a region into a specific pixel grid
+"""
+def compute_dimensions_v2(pixel_width, left, right, pixel_height, bottom, top, pixel_unit=1):
+    print(left, right, 3*(pixel_width//pixel_unit))
+    frame_lengths = np.linspace(left, right, 3*(pixel_width//pixel_unit), endpoint=False) \
+        .reshape([pixel_width//pixel_unit, 3]) \
+        .transpose([1, 0])[0]
+    print(bottom, top, 3*(pixel_height//pixel_unit))
+    frame_heights = np.linspace(bottom, top, 3*(pixel_height//pixel_unit), endpoint=False) \
+        .reshape([pixel_height//pixel_unit, 3]) \
+        .transpose([1, 0])[0]
     pixel_lengths = np.array([*range(0, pixel_width)]) \
         .reshape(pixel_width//pixel_unit, pixel_unit) \
         .transpose()[0]
