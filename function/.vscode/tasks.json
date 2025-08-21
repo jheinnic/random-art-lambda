@@ -1,28 +1,49 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"type": "typescript",
-			"tsconfig": "tsconfig.json",
-			"option": "watch",
-			"problemMatcher": [
-				"$tsc-watch"
-			],
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			},
-			"label": "tsc: watch - tsconfig.json",
-			"detail": "/Users/john.heinnickel/Git/lambdas/random-art-lambda/function/node_modules/typescript/bin/tsc"
-		},
-		{
-			"type": "typescript",
-			"tsconfig": "tsconfig.json",
-			"problemMatcher": [
-				"$tsc"
-			],
-			"group": "build",
-			"label": "tsc: build - tsconfig.json"
-		}
-	]
+   "version": "2.0.0",
+   "tasks": [
+      {
+         "type": "typescript",
+         "tsconfig": "tsconfig.json",
+         "option": "watch",
+         "problemMatcher": ["$tsc-watch"],
+         "group": "build",
+         "label": "tsc: watch - tsconfig.json",
+         "detail": "/Users/john.heinnickel/Git/lambdas/random-art-lambda/function/node_modules/typescript/bin/tsc"
+      },
+      {
+         "type": "typescript",
+         "tsconfig": "tsconfig.json",
+         "problemMatcher": ["$tsc"],
+         "group": "build",
+         "label": "tsc: build - tsconfig.json"
+      },
+      {
+         "type": "npm",
+         "script": "test",
+         "group": "test",
+         "problemMatcher": [],
+         "label": "npm: test",
+         "detail": "jest"
+      },
+      {
+         "type": "npm",
+         "script": "build/cli/main.js plot",
+         "group": "test",
+         "problemMatcher": [],
+         "label": "npm: runPlot",
+         "detail": "cli"
+      },
+      {
+         "type": "npm",
+         "script": "build",
+         "path": ".",
+         "group": {
+            "kind": "build",
+            "isDefault": true
+         },
+         "problemMatcher": [],
+         "label": "npm: build",
+         "detail": "npm run clean && tsc -b src && echo `pwd`"
+      }
+   ]
 }
