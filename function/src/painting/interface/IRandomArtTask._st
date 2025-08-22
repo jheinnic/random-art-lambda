@@ -1,0 +1,8 @@
+import { IRandomArtwork } from "./IRandomArtwork.js"
+import { RandomArtTaskCall } from "../dto/RandomArtTaskCall.js"
+
+export interface IRandomArtTask {
+   readonly spec: RandomArtTaskCall
+   // done: boolean
+   readonly artwork: Promise<IRandomArtwork>
+}

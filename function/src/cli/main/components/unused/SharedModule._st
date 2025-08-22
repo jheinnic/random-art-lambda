@@ -1,0 +1,18 @@
+/**
+ * A dynamic NestJS module that provides shared services like MyService.
+ * It allows the consuming application (CLI or Web) to provide the specific
+ * implementation of INetworkAdapter, achieving true loose coupling.
+ */
+@Module({}) // No direct providers here, they come from register()
+export class SharedNetworkModule {
+   static register(options: SharedNetworkModuleOptions): DynamicModule {
+      return {
+         module: SharedNetworkModule,
+         // MyService is always provided by this shared module.
+         // The networkAdapterProvider is dynamically supplied by the importing module.
+         providers: [MyService, options.networkAdapterProvider],
+         // Export MyService so that modules importing SharedNetworkModule can inject it.
+         exports: [MyService],
+      }
+   }
+}

@@ -1,0 +1,48 @@
+// src/common/my.service.ts
+import { Injectable, Inject, Scope } from "@nestjs/common"
+import { INetworkAdapter } from "./network-adapter.interface"
+import { ModuleRef, ContextId } from "@nestjs/core" // Import ModuleRef and ContextId
+
+/**
+ * A service that depends on the network adapter. This service is shared
+ * between both the CLI and web applications. It only knows about the
+ * INetworkAdapter interface, not its concrete implementation or how it's configured.
+ *
+ * MyService remains a SINGLETON, but it uses ModuleRef.resolve() to get
+ * the correct instance of INetworkAdapter (either SINGLETON/TRANSIENT for CLI,
+ * or REQUEST-scoped for Web) based on the provided ContextId and optional arguments.
+ */
+@Injectable()
+export class MyService {
+   constructor(private readonly moduleRef: ModuleRef) {
+      // Inject ModuleRef
+      console.log("MyService (Singleton) instantiated.")
+   }
+
+   /**
+    * Performs some operation using the network adapter.
+    * Accepts an optional ContextId for resolving request-scoped providers (Web).
+    * Accepts optional adapterConfig to pass to the resolved adapter's constructor (CLI TRANSIENT).
+    */
+   async performNetworkOperation(
+      contextId?: ContextId,
+      adapterConfig?: string,
+   ): Promise<string> {
+      console.log(
+         `MyService is performing a network operation... (ContextId: ${contextId?.uuid || "None"})`,
+      )
+
+      // Lazily resolve the 'NETWORK_ADAPTER' provider from the correct scope.
+      // If contextId is provided (from web request or custom CLI context),
+      // NestJS will resolve from that specific context.
+      // { strict: false } allows resolution even if no specific scope is passed (CLI default).
+      // The 'arguments' array is passed to the constructor of TRANSIENT providers.
+      const networkAdapter = await this.moduleRef.resolve<INetworkAdapter>(
+         "NETWORK_ADAPTER",
+         contextId,
+         { strict: false, arguments: !!adapterConfig ? [adapterConfig] : [] },
+      )
+      const result = await networkAdapter.fetchData()
+      return `Service Operation Result: ${result}`
+   }
+}
