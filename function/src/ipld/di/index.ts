@@ -1,5 +1,3 @@
-export { IpldModule } from "./IpldModule.js"
-export { IpldModuleTypes } from "./IpldModuleTypes.js"
-export { SerdesConfiguration } from "./SerdesConfiguration.js"
-
-export * from "./IpldModuleDefinition.js"
+export * from "./Module.js"
+export * from "./Types.js"
+export * from "./Extra.js"
