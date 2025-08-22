@@ -1,0 +1,11 @@
+// src/shared-network/shared-network.module.ts
+import { Provider } from "@nestjs/common"
+import { INetworkAdapter } from "../common/network-adapter.interface"
+
+/**
+ * Interface for options passed to the dynamic module.
+ * It expects a provider definition for INetworkAdapter.
+ */
+interface SharedNetworkModuleOptions {
+   networkAdapterProvider: Provider<INetworkAdapter>
+}
