@@ -1,0 +1,21 @@
+// src/web/app.module.ts (Web application's root module)
+import { Module, Scope } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { WebNetworkAdapter, INetworkAdapter } from './network-adapter-web'; // Web specific adapter
+import { SharedNetworkModule } from '../shared-network/shared-network.module'; // The dynamic shared module
+
+@Module({
+  imports: [
+    // Register the SharedNetworkModule, providing the Web-specific adapter implementation
+    SharedNetworkModule.register({
+      networkAdapterProvider: {
+        provide: 'NETWORK_ADAPTER', // Token that MyService expects
+        useClass: WebNetworkAdapter, // Provide the web-specific adapter class
+        scope: Scope.REQUEST,        // Ensure it's request-scoped for the web context
+      },
+    }),
+  ],
+  controllers: [AppController], // Your web controllers
+  providers: [],
+})
+export class AppModuleWeb {}

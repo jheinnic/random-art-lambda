@@ -1,0 +1,9 @@
+// src/network-adapter.interface.ts
+/**
+ * Defines the interface for our network-agnostic adapter.
+ * This helps maintain loose coupling.
+ */
+export interface INetworkAdapter {
+  fetchData(): Promise<string>;
+  configure(data: string): void;
+}
