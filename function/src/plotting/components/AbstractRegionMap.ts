@@ -1,93 +1,101 @@
-import { IRegionMap, IRegionPlotter } from "../interface/index.js"
+import {
+   IRegionMap,
+   IRegionMapBuilder,
+   IRegionPlotter,
+} from "../interface/index.js"
 
 // import { TupleOfLength } from "@jchptf/tupletypes"
 
 export abstract class AbstractRegionMap implements IRegionMap {
-  abstract get pixelHeight(): number
+   abstract get pixelHeight(): number
 
-  abstract get pixelWidth(): number
+   abstract get pixelWidth(): number
 
-  abstract get columnOrderedXCoordinates(): readonly number[]
+   abstract get columnOrderedXCoordinates(): readonly number[]
 
-  abstract get columnOrderedYCoordinates(): readonly number[]
+   abstract get columnOrderedYCoordinates(): readonly number[]
 
-  abstract get isUniform(): boolean
+   abstract get isUniform(): boolean
 
-  public oldDirector( plotter: IRegionPlotter ): void {
-    const xMax: number = this.pixelWidth
-    const yMax: number = this.pixelHeight
-    const xCols: readonly number[] = this.columnOrderedXCoordinates
-    const yCols: readonly number[] = this.columnOrderedYCoordinates
+   abstract directBuilder(builder: IRegionMapBuilder): void
 
-    if ( this.isUniform ) {
-      let nextX: number = -1
-      while ( ++nextX < xMax ) {
-        let nextY: number = -1
-        while ( ++nextY < yMax ) {
-          plotter.plot( nextX, nextY, xCols[ nextX ], yCols[ nextY ] )
-        }
-      }
-    } else {
-      let ii: number = 0
-      let nextX: number = -1
-      while ( ++nextX < xMax ) {
-        let nextY = -1
-        while ( ++nextY < yMax ) {
-          // console.log(nextX, nextY, xCols[ii], yCols[ii])
-          plotter.plot( nextX, nextY, xCols[ ii ], yCols[ ii++ ] )
-        }
-      }
-    }
-    // plotter.finish()
-  }
+   public async directPlotter(plotter: IRegionPlotter): Promise<void> {
+      const xMax: number = this.pixelWidth
+      const yMax: number = this.pixelHeight
+      const xCols: readonly number[] = this.columnOrderedXCoordinates
+      const yCols: readonly number[] = this.columnOrderedYCoordinates
 
-  public director( plotter: IRegionPlotter ): void {
-    if ( this.isUniform ) {
-      this.directUniform( plotter )
-    } else {
-      this.directVariable( plotter )
-    }
-  }
-
-  private directUniform( plotter: IRegionPlotter ): void {
-    const xMax: number = this.pixelWidth
-    const yMax: number = this.pixelHeight
-    const xCols: readonly number[] = this.columnOrderedXCoordinates
-    const yCols: readonly number[] = this.columnOrderedYCoordinates
-
-    function loopForX( nextX: number ): void {
-      let nextY: number = -1
-      while ( ++nextY < yMax ) {
-        plotter.plot( nextX, nextY, xCols[ nextX ], yCols[ nextY ] )
-      }
-      if ( ++nextX < xMax ) {
-        setTimeout( loopForX, 0, nextX )
+      if (this.isUniform) {
+         let nextX: number = -1
+         while (++nextX < xMax) {
+            let nextY: number = -1
+            while (++nextY < yMax) {
+               plotter.plot(nextX, nextY, xCols[nextX], yCols[nextY])
+            }
+         }
       } else {
-        console.log( "Done looping" )
-        // plotter.finish()
+         let ii: number = 0
+         let nextX: number = -1
+         while (++nextX < xMax) {
+            let nextY = -1
+            while (++nextY < yMax) {
+               // console.log(nextX, nextY, xCols[ii], yCols[ii])
+               plotter.plot(nextX, nextY, xCols[ii], yCols[ii++])
+            }
+         }
       }
-    }
-    loopForX( 0 )
-  }
+      // plotter.finish()
+   }
 
-  private directVariable( plotter: IRegionPlotter ): void {
-    const xMax: number = this.pixelWidth
-    const yMax: number = this.pixelHeight
-    const xCols: readonly number[] = this.columnOrderedXCoordinates
-    const yCols: readonly number[] = this.columnOrderedYCoordinates
-
-    function loopForXI( nextX: number, ii: number ): void {
-      let nextY = -1
-      while ( ++nextY < yMax ) {
-        plotter.plot( nextX, nextY, xCols[ ii ], yCols[ ii++ ] )
-      }
-      if ( ++nextX < xMax ) {
-        setTimeout( loopForXI, 0, nextX, ii )
+   public async oldDirectPlotter(plotter: IRegionPlotter): Promise<void> {
+      if (this.isUniform) {
+         await this.directUniform(plotter)
       } else {
-        console.log( "Done looping" )
-        // plotter.finish()
+         await this.directVariable(plotter)
       }
-    }
-    loopForXI( 0, 0 )
-  }
+   }
+
+   private async directUniform(plotter: IRegionPlotter): Promise<void> {
+      const xMax: number = this.pixelWidth
+      const yMax: number = this.pixelHeight
+      const xCols: readonly number[] = this.columnOrderedXCoordinates
+      const yCols: readonly number[] = this.columnOrderedYCoordinates
+
+      async function loopForX(nextX: number): Promise<void> {
+         let nextY: number = -1
+         while (++nextY < yMax) {
+            plotter.plot(nextX, nextY, xCols[nextX], yCols[nextY])
+         }
+         if (++nextX < xMax) {
+            // setTimeout(loopForX, 0, nextX)
+            await loopForX(nextX)
+         } else {
+            console.log("Done looping")
+            // plotter.finish()
+         }
+      }
+      await loopForX(0)
+   }
+
+   private async directVariable(plotter: IRegionPlotter): Promise<void> {
+      const xMax: number = this.pixelWidth
+      const yMax: number = this.pixelHeight
+      const xCols: readonly number[] = this.columnOrderedXCoordinates
+      const yCols: readonly number[] = this.columnOrderedYCoordinates
+
+      async function loopForXI(nextX: number, ii: number): Promise<void> {
+         let nextY = -1
+         while (++nextY < yMax) {
+            plotter.plot(nextX, nextY, xCols[ii], yCols[ii++])
+         }
+         if (++nextX < xMax) {
+            // setTimeout(loopForXI, 0, nextX, ii)
+            await loopForXI(nextX, ii)
+         } else {
+            console.log("Done looping")
+            // plotter.finish()
+         }
+      }
+      await loopForXI(0, 0)
+   }
 }
