@@ -20,7 +20,6 @@ for (let ii = 0, idx = 0; ii < 256; ii++) {
 
 export class GenModelArtist implements IRegionPlotter {
    private readonly context: CanvasRenderingContext2D
-   private finished: boolean = false
 
    public constructor(
       private readonly genModel: GenModel,

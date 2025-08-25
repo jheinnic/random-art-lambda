@@ -1,8 +1,4 @@
-import {
-   Module,
-   ConfigurableModuleBuilder,
-   // ConfigurableModuleHost,
-} from "@nestjs/common"
+import { Module, ConfigurableModuleBuilder } from "@nestjs/common"
 
 import { RandomArtTaskEngine } from "../components/RandomArtTaskEngine.js"
 
