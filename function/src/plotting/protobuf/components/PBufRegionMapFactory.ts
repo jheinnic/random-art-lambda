@@ -6,6 +6,9 @@ import { PointPlotDocument, PointPlotData } from "./PBufUtil.js"
 
 @Injectable()
 export class PBufRegionMapFactory {
+   // eslint-disable-next-line @typescript-eslint/no-useless-constructor
+   constructor() {}
+
    public adapt(sourceFile: string): PBufRegionMap
    public adapt(sourceFile: Buffer): PBufRegionMap
    public adapt(sourceFile: string | Buffer): PBufRegionMap {
