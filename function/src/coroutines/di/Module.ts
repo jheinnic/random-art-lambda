@@ -1,5 +1,4 @@
 import {
-   InjectionToken,
    ConfigurableModuleBuilder,
    DynamicModule,
    Module,
@@ -7,7 +6,7 @@ import {
 import { chan } from "medium"
 
 import { CoroutineModuleTypes } from "./Types.js"
-import { CoroutineModuleExtras, ProviderRequest } from "./Extras.js"
+import { CoroutineModuleExtras } from "./Extras.js"
 import { REGISTER_METHOD_KEY, CREATE_METHOD_KEY } from "./Constants.js"
 
 const dynamicHost = new ConfigurableModuleBuilder<
