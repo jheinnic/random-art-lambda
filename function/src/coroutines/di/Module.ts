@@ -32,7 +32,7 @@ const dynamicHost = new ConfigurableModuleBuilder<
             ...Object.getOwnPropertySymbols(extras.requests),
             ...Object.getOwnPropertyNames(extras.requests),
          ]
-         console.log("Coroutines transform requested with :: ", extras)
+         // console.log("Coroutines transform requested with :: ", extras)
          if (keys.length === 0) {
             return moduleIn
          }
@@ -41,7 +41,7 @@ const dynamicHost = new ConfigurableModuleBuilder<
          const imports = moduleIn.imports ?? []
 
          keys.forEach((key: symbol | string) => {
-            console.log("Handling an extra, ", key)
+            // console.log("Handling an extra, ", key)
             const value = extras.requests[key]
             let component
             switch (value.component) {
@@ -91,12 +91,12 @@ export type CoroutinesModuleOptions = typeof dynamicHost.OPTIONS_TYPE
 })
 export class CoroutinesModule extends dynamicHost.ConfigurableModuleClass {
    static register(config: CoroutinesModuleAsyncOptions): DynamicModule {
-      console.log(
-         "In CoroutinesMode.elevate() and watch him for a few more days :: ",
-         config,
-      )
+      // console.log(
+      //    "In CoroutinesMode.elevate() and watch him for a few more days :: ",
+      //    config,
+      // )
       const rv = super.register(config)
-      console.log("now the contract is : ", rv)
+      // console.log("now the contract is : ", rv)
       return rv
    }
 
