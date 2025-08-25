@@ -12,9 +12,12 @@ import type { IRandomArtTaskEngine } from "../interface/index.js"
 
 import { GenModelArtist } from "./GenModelArtist.js"
 import { GenModel, newPicture } from "./genjs6.js"
+import { ChannelWrapper } from "../../cli/channels/ChannelWrapper.js"
 
 @Injectable()
 export class RandomArtTaskEngine implements IRandomArtTaskEngine {
+   private readonly requests: Chan<RandomArtTaskCall>
+   private readonly replies: Chan<RandomArtTaskReply>
    private handles: Array<Promise<void>>
    private readonly concurrency: number
 
@@ -22,12 +25,14 @@ export class RandomArtTaskEngine implements IRandomArtTaskEngine {
       @Inject(PaintingModuleTypes.InjectedRegionMapRepository)
       private readonly regionMapRepository: IRegionMapRepository,
       @Inject(PaintingModuleTypes.RandomArtTaskCallChannel)
-      private readonly requests: Chan<RandomArtTaskCall>,
+      readonly requestsWrapper: ChannelWrapper<RandomArtTaskCall>,
       @Inject(PaintingModuleTypes.RandomArtTaskReplyChannel)
-      private readonly replies: Chan<RandomArtTaskReply>,
+      readonly repliesWrapper: ChannelWrapper<RandomArtTaskReply>,
    ) {
       this.concurrency = 4
       this.handles = new Array<Promise<void>>(this.concurrency)
+      this.requests = requestsWrapper.unwrap()
+      this.replies = repliesWrapper.unwrap()
    }
 
    public async begin(): Promise<void> {

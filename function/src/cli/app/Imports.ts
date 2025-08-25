@@ -1,5 +1,4 @@
 import { DynamicModule } from "@nestjs/common"
-import { Chan } from "medium"
 
 import { CliChannelsModuleTypes } from "../channels/Types.js"
 import { CliChannelsModule } from "../channels/Module.js"
@@ -31,13 +30,13 @@ import {
    RandomArtTaskCall,
    RandomArtTaskReply,
 } from "../../painting/message/index.js"
+import { ChannelWrapper } from "../channels/ChannelWrapper.js"
 
-
-const plottingModuleOptions: ProtobufPlottingModuleAsyncOptions = {
+export const plottingModuleOptions: ProtobufPlottingModuleAsyncOptions = {
    imports: [CliChannelsModule],
    useFactory: (
-      enrollSourceFileCallChannel: Chan<EnrollSourceFileCall>,
-      enrollSourceFileReplyChannel: Chan<EnrollSourceFileReply>,
+      enrollSourceFileCallChannel: ChannelWrapper<EnrollSourceFileCall>,
+      enrollSourceFileReplyChannel: ChannelWrapper<EnrollSourceFileReply>,
    ): ProtobufPlottingModuleConfiguration => {
       return new ProtobufPlottingModuleConfiguration(
          enrollSourceFileCallChannel,
@@ -49,16 +48,15 @@ const plottingModuleOptions: ProtobufPlottingModuleAsyncOptions = {
       CliChannelsModuleTypes.EnrollSourceFileReplyChannel,
    ],
 }
-const plottingModule: DynamicModule = ProtobufPlottingModule.registerAsync(
-   plottingModuleOptions,
-)
+export const plottingModule: DynamicModule =
+   ProtobufPlottingModule.registerAsync(plottingModuleOptions)
 
 const paintingModuleOptions: PaintingModuleAsyncOptions = {
    imports: [CliChannelsModule, plottingModule],
    useFactory: (
       regionMapRepo: IRegionMapRepository,
-      randomArtTaskCallChannel: Chan<RandomArtTaskCall>,
-      randomArtTaskReplyChannel: Chan<RandomArtTaskReply>,
+      randomArtTaskCallChannel: ChannelWrapper<RandomArtTaskCall>,
+      randomArtTaskReplyChannel: ChannelWrapper<RandomArtTaskReply>,
    ): PaintingModuleConfiguration => {
       return new PaintingModuleConfiguration(
          regionMapRepo,
@@ -73,7 +71,7 @@ const paintingModuleOptions: PaintingModuleAsyncOptions = {
    ],
 }
 
-const paintingModule: DynamicModule = PaintingModule.registerAsync(
+export const paintingModule: DynamicModule = PaintingModule.registerAsync(
    paintingModuleOptions,
 )
 
@@ -81,10 +79,10 @@ export const cliMainModuleAsyncOptions: CliMainModuleAsyncOptions = {
    imports: [CliChannelsModule, paintingModule],
    useFactory: (
       randomArtTaskEngine: IRandomArtTaskEngine,
-      enrollSourceFileCallChannel: Chan<EnrollSourceFileCall>,
-      enrollSourceFileReplyChannel: Chan<EnrollSourceFileReply>,
-      randomArtTaskCallChannel: Chan<RandomArtTaskCall>,
-      randomArtTaskReplyChannel: Chan<RandomArtTaskReply>,
+      enrollSourceFileCallChannel: ChannelWrapper<EnrollSourceFileCall>,
+      enrollSourceFileReplyChannel: ChannelWrapper<EnrollSourceFileReply>,
+      randomArtTaskCallChannel: ChannelWrapper<RandomArtTaskCall>,
+      randomArtTaskReplyChannel: ChannelWrapper<RandomArtTaskReply>,
    ): CliMainModuleConfiguration => {
       return new CliMainModuleConfiguration(
          randomArtTaskEngine,
@@ -102,4 +100,3 @@ export const cliMainModuleAsyncOptions: CliMainModuleAsyncOptions = {
       CliChannelsModuleTypes.RandomArtTaskReplyChannel,
    ],
 }
-

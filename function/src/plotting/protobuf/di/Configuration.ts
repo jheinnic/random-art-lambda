@@ -1,4 +1,4 @@
-import { Chan } from "medium"
+import { ChannelWrapper } from "../../../cli/channels/ChannelWrapper.js"
 import {
    EnrollSourceFileCall,
    EnrollSourceFileReply,
@@ -6,7 +6,7 @@ import {
 
 export class ProtobufPlottingModuleConfiguration {
    constructor(
-      public readonly enrollSourceFileCallChannel: Chan<EnrollSourceFileCall>,
-      public readonly enrollSourceFileReplyChannel: Chan<EnrollSourceFileReply>,
+      public readonly enrollSourceFileCallChannel: ChannelWrapper<EnrollSourceFileCall>,
+      public readonly enrollSourceFileReplyChannel: ChannelWrapper<EnrollSourceFileReply>,
    ) {}
 }

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common"
+import { Injectable } from "@nestjs/common"
 import { CID } from "multiformats"
 
 import {
@@ -7,7 +7,6 @@ import {
    IRegionMapBuilder,
 } from "../../interface/index.js"
 import { PBufRegionMapFactory } from "./PBufRegionMapFactory.js"
-import { ProtobufPlottingModuleTypes } from "../di/Types.js"
 import { PBufSourceConfiguration } from "./PBufSourceConfiguration.js"
 
 @Injectable()

@@ -38,4 +38,4 @@ export const ProtobufPlottingModuleTypes = {
    EnrollSourceFileCallChannel: ENROLL_SOURCE_FILE_CALL_CHANNEL,
    EnrollSourceFileReplyChannel: ENROLL_SOURCE_FILE_REPLY_CHANNEL,
    ModuleConfiguration: PROTOBUF_PLOTTING_MODULE_CONFIGURATION,
-}
+} as const
