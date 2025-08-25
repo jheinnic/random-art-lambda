@@ -1,5 +1,5 @@
-import { Injectable, Inject } from "@nestjs/common"
-import { Chan, repeatTake, CLOSED, put } from "medium"
+import { Injectable, Inject, Logger } from "@nestjs/common"
+import { Chan, repeatTake, CLOSED, put, close } from "medium"
 import { CID } from "multiformats"
 import * as fs from "fs"
 
@@ -18,6 +18,7 @@ export class PBufSourceConfiguration implements ISourceConfiguration {
    private readonly cidHandles: Chan<EnrollSourceFileReply>
    private readonly buffersByCid: Map<CID, Buffer> = new Map<CID, Buffer>()
    private ready: boolean = false
+   private readonly logger: Logger = new Logger("PBufSourceConfiguration")
 
    /**
     * Prime the configuration with a list of name to file paths.
@@ -41,9 +42,11 @@ export class PBufSourceConfiguration implements ISourceConfiguration {
          await repeatTake(
             this.fileSources,
             loadSourceFile,
-            new WorkContext(this.buffersByCid, this.cidHandles),
+            new WorkContext(this.buffersByCid, this.cidHandles, this.logger),
          )
 
+         this.logger.log("Received end-of-stream")
+         await close(this.cidHandles)
          this.ready = true
       }
    }
@@ -61,6 +64,7 @@ class WorkContext {
    constructor(
       public readonly buffersByCid: Map<CID, Buffer>,
       public readonly cidHandles: Chan<EnrollSourceFileReply>,
+      public readonly logger: Logger,
    ) {}
 }
 
@@ -69,20 +73,32 @@ async function loadSourceFile(
    context: WorkContext,
 ): Promise<false | WorkContext> {
    if (typeof nextTask === "symbol") {
+      context.logger.log("Received end-of-stream")
+      await close(context.cidHandles)
       return false
    }
 
+   context.logger.log(`Received ${JSON.stringify(nextTask)}`)
    const result = await fs.promises
       .readFile(nextTask.filePath)
       .then(async (buffer: Buffer) => {
          const cid = await bytesToCIDv1(buffer)
          context.buffersByCid.set(cid, buffer)
          await put(context.cidHandles, nextTask.prepareReply(cid))
+         context.logger.log(
+            `Put reply to sender for ${nextTask.correlationId}.`,
+         )
 
          return context
       })
       .catch(async (x: Error) => {
+         context.logger.log(
+            `Sending error to sender for ${nextTask.correlationId}.`,
+         )
          await put(context.cidHandles, nextTask.prepareError(x.message))
+         context.logger.log(
+            `Put error to sender for ${nextTask.correlationId}.`,
+         )
 
          return undefined
       })

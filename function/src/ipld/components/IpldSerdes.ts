@@ -19,7 +19,7 @@ export class IpldSerdes<
       private readonly toRepresentation: (source: RDP[1]) => RDP[0],
       private readonly toDomainModel: (source: RDP[0]) => RDP[1],
       private readonly codec: BlockCodec<Code, RDP[0]>,
-      private readonly hasher: MultihashHasher<Hash>
+      private readonly hasher: MultihashHasher<Hash>,
       // private validate: () => true
    ) {}
 
@@ -48,14 +48,14 @@ export class IpldSerdes<
     * @returns Decoded Block
     */
    public async bytesToBlock(
-      bytes: ByteView<RDP[0]>
+      bytes: ByteView<RDP[0]>,
    ): Promise<BlockView<RDP[0]>> {
       const codec = this.codec
       const hasher = this.hasher
       const block = await decode<RDP[0], Code, Hash>({ codec, hasher, bytes })
       if (block === undefined) {
          throw new TypeError(
-            "Invalid deserialized representation, did not follow from schema"
+            "Invalid deserialized representation, did not follow from schema",
          )
       }
       return block
@@ -68,7 +68,7 @@ export class IpldSerdes<
     */
    public async bytesToDomain(bytes: ByteView<RDP[0]>): Promise<RDP[1]> {
       const domainModel = await this.blockToDomain(
-         await this.bytesToBlock(bytes)
+         await this.bytesToBlock(bytes),
       )
       return domainModel
    }
@@ -82,7 +82,7 @@ export class IpldSerdes<
       const domainModel = this.toDomainModel(block.value)
       if (domainModel === undefined) {
          throw new TypeError(
-            "Invalid deserialized representation form, did not follow schema"
+            "Invalid deserialized representation form, did not follow schema",
          )
       }
       return domainModel

@@ -34,14 +34,8 @@ async function bootstrap(): Promise<INestApplicationContext> {
          })
       const logger: Logger = new Logger("Bootstrap")
       logger.log("Application context loaded")
-      const callChan: Chan = app
-         .get(CliChannelsModuleTypes.EnrollSourceFileCallChannel)
-         .unwrap()
-      await put(callChan, 7)
-      logger.warn(await take(callChan))
       const genericService: GenericService = app.get(GenericService)
-
-      logger.log(genericService)
+      logger.log("Running genericService.run()")
       logger.log(await genericService.run())
       logger.log("Exiting...")
       return app

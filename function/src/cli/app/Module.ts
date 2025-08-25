@@ -17,6 +17,11 @@ import {
       CliMainModule.registerAsync(cliMainModuleAsyncOptions),
    ],
    providers: [],
-   exports: [CliChannelsModule, PaintingModule, CliMainModule],
+   exports: [
+      CliChannelsModule,
+      ProtobufPlottingModule,
+      PaintingModule,
+      CliMainModule,
+   ],
 })
 export class CliAppModule {}
