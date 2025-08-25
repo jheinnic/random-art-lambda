@@ -7,8 +7,10 @@
     "scripts": {
         "prebuild": "rimraf dist",
         "brokeBuild": "nest build",
-        "build": "tsc -b",
-        "badBuild": "tsc -b && cp build/src/plotting/protobuf/plot_mapping_pb.mjs build/src/plotting/protobuf/plot_mapping_pb.js",
+        "build": "tsc -p tsconfig.json",
+	"clean": "rm -rf build",
+	"cleanBuild": "npm run clean && npm run build && npm run copyJs",
+	"copyJs": "cp src/painting/components/genjs6.* build/painting/components/ && cp src/plotting/protobuf/components/plot_mapping_pb* build/plotting/protobuf/components/",
         "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
         "runCli": "node ./build/cli/main.js plot",
         "start": "nest start",
