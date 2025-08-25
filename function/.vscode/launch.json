@@ -18,8 +18,8 @@
          "request": "launch",
          "name": "Lunch Program",
          "skipFiles": ["<node_internals>/**"],
-         "runtimeExecutable": "/home/ionadmin/.nvm/versions/node/v20.19.3/bin/node",
-         "program": "${workspaceFolder}/build/cli/main.js plot",
+         "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/tsx",
+         "program": "${workspaceFolder}/src/cli/main.ts plot",
          "outFiles": ["${workspaceFolder}/**/*.js"]
       },
       {
