@@ -1,12 +1,12 @@
 // const I_REGION_MAP_REPOSITORY: unique symbol = Symbol("IRegionMapRepository")
 const RANDOM_ART_TASK_CALL_CHANNEL: unique symbol = Symbol(
-   "CliMain::Chan<Chan<RandomArtTaskCall>",
+   "CliMain::Chan<RandomArtTaskCall>",
 )
 const RANDOM_ART_TASK_REPLY_CHANNEL: unique symbol = Symbol(
-   "CliMain::Chan<Chan<RandomArtTaskReply>",
+   "CliMain::Chan<RandomArtTaskReply>",
 )
 const ENROLL_SOURCE_FILE_CALL_CHANNEL: unique symbol = Symbol(
-   "CliMain::Chan<Chan<EnrollSourceFileCall>",
+   "CliMain::Chan<EnrollSourceFileCall>",
 )
 const ENROLL_SOURCE_FILE_REPLY_CHANNEL: unique symbol = Symbol(
    "CliMain::Chan<EnrollSourceFileReply>",
