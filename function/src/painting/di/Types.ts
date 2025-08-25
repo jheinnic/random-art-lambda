@@ -31,4 +31,4 @@ export const PaintingModuleTypes = {
    // IRandomArtPainter: I_RANDOM_ART_PAINTER,
    // IGenModelAdapter: I_GEN_MODEL_ADAPTER,
    // ICanvasFactory: I_CANVAS_FACTORY,
-}
+} as const

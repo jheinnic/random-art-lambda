@@ -10,9 +10,12 @@ import {
    EnrollSourceFileCall,
    EnrollSourceFileReply,
 } from "../message/index.js"
+import { ChannelWrapper } from "../../../cli/channels/ChannelWrapper.js"
 
 @Injectable()
 export class PBufSourceConfiguration implements ISourceConfiguration {
+   private readonly fileSources: Chan<EnrollSourceFileCall>
+   private readonly cidHandles: Chan<EnrollSourceFileReply>
    private readonly buffersByCid: Map<CID, Buffer> = new Map<CID, Buffer>()
    private ready: boolean = false
 
@@ -25,10 +28,13 @@ export class PBufSourceConfiguration implements ISourceConfiguration {
     */
    constructor(
       @Inject(ProtobufPlottingModuleTypes.EnrollSourceFileCallChannel)
-      private readonly fileSources: Chan<EnrollSourceFileCall>,
+      readonly fileSourcesWrapper: ChannelWrapper<EnrollSourceFileCall>,
       @Inject(ProtobufPlottingModuleTypes.EnrollSourceFileReplyChannel)
-      private readonly cidHandles: Chan<EnrollSourceFileReply>,
-   ) {}
+      readonly cidHandlesWrapper: ChannelWrapper<EnrollSourceFileReply>,
+   ) {
+      this.fileSources = fileSourcesWrapper.unwrap()
+      this.cidHandles = cidHandlesWrapper.unwrap()
+   }
 
    private async loadMaps(): Promise<void> {
       if (!this.ready) {

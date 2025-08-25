@@ -1,7 +1,6 @@
 import { Chan, take, put, close } from "medium"
-import { Inject } from "@nestjs/common"
+import { Inject, Injectable, Logger } from "@nestjs/common"
 
-import { CliMainModuleTypes } from "../di/Types.js"
 import {
    RandomArtTaskCall,
    RandomArtTaskReply,
@@ -10,26 +9,42 @@ import {
    EnrollSourceFileCall,
    EnrollSourceFileReply,
 } from "../../../plotting/protobuf/message/index.js"
+
+import { ChannelWrapper } from "../../channels/ChannelWrapper.js"
 import { IRandomArtTaskEngine } from "../../../painting/interface/index.js"
+import { CliMainModuleTypes } from "../di/Types.js"
+
 /**
  * A sample CLI command that takes an option and uses it to configure a service.
  */
+@Injectable()
 export class GenericService {
+   private readonly inputFiles: Chan<EnrollSourceFileCall>
+   private readonly returnCids: Chan<EnrollSourceFileReply>
+   private readonly artworkRequests: Chan<RandomArtTaskCall>
+   private readonly artworkReplies: Chan<RandomArtTaskReply>
+   private readonly logger: Logger
+
    constructor(
-      // private readonly dummy: Dummy,
       // @Inject(ProtobufPlottingModuleTypes.ProtobufRegionMapRepository)
-      // pbufRepo: IRegionMapRepository,
+      // private readonly pbufRepo: IRegionMapRepository,
       @Inject(CliMainModuleTypes.EnrollSourceFileCallChannel)
-      private readonly inputFiles: Chan<EnrollSourceFileCall>,
+      readonly inputFilesWrapper: ChannelWrapper<EnrollSourceFileCall>,
       @Inject(CliMainModuleTypes.EnrollSourceFileReplyChannel)
-      private readonly returnCids: Chan<EnrollSourceFileReply>,
+      readonly returnCidsWrapper: ChannelWrapper<EnrollSourceFileReply>,
       @Inject(CliMainModuleTypes.RandomArtTaskCallChannel)
-      private readonly artworkRequests: Chan<RandomArtTaskCall>,
+      readonly artworkRequestsWrapper: ChannelWrapper<RandomArtTaskCall>,
       @Inject(CliMainModuleTypes.RandomArtTaskReplyChannel)
-      private readonly artworkReplies: Chan<RandomArtTaskReply>,
+      readonly artworkRepliesWrapper: ChannelWrapper<RandomArtTaskReply>,
       @Inject(CliMainModuleTypes.RandomArtTaskEngine)
       private readonly randomArtEngine: IRandomArtTaskEngine,
-   ) {}
+   ) {
+      this.inputFiles = inputFilesWrapper.unwrap()
+      this.returnCids = returnCidsWrapper.unwrap()
+      this.artworkRequests = artworkRequestsWrapper.unwrap()
+      this.artworkReplies = artworkRepliesWrapper.unwrap()
+      this.logger = new Logger("GenericService")
+   }
 
    /**
     * The main method executed when the command is run.
@@ -69,7 +84,7 @@ export class GenericService {
                   this.returnCids,
                )
                if (typeof next === "symbol") {
-                  console.log("Received end of reply stream")
+                  this.logger.log("Received end of reply stream")
                   return false
                }
                tracking[next.correlationId] = next
@@ -83,11 +98,11 @@ export class GenericService {
       await receiveAll
       await close(this.inputFiles)
 
-      console.log(tracking)
+      this.logger.log(tracking)
 
       await this.randomArtEngine.begin()
       const msg = await take(this.returnCids)
       await this.randomArtEngine.stop()
-      console.log("Fin", msg)
+      this.logger.log("Fin", msg)
    }
 }

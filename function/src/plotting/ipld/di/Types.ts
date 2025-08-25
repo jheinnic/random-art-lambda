@@ -19,4 +19,4 @@ export const IpldPlottingModuleTypes = {
    IDataBlockSerdes: IPLD_DATA_BLOCK_SERDES,
    InjectedBlockStore: INJECTED_BLOCK_STORE,
    ModuleConfiguration: MODULE_CONFIGURATION,
-}
+} as const

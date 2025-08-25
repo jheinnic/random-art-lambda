@@ -1,5 +1,5 @@
 // import { InjectionToken } from "@nestjs/common"
-import { Chan } from "medium"
+import { ChannelWrapper } from "../../cli/channels/ChannelWrapper.js"
 import { IRegionMapRepository } from "../../plotting/interface/index.js"
 import { RandomArtTaskCall } from "../message/RandomArtTaskCall.js"
 import { RandomArtTaskReply } from "../message/RandomArtTaskReply.js"
@@ -12,7 +12,7 @@ import { RandomArtTaskReply } from "../message/RandomArtTaskReply.js"
 export class PaintingModuleConfiguration {
    constructor(
       public readonly regionMapRepo: IRegionMapRepository,
-      public readonly randomArtTaskCallChannel: Chan<RandomArtTaskCall>,
-      public readonly randomArtTaskReplyChannel: Chan<RandomArtTaskReply>,
+      public readonly randomArtTaskCallChannel: ChannelWrapper<RandomArtTaskCall>,
+      public readonly randomArtTaskReplyChannel: ChannelWrapper<RandomArtTaskReply>,
    ) {}
 }
