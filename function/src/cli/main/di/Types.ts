@@ -20,7 +20,7 @@ const CLI_MAIN_MODULE_CONFIGURATION: unique symbol = Symbol(
    "CliMain::ModuleConfiguration",
 )
 
-export const CliMainModuleTypes: Record<string, symbol> = {
+export const CliMainModuleTypes = {
    RandomArtTaskCallChannel: RANDOM_ART_TASK_CALL_CHANNEL,
    RandomArtTaskReplyChannel: RANDOM_ART_TASK_REPLY_CHANNEL,
    EnrollSourceFileCallChannel: ENROLL_SOURCE_FILE_CALL_CHANNEL,
@@ -30,4 +30,4 @@ export const CliMainModuleTypes: Record<string, symbol> = {
    // InjectedRegionMapRepository: I_REGION_MAP_REPOSITORY,
    // IRegionMapRepository: I_REGION_MAP_REPOSITORY,
    // PaintingModuleConfigurationFactory: PAINTING_MODULE_CONFIGURATION_FACTORY,
-}
+} as const

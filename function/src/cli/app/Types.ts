@@ -21,7 +21,7 @@ const CLI_APP_MODULE_CONFIGURATION: unique symbol = Symbol(
    "CliApp::ModuleConfiguration",
 )
 
-export const CliAppModuleTypes: Record<string, symbol> = {
+export const CliAppModuleTypes = {
    IRegionMapRepository: I_REGION_MAP_REPOSITORY,
    RandomArtTaskEngine: RANDOM_ART_TASK_ENGINE,
    RandomArtTaskCallChannel: RANDOM_ART_TASK_CALL_CHANNEL,
@@ -31,4 +31,4 @@ export const CliAppModuleTypes: Record<string, symbol> = {
    ModuleConfiguration: CLI_APP_MODULE_CONFIGURATION,
    // IRegionMapRepository: I_REGION_MAP_REPOSITORY,
    // PaintingModuleConfigurationFactory: PAINTING_MODULE_CONFIGURATION_FACTORY,
-}
+} as const

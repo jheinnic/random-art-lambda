@@ -1,7 +1,7 @@
-import { Logger } from "@nestjs/common"
+import { INestApplicationContext, Logger } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
-// import { sha256 as hash } from "multiformats/hashes/sha2"
-// import { CID } from "multiformats"
+import { Chan, put, take } from "medium"
+import { CliChannelsModuleTypes } from "./channels/Types.js"
 import { CliAppModule } from "./app/Module.js"
 import { GenericService } from "./main/components/GenericService.js"
 
@@ -23,24 +23,35 @@ process.on("uncaughtException", (error) => {
    process.exit(1)
 })
 
-async function bootstrap(): Promise<void> {
+async function bootstrap(): Promise<INestApplicationContext> {
    try {
       console.log("Loading")
-      const app = await NestFactory.createApplicationContext(CliAppModule, {
-         abortOnError: false,
-         logger: ["fatal", "error", "warn", "log", "verbose", "debug"],
-      })
-      const logger: Logger = app.get(Logger)
+      const app: INestApplicationContext =
+         await NestFactory.createApplicationContext(CliAppModule, {
+            abortOnError: false,
+            snapshot: true,
+            logger: ["fatal", "error", "warn", "log", "verbose", "debug"],
+         })
+      const logger: Logger = new Logger("Bootstrap")
       logger.log("Application context loaded")
+      const callChan: Chan = app
+         .get(CliChannelsModuleTypes.EnrollSourceFileCallChannel)
+         .unwrap()
+      await put(callChan, 7)
+      logger.warn(await take(callChan))
       const genericService: GenericService = app.get(GenericService)
 
       logger.log(genericService)
       logger.log(await genericService.run())
       logger.log("Exiting...")
-   } catch {
+      return app
+   } catch (err) {
       console.error("Exception thrown?")
+      throw err
    }
 }
 
-bootstrap().catch((x) => console.error(x))
+await bootstrap()
+
+// .catch((x) => console.error(x))
 // tn / 9V / 1v / zdpuAsQEbAYrfbrgcR7EgDarTSGePziWyX3m8jL4gmJ

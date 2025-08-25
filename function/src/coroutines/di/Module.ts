@@ -3,7 +3,7 @@ import {
    DynamicModule,
    Module,
 } from "@nestjs/common"
-import { chan } from "medium"
+import { Chan, chan } from "medium"
 
 import { CoroutineModuleTypes } from "./Types.js"
 import { CoroutineModuleExtras } from "./Extras.js"
@@ -31,21 +31,29 @@ const dynamicHost = new ConfigurableModuleBuilder<
             ...Object.getOwnPropertySymbols(extras.requests),
             ...Object.getOwnPropertyNames(extras.requests),
          ]
+         console.log("Input is ", moduleIn)
          // console.log("Coroutines transform requested with :: ", extras)
          if (keys.length === 0) {
             return moduleIn
          }
+         moduleIn.imports = moduleIn.imports ?? []
+         moduleIn.exports = moduleIn.exports ?? []
          const providers = moduleIn.providers ?? []
-         const exports = moduleIn.exports ?? []
-         const imports = moduleIn.imports ?? []
+         const imports = moduleIn.imports
+         const exports = moduleIn.exports
 
          keys.forEach((key: symbol | string) => {
             // console.log("Handling an extra, ", key)
             const value = extras.requests[key]
-            let component
             switch (value.component) {
                case "BlockingChannel": {
-                  component = chan(value.concurrency ?? 1)
+                  const provider = {
+                     provide: key,
+                     useFactory: (..._args: any[]): Chan =>
+                        chan(value.concurrency ?? 1),
+                  }
+                  providers.push(provider)
+                  exports.push(provider)
                   break
                }
                case "DroppingChannel": {
@@ -61,21 +69,10 @@ const dynamicHost = new ConfigurableModuleBuilder<
                   throw new Error(`Unknown component: ${value}`)
                }
             }
-            providers.unshift({
-               provide: key,
-               useValue: component,
-            })
-            exports.unshift(key)
          })
 
-         const moduleOut: DynamicModule = {
-            imports,
-            providers,
-            exports,
-            module: moduleIn.module,
-         }
-         console.log("Transformed Coroutines Module is now :: ", moduleOut)
-         return moduleOut
+         console.log("Transformed Coroutines Module is now :: ", moduleIn)
+         return moduleIn
       },
    )
    .build()
@@ -88,18 +85,4 @@ export type CoroutinesModuleOptions = typeof dynamicHost.OPTIONS_TYPE
    providers: [],
    exports: [],
 })
-export class CoroutinesModule extends dynamicHost.ConfigurableModuleClass {
-   static register(config: CoroutinesModuleAsyncOptions): DynamicModule {
-      // console.log(
-      //    "In CoroutinesMode.elevate() and watch him for a few more days :: ",
-      //    config,
-      // )
-      const rv = super.register(config)
-      // console.log("now the contract is : ", rv)
-      return rv
-   }
-
-   // static registerAsync(options: CoroutinesModuleAsyncOptions): DynamicModule {
-   // return super.registerAsync(options)
-   // }
-}
+export class CoroutinesModule extends dynamicHost.ConfigurableModuleClass {}
