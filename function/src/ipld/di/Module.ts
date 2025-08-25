@@ -49,15 +49,15 @@ const dynamicHost = new ConfigurableModuleBuilder<
             module.providers = []
          }
          let rootProduction: string
-         console.log(extras.rootProductionTokens)
+         // console.log(extras.rootProductionTokens)
          const serdesFactory = new IpldSerdesFactory(
             extras.schemaDsl,
             extras.codec,
             extras.hasher,
          )
          for (rootProduction of Object.keys(extras.rootProductionTokens)) {
-            console.log(rootProduction)
-            console.log(extras.rootProductionTokens[rootProduction])
+            // console.log(rootProduction)
+            // console.log(extras.rootProductionTokens[rootProduction])
             module.providers.push({
                provide: extras.rootProductionTokens[rootProduction],
                useValue: serdesFactory.getProduction(rootProduction),
