@@ -44,7 +44,7 @@ export class GenModelArtist implements IRegionPlotter {
       // this.painter.paint(pixelX, pixelY, `#${BYTES[rgb[0]]}${BYTES[rgb[1]]}${BYTES[rgb[2]]}`)
       // this.painter.paint(pixelX, pixelY, COLORS[(rgb[0] << 16) + (rgb[1] << 8) + rgb[2]]
       const rgb = computePixel(this.genModel, regionX, regionY)
-      this.context.fillStyle = COLORS[(rgb[0] << 16) + (rgb[1] << 8) + rgb[2]]
+      this.context.fillStyle = COLORS[(rgb[0] << 16) | (rgb[1] << 8) | rgb[2]]
       this.context.fillRect(pixelX, pixelY, 1, 1)
    }
 }
