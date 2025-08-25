@@ -61,11 +61,11 @@ const dynamicHost = new ConfigurableModuleBuilder<
                   throw new Error(`Unknown component: ${value}`)
                }
             }
-            providers.push({
+            providers.unshift({
                provide: key,
                useValue: component,
             })
-            exports.push(key)
+            exports.unshift(key)
          })
 
          const moduleOut: DynamicModule = {
