@@ -1,5 +1,6 @@
 import { Chan, take, put, close } from "medium"
 import { Inject, Injectable, Logger } from "@nestjs/common"
+import { Barrier } from "@nestjs/core/helpers/barrier.js"
 
 import {
    RandomArtTaskCall,
@@ -13,6 +14,7 @@ import {
 import { ChannelWrapper } from "../../channels/ChannelWrapper.js"
 import { IRandomArtTaskEngine } from "../../../painting/interface/index.js"
 import { CliMainModuleTypes } from "../di/Types.js"
+import { PBufRegionMapRepository } from "../../../plotting/protobuf/components/PBufRegionMapRepository.js"
 
 /**
  * A sample CLI command that takes an option and uses it to configure a service.
@@ -24,6 +26,14 @@ export class GenericService {
    private readonly artworkRequests: Chan<RandomArtTaskCall>
    private readonly artworkReplies: Chan<RandomArtTaskReply>
    private readonly logger: Logger
+   private readonly inputs: readonly EnrollSourceFileCall[]
+   private readonly tracking: Record<
+      string,
+      EnrollSourceFileCall | EnrollSourceFileReply
+   >
+
+   private readonly repoBarrier: Barrier
+   private readonly initRepo: Promise<void>
 
    constructor(
       // @Inject(ProtobufPlottingModuleTypes.ProtobufRegionMapRepository)
@@ -36,6 +46,8 @@ export class GenericService {
       readonly artworkRequestsWrapper: ChannelWrapper<RandomArtTaskCall>,
       @Inject(CliMainModuleTypes.RandomArtTaskReplyChannel)
       readonly artworkRepliesWrapper: ChannelWrapper<RandomArtTaskReply>,
+      @Inject(CliMainModuleTypes.RegionMapRepository)
+      private readonly regionMapRepository: PBufRegionMapRepository,
       @Inject(CliMainModuleTypes.RandomArtTaskEngine)
       private readonly randomArtEngine: IRandomArtTaskEngine,
    ) {
@@ -44,15 +56,7 @@ export class GenericService {
       this.artworkRequests = artworkRequestsWrapper.unwrap()
       this.artworkReplies = artworkRepliesWrapper.unwrap()
       this.logger = new Logger("GenericService")
-   }
-
-   /**
-    * The main method executed when the command is run.
-    * @param passedParams Any parameters passed without flags.
-    * @param options An object containing parsed options.
-    */
-   async run(): Promise<void> {
-      const inputs: EnrollSourceFileCall[] = [
+      this.inputs = [
          new EnrollSourceFileCall(
             "/home/ionadmin/Git/lambdas/random-art-lambda/function/rdoc01.proto",
          ),
@@ -66,43 +70,72 @@ export class GenericService {
             "/home/ionadmin/Git/lambdas/random-art-lambda/function/tdoc01.proto",
          ),
       ]
+      this.tracking = {}
+      this.repoBarrier = new Barrier(this.inputs.length)
+      this.initRepo = this.regionMapRepository.init()
+   }
+
+   /**
+    * The main method executed when the command is run.
+    * @param passedParams Any parameters passed without flags.
+    * @param options An object containing parsed options.
+    */
+   async run(): Promise<void> {
       const tracking: Record<
          string,
          EnrollSourceFileCall | EnrollSourceFileReply
       > = {}
-      const sendAll = Promise.all(
-         inputs.map(async (next: EnrollSourceFileCall) => {
-            tracking[next.correlationId] = next
+      const sending = Promise.all(
+         this.inputs.map(async (next: EnrollSourceFileCall) => {
+            this.tracking[next.correlationId] = next
+            this.logger.log(
+               `Sending ${next.filePath} for registration as ${next.correlationId}`,
+            )
+            this.logger.log(JSON.stringify(this.tracking))
             await put(this.inputFiles, next)
-            return next
          }),
       )
-      const receiveAll: Promise<Array<EnrollSourceFileReply | boolean>> =
-         Promise.all(
-            inputs.map(async () => {
-               const next: symbol | EnrollSourceFileReply = await take(
-                  this.returnCids,
-               )
-               if (typeof next === "symbol") {
-                  this.logger.log("Received end of reply stream")
-                  return false
-               }
-               tracking[next.correlationId] = next
-               if (next.isError()) {
-                  throw new Error(next.error)
-               }
-               return next
-            }),
-         )
-      await sendAll
-      await receiveAll
+      this.logger.log("Started sending.  Watching for complete.")
+      const initDone = this.watchForInitDone()
+      this.logger.log("Now watching for replies")
+      const receiveReplies = this.receiveReplies()
+      await initDone
+      this.logger.log("Async receive returned")
+      await sending
+      this.logger.log("Done receiving")
+      await receiveReplies
+      this.logger.log(JSON.stringify(this.tracking))
+
+      // await this.randomArtEngine.begin()
+      this.logger.log("Start and stop")
+      // const msg = await take(this.returnCids)
+      // await this.randomArtEngine.stop()
+      this.logger.log("Fin")
+   }
+
+   async watchForInitDone(): Promise<void> {
+      await this.repoBarrier.wait()
+      this.logger.log("Barrier threshold crossed")
       await close(this.inputFiles)
+      this.logger.log("Closed input")
+      await this.initRepo
+      this.logger.log("Initialized repository!")
+   }
 
-      this.logger.log(tracking)
-
-      await this.randomArtEngine.begin()
-      const msg = await take(this.returnCids)
-      await this.randomArtEngine.stop()
-      this.logger.log("Fin", msg)
+   async receiveReplies(): Promise<void> {
+      this.logger.log("Waiting for next reply...")
+      while (true) {
+         const reply: symbol | EnrollSourceFileReply = await take(
+            this.returnCids,
+         )
+         if (typeof reply === "symbol") {
+            this.logger.log("Last reply...")
+            return
+         }
+         this.logger.log("Received a reply...")
+         this.tracking[reply.correlationId] = reply
+         this.logger.log(JSON.stringify(this.tracking))
+         this.repoBarrier.signal()
+      }
    }
 }

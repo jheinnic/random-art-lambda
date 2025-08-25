@@ -13,6 +13,7 @@ import {
    RandomArtTaskReply,
 } from "../../../painting/message/index.js"
 import { IRandomArtTaskEngine } from "../../../painting/interface/IRandomArtTaskEngine.js"
+import { PBufRegionMapRepository } from "../../../plotting/protobuf/components/PBufRegionMapRepository.js"
 
 const unpackRandomArtTaskCallChannel = {
    provide: CliMainModuleTypes.RandomArtTaskCallChannel,
@@ -44,6 +45,13 @@ const unpackEnrollSourceFileReplyChannel = {
    inject: [CliMainModuleTypes.ModuleConfiguration],
 }
 
+const unpackRegionMapRepository = {
+   provide: CliMainModuleTypes.RegionMapRepository,
+   useFactory: (config: CliMainModuleConfiguration): PBufRegionMapRepository =>
+      config.regionMapRepository,
+   inject: [CliMainModuleTypes.ModuleConfiguration],
+}
+
 const unpackRandomArtEngine = {
    provide: CliMainModuleTypes.RandomArtTaskEngine,
    useFactory: (config: CliMainModuleConfiguration): IRandomArtTaskEngine =>
@@ -56,5 +64,6 @@ export const allProviders = [
    unpackEnrollSourceFileReplyChannel,
    unpackRandomArtTaskCallChannel,
    unpackRandomArtTaskReplyChannel,
+   unpackRegionMapRepository,
    unpackRandomArtEngine,
 ]

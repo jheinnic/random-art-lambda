@@ -31,6 +31,7 @@ import {
    RandomArtTaskReply,
 } from "../../painting/message/index.js"
 import { ChannelWrapper } from "../channels/ChannelWrapper.js"
+import { PBufRegionMapRepository } from "../../plotting/protobuf/components/PBufRegionMapRepository.js"
 
 export const plottingModuleOptions: ProtobufPlottingModuleAsyncOptions = {
    imports: [CliChannelsModule],
@@ -76,9 +77,10 @@ export const paintingModule: DynamicModule = PaintingModule.registerAsync(
 )
 
 export const cliMainModuleAsyncOptions: CliMainModuleAsyncOptions = {
-   imports: [CliChannelsModule, paintingModule],
+   imports: [CliChannelsModule, plottingModule, paintingModule],
    useFactory: (
       randomArtTaskEngine: IRandomArtTaskEngine,
+      regionMapRepository: PBufRegionMapRepository,
       enrollSourceFileCallChannel: ChannelWrapper<EnrollSourceFileCall>,
       enrollSourceFileReplyChannel: ChannelWrapper<EnrollSourceFileReply>,
       randomArtTaskCallChannel: ChannelWrapper<RandomArtTaskCall>,
@@ -86,6 +88,7 @@ export const cliMainModuleAsyncOptions: CliMainModuleAsyncOptions = {
    ): CliMainModuleConfiguration => {
       return new CliMainModuleConfiguration(
          randomArtTaskEngine,
+         regionMapRepository,
          randomArtTaskCallChannel,
          randomArtTaskReplyChannel,
          enrollSourceFileCallChannel,
@@ -94,6 +97,7 @@ export const cliMainModuleAsyncOptions: CliMainModuleAsyncOptions = {
    },
    inject: [
       RandomArtTaskEngine,
+      PBufRegionMapRepository,
       CliChannelsModuleTypes.EnrollSourceFileCallChannel,
       CliChannelsModuleTypes.EnrollSourceFileReplyChannel,
       CliChannelsModuleTypes.RandomArtTaskCallChannel,
