@@ -49,8 +49,53 @@ export class PlotCommand extends CommandRunner {
          networkConfig: string
       },
    ): Promise<void> {
-      await put(this.inputFiles, "./rdoc.proto")
+      const inputs = [
+         new EnrollSourceFileCall(
+            "/home/ionadmin/Git/lambdas/random-art-lambda/function/rdoc01.proto",
+         ),
+         new EnrollSourceFileCall(
+            "/home/ionadmin/Git/lambdas/random-art-lambda/function/rdoc02.proto",
+         ),
+         new EnrollSourceFileCall(
+            "/home/ionadmin/Git/lambdas/random-art-lambda/function/rdoc03.proto",
+         ),
+         new EnrollSourceFileCall(
+            "/home/ionadmin/Git/lambdas/random-art-lambda/function/tdoc01.proto",
+         ),
+      ]
+      const tracking: Record<
+         string,
+         EnrollSourceFileCall | EnrollSourceFileReply
+      > = {}
+      const sendAll = Promise.all(
+         inputs.map(async (next: EnrollSourceFileCall) => {
+            tracking[next.correlationId] = next
+            await put(this.inputFiles, next)
+            return next
+         }),
+      )
+      const receiveAll: Promise<Array<EnrollSourceFileReply | boolean>> =
+         Promise.all(
+            inputs.map(async () => {
+               const next: symbol | EnrollSourceFileReply = await take(
+                  this.returnCids,
+               )
+               if (typeof next === "symbol") {
+                  console.log("Received end of reply stream")
+                  return false
+               }
+               tracking[next.correlationId] = next
+               if (next.isError()) {
+                  throw new Error(next.error)
+               }
+               return next
+            }),
+         )
+      await sendAll
+      await receiveAll
       await close(this.inputFiles)
+
+      console.log(tracking)
 
       await this.randomArtEngine.begin()
       const msg = await take(this.returnCids)
