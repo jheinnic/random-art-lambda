@@ -18,6 +18,14 @@ export class PBufRegionMapRepository implements IRegionMapRepository {
       private readonly sourceConfig: PBufSourceConfiguration,
    ) {}
 
+   async init(): Promise<void> {
+      if (this.regionMapBuffers === undefined) {
+         this.regionMapBuffers = new Map<CID, Buffer | IRegionMap>(
+            await this.sourceConfig.getBuffersByCid(),
+         )
+      }
+   }
+
    async import(_director: (builder: IRegionMapBuilder) => void): Promise<CID> {
       throw new Error("Method not implemented.")
    }

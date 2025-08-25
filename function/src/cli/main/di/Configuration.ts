@@ -8,10 +8,12 @@ import {
 } from "../../../plotting/protobuf/message/index.js"
 import { ChannelWrapper } from "../../channels/ChannelWrapper.js"
 import { IRandomArtTaskEngine } from "../../../painting/index.js"
+import { PBufRegionMapRepository } from "../../../plotting/protobuf/components/PBufRegionMapRepository.js"
 
 export class CliMainModuleConfiguration {
    constructor(
       public readonly randomArtTaskEngine: IRandomArtTaskEngine,
+      public readonly regionMapRepository: PBufRegionMapRepository,
       public readonly randomArtTaskCallChannel: ChannelWrapper<RandomArtTaskCall>,
       public readonly randomArtTaskReplyChannel: ChannelWrapper<RandomArtTaskReply>,
       public readonly enrollSourceFileCallChannel: ChannelWrapper<EnrollSourceFileCall>,

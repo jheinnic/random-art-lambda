@@ -12,6 +12,9 @@ const ENROLL_SOURCE_FILE_REPLY_CHANNEL: unique symbol = Symbol(
    "CliMain::Chan<EnrollSourceFileReply>",
 )
 
+const PBUF_REGION_MAP_REPOSITORY: unique symbol = Symbol(
+   "CliMain::PBufRegionMapRepository",
+)
 const RANDOM_ART_TASK_ENGINE: unique symbol = Symbol(
    "CliMain::RandomArtTaskEngine",
 )
@@ -25,9 +28,7 @@ export const CliMainModuleTypes = {
    RandomArtTaskReplyChannel: RANDOM_ART_TASK_REPLY_CHANNEL,
    EnrollSourceFileCallChannel: ENROLL_SOURCE_FILE_CALL_CHANNEL,
    EnrollSourceFileReplyChannel: ENROLL_SOURCE_FILE_REPLY_CHANNEL,
+   RegionMapRepository: PBUF_REGION_MAP_REPOSITORY,
    RandomArtTaskEngine: RANDOM_ART_TASK_ENGINE,
    ModuleConfiguration: CLI_MAIN_MODULE_CONFIGURATION,
-   // InjectedRegionMapRepository: I_REGION_MAP_REPOSITORY,
-   // IRegionMapRepository: I_REGION_MAP_REPOSITORY,
-   // PaintingModuleConfigurationFactory: PAINTING_MODULE_CONFIGURATION_FACTORY,
 } as const
