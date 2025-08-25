@@ -1,1 +1,2 @@
-export * from "./PlotCommand.js"
+export * from "./GenericService.js"
+// export * from "./PlotCommand.js"
