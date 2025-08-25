@@ -22,9 +22,9 @@ export type ProtobufPlottingModuleOptions = typeof dynamicHost.OPTIONS_TYPE
 @Module({
    imports: [],
    providers: [
-      PBufRegionMapRepository,
       PBufRegionMapFactory,
       PBufSourceConfiguration,
+      PBufRegionMapRepository,
       Providers.regionMapRepositoryAlias,
       Providers.unpackConfiguredCallChannel,
       Providers.unpackConfiguredReplyChannel,

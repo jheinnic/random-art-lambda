@@ -2,17 +2,15 @@ import { BitInputStream, BitOutputStream } from "@thi.ng/bitstream"
 import Fraction from "fraction.js"
 import * as fs from "fs"
 
+import { DataBlock } from "../ipldmodel/DataBlock.js"
 import {
-   DataBlock,
+   DimensionCoding,
    FractionList,
-   FractionPalette,
-   NO_BYTES,
-   RowColRecord,
    RegionBoundaries,
    RegionBoundaryFractions,
-   DimensionCoding,
+   WordSizes,
    EMPTY_DIMENSION,
-} from "../ipldmodel/index.js"
+} from "../ipldmodel/OtherDataTypes.js"
 
 export function fractionifyBounds(
    bounds: RegionBoundaries,
@@ -37,7 +35,9 @@ export function fractionifyList(
    source: readonly number[],
    offset: number,
 ): FractionList {
-   const fractions = source.map((x: number) => new Fraction(x - offset))
+   const fractions: Fraction[] = source.map(
+      (x: number): Fraction => new Fraction(x - offset),
+   )
    return {
       N: fractions.map((f: Fraction) => f.n * f.s),
       D: fractions.map((f: Fraction) => f.d),
@@ -77,12 +77,13 @@ export function fractionify<K extends string = never, A extends string = never>(
 export type Palette = readonly number[]
 
 export interface PaletteMaybe {
+   data: readonly number[]
    palette: Palette
    paletteWordLen: number
    baseWordLen: number
 }
 
-export function paletteMaybe(src: number[]): PaletteMaybe {
+export function paletteMaybe(src: readonly number[]): PaletteMaybe {
    const asSet = new Set<number>(src)
    let srcMax = -1
    asSet.forEach((value: number) => {
@@ -96,24 +97,26 @@ export function paletteMaybe(src: number[]): PaletteMaybe {
       `${newSize} >?< ${baseSize}, ${paletteWordLen}, ${asSet.size}, ${baseWordLen}, ${src.length} :: ${srcMax}`,
    )
    if (newSize > baseSize) {
-      return { palette: EMPTY_DIMENSION, paletteWordLen: 0, baseWordLen }
+      return {
+         data: src,
+         palette: EMPTY_DIMENSION,
+         paletteWordLen: 0,
+         baseWordLen,
+      }
       // return { palette: NO_BYTES, paletteWordLen: 0, baseWordLen }
    }
    const palette: readonly number[] = [...asSet]
-   const map: Record<number, number> = {}
-   palette.forEach((value: number, idx: number) => {
-      map[value] = idx
-   })
-   src.forEach((value: number, idx: number) => {
-      src[idx] = map[value]
-   })
+   const map: Record<number, number> = Object.fromEntries(
+      palette.map((val: number, idx: number): [number, number] => [val, idx]),
+   )
    // return { palette: translate( palette, baseWordLen ), paletteWordLen, baseWordLen }
-   return { palette, paletteWordLen: baseWordLen, baseWordLen: paletteWordLen }
+   return {
+      data: src.map((val: number): number => map[val]),
+      palette,
+      paletteWordLen: baseWordLen,
+      baseWordLen: paletteWordLen,
+   }
 }
-
-export type WordSizes = RowColRecord<number>
-const BLOCK_OVERHEAD = 16
-const NO_DATA_BLOCKS: readonly DataBlock[] = []
 
 function measureSize(
    name: string,
@@ -135,9 +138,12 @@ function measureSize(
    return wordSize * numbers.length
 }
 
+const BLOCK_OVERHEAD = 16
+const NO_DATA_BLOCKS: readonly DataBlock[] = []
+
 export function blockify(
-   rows: FractionPalette,
-   cols: FractionPalette,
+   rows: FractionList,
+   cols: FractionList,
    chunkSize: number,
    wordSizes: WordSizes,
 ): readonly DataBlock[] {
@@ -231,6 +237,8 @@ export function unblockify(
    return hydrate(dataBytes, paletteArray, coding.baseWordLen)
 }
 
+const NO_BYTES: Uint8Array = Uint8Array.of()
+
 export function translate(input: number[], wordSize: number): Uint8Array {
    if (
       input === undefined ||
@@ -277,10 +285,7 @@ export function hydrate(
    return unpacked
 }
 
-export function rationalize(
-   fractions: FractionPalette,
-   offset: number,
-): Palette {
+export function rationalize(fractions: FractionList, offset: number): Palette {
    const len = fractions.N.length
    const retval = new Array<number>(len)
    let idx = 0
@@ -297,8 +302,8 @@ export function rationalize(
 
 export function logFractions(
    fileName: string,
-   rows: FractionPalette,
-   cols: FractionPalette,
+   rows: FractionList,
+   cols: FractionList,
    region: RegionBoundaryFractions,
 ): void {
    let bottomOffset = 0
