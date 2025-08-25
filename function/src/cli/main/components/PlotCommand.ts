@@ -99,7 +99,7 @@ export class PlotCommand extends CommandRunner {
 
       await this.randomArtEngine.begin()
       const msg = await take(this.returnCids)
-      await this.randomArtEngine.stop()
+      // await this.randomArtEngine.stop()
       console.log("Fin", msg)
    }
 
