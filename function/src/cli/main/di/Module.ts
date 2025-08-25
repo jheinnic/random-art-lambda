@@ -16,7 +16,7 @@ const dynamicHost = new ConfigurableModuleBuilder<CliMainModuleConfiguration>({
 export type CliMainModuleAsyncOptions = typeof dynamicHost.ASYNC_OPTIONS_TYPE
 export type CliMainModuleOptions = typeof dynamicHost.OPTIONS_TYPE
 
-console.log(allProviders)
+// console.log(allProviders)
 
 @Module({
    imports: [],
