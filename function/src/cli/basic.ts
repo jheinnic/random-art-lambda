@@ -1,16 +1,16 @@
 import { NestFactory } from "@nestjs/core"
 // import { sha256 as hash } from "multiformats/hashes/sha2"
 // import { CID } from "multiformats"
-import { CliAppModule, CliChannelsModuleTypes } from "./index.js"
 import { PlotCommand } from "./main/components/PlotCommand.js"
-import * as Modules from "./app/Imports.js"
+import { CliAppModule } from "./app/Module.js"
 
 async function bootstrap(): Promise<void> {
-   const app = await NestFactory.createApplicationContext(CliAppModule)
-   const appNode = app
-      .select(Modules.cliChannelsModule)
-      .get(CliChannelsModuleTypes.EnrollSourceFileCall)
-   console.log(appNode)
+   try {
+      console.log("Loading")
+      const app = await NestFactory.createApplicationContext(CliAppModule, {
+         abortOnError: false,
+         logger: ["error", "warn", "log", "verbose", "debug"],
+      })
 
    const appSvc = app.get(PlotCommand)
    console.log(appSvc)
@@ -32,6 +32,9 @@ async function bootstrap(): Promise<void> {
    // console.log( regionMap )
 
    // appSvc.testRepoSave()
+   } catch {
+      console.error("Exception thrown?")
+   }
 }
 
 bootstrap().catch((x) => console.error(x))

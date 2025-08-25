@@ -1,15 +1,11 @@
 import { Module } from "@nestjs/common"
+import { CliMainModule } from "../main/di/Module.js"
 
-import {
-   cliChannelsModule,
-   plottingModule,
-   paintingModule,
-   cliMainModule,
-} from "./Imports.js"
+import { cliMainModuleAsyncOptions } from "./Imports.js"
 
 @Module({
-   imports: [cliChannelsModule, plottingModule, paintingModule, cliMainModule],
+   imports: [CliMainModule.registerAsync(cliMainModuleAsyncOptions)],
    providers: [],
-   exports: [cliMainModule],
+   exports: [CliMainModule],
 })
 export class CliAppModule {}

@@ -1,10 +1,8 @@
 import { Module } from "@nestjs/common"
 import { Blockstore } from "interface-blockstore"
 
-import {
-   IpldPlottingModule,
-   IpldPlottingModuleConfiguration,
-} from "../../plotting/ipld/index.js"
+import { IpldPlottingModule } from "../../plotting/ipld/di/Module.js"
+import { IpldPlottingModuleConfiguration } from "../../plotting/ipld/di/Configuration.js"
 // import { PaintingModule } from "../../painting/di/Module.js"
 import { AppService } from "../components/AppService.js"
 import { AppServiceTwo } from "../components/AppServiceTwo.js"
