@@ -1,10 +1,11 @@
+// <reference path="./plot_mapping_pb.d.ts"/>
 import { AbstractRegionMap } from "../../components/AbstractRegionMap.js"
 import { IRegionMapBuilder } from "../../interface/IRegionMapBuilder.js"
 import { PointPlotData } from "./plot_mapping_pb.js"
 
 type PR = "Center" | "TopLeft"
 const PIXEL_REF_MAP: PR[] = ["Center", "TopLeft"]
-// <reference path="./plot_mapping_pb.d.ts"/>
+
 export class PBufRegionMap extends AbstractRegionMap {
    constructor(private readonly _data: PointPlotData) {
       super()
