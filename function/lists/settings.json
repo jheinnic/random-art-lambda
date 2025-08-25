@@ -1,0 +1,43 @@
+{
+  "npm.enableRunFromFolder": true,
+  "npm.packageManager": "yarn",
+  "javascript.preferences.importModuleSpecifierEnding": "js",
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "typescript.locale": "en",
+  "typescript.tsdk": "./node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "importSorter.generalConfiguration.sortOnBeforeSave": true,
+  "importSorter.importStringConfiguration.hasSemicolon": false,
+  "importSorter.importStringConfiguration.quoteMark": "double",
+  "eslint.nodeEnv": "PRODUCTION",
+  "prettier.requireConfig": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.tabSize": 3,
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "cSpell.words": [
+    "Blockstores",
+    "cbor",
+    "fastseries",
+    "fdoc",
+    "ipldmodel",
+    "Multihash",
+    "Pixelheight",
+    "Pixelref",
+    "Pixelwidth",
+    "Serdes",
+    "sprintf",
+    "strv",
+    "tyriar",
+    "unblockify",
+    "xmptoolkit"
+  ],
+  "python-envs.pythonProjects": [
+    {
+      "path": "src/cli/main/main",
+      "envManager": "ms-python.python:venv",
+      "packageManager": "ms-python.python:pip"
+    }
+  ]
+}
