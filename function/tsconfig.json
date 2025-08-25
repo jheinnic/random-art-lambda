@@ -27,12 +27,7 @@
       "emitDecoratorMetadata": true,
       "esModuleInterop": true
    },
-   "include": [
-      "./src/**/*.ts",
-      "./typings/medium.d.ts",
-      "src/cli/main/di/Module.ts",
-      "src/cli/app/Providers._st"
-   ],
+   "include": ["./src/**/*.ts", "./typings/medium.d.ts"],
    "exclude": [
       "./node_modules/**/*",
       "./attic/**/*",
