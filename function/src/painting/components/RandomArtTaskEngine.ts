@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common"
+import { Inject, Injectable, Logger } from "@nestjs/common"
 import { close, put, repeatTake, Chan, CLOSED } from "medium"
 import { Canvas } from "canvas"
 
@@ -7,11 +7,16 @@ import type {
    IRegionMap,
    IRegionMapRepository,
 } from "../../plotting/interface/index.js"
-import type { RandomArtTaskCall, RandomArtTaskReply } from "../message/index.js"
+import type {
+   AbstractRandomArtTaskCall,
+   RandomArtTaskCall,
+   RandomArtTaskReply,
+   RandomArtTaskWordsCall,
+} from "../message/index.js"
 import type { IRandomArtTaskEngine } from "../interface/index.js"
 
 import { GenModelArtist } from "./GenModelArtist.js"
-import { GenModel, newPicture } from "./genjs6.js"
+import { GenModel, newPicture, oldPicture, substringChars } from "./genjs6.js"
 import { ChannelWrapper } from "../../cli/channels/ChannelWrapper.js"
 
 @Injectable()
@@ -20,6 +25,7 @@ export class RandomArtTaskEngine implements IRandomArtTaskEngine {
    private readonly replies: Chan<RandomArtTaskReply>
    private handles: Array<Promise<void>>
    private readonly concurrency: number
+   private readonly logger: Logger = new Logger("RandomArtTaskEngine")
 
    public constructor(
       @Inject(PaintingModuleTypes.InjectedRegionMapRepository)
@@ -41,6 +47,7 @@ export class RandomArtTaskEngine implements IRandomArtTaskEngine {
             regionMapRepo: this.regionMapRepository,
             requests: this.requests,
             replies: this.replies,
+            logger: new Logger(`SeedWorker${ii}`),
             workerId: ii,
          }
          this.handles[ii] = repeatTake(
@@ -53,6 +60,9 @@ export class RandomArtTaskEngine implements IRandomArtTaskEngine {
       await Promise.all(this.handles)
    }
 
+   /**
+    * Force the service to complete by closing the Channel with its input requests.
+    */
    public async stop(): Promise<void> {
       await close(this.requests)
    }
@@ -62,21 +72,22 @@ interface WorkContext {
    readonly regionMapRepo: IRegionMapRepository
    readonly requests: Chan<RandomArtTaskCall>
    readonly replies: Chan<RandomArtTaskReply>
+   readonly logger: Logger
    readonly workerId: number
 }
 
 async function performPaintTask(
-   nextTask: RandomArtTaskCall | typeof CLOSED,
+   nextTask: RandomArtTaskCall | RandomArtTaskWordsCall,
    context: WorkContext,
 ): Promise<false | WorkContext> {
-   if (typeof nextTask === "symbol") {
-      return false
-   }
-
-   // const prefix = [...request.prefix]
-   // const suffix = [...request.suffix]
-   const genModel: GenModel = newPicture(nextTask.prefix, nextTask.suffix)
-   const request: RandomArtTaskCall = nextTask
+   const genModel: GenModel =
+      nextTask.inputKind === "PrefixSuffix"
+         ? newPicture(nextTask.prefix, nextTask.suffix)
+         : newPicture(
+              substringChars(nextTask.prefix, 0, nextTask.prefix.length),
+              substringChars(nextTask.suffix, 0, nextTask.suffix.length),
+           )
+   const request: AbstractRandomArtTaskCall = nextTask
    try {
       const regionMap: IRegionMap = await context.regionMapRepo.load(
          request.regionMap,
@@ -88,16 +99,17 @@ async function performPaintTask(
       )
       const artist: GenModelArtist = new GenModelArtist(genModel, canvas)
       await regionMap.directPlotter(artist)
-      await put(context.replies, request.prepareReply(canvas))
+      if (!(await put(context.replies, request.prepareReply(canvas)))) {
+         return false
+      }
    } catch (error) {
       const workerId: string = context.workerId.toString()
       const errorMsg: string = error.toString()
-      console.error(`Error processing task in worker ${workerId}: ${errorMsg}`)
+      context.logger.error(
+         `Error processing task in worker ${workerId}: ${errorMsg}`,
+      )
+      await put(context.replies, request.prepareError(errorMsg))
       return false
-      // TODO
-      // await replyChannel.put(
-      // nextTask.prepareAmbush()
-      //
    }
 
    return context

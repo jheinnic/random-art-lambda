@@ -5,6 +5,7 @@ import { Barrier } from "@nestjs/core/helpers/barrier.js"
 import {
    RandomArtTaskCall,
    RandomArtTaskReply,
+   RandomArtTaskWordsCall,
 } from "../../../painting/message/index.js"
 import {
    EnrollSourceFileCall,
@@ -106,10 +107,38 @@ export class GenericService {
       await receiveReplies
       this.logger.log(JSON.stringify(this.tracking))
 
-      // await this.randomArtEngine.begin()
+      const engineShutdown = this.randomArtEngine.begin()
       this.logger.log("Start and stop")
-      // const msg = await take(this.returnCids)
-      // await this.randomArtEngine.stop()
+      const item = Object.values(this.tracking)[0]
+      if (item instanceof EnrollSourceFileReply) {
+         const cid = item.cid
+         if (cid === undefined) {
+            this.logger.error("Got a null CID from a file")
+         } else {
+            const message = new RandomArtTaskWordsCall(
+               "Happy",
+               "Fiddlesticks",
+               cid,
+            )
+            await put(this.artworkRequests, message)
+            const reply: RandomArtTaskReply | symbol = await take(
+               this.artworkReplies,
+            )
+            if (typeof reply === "symbol") {
+               this.logger.log("Got end of stream")
+            } else {
+               const canvas = reply.canvas
+               if (canvas !== undefined) {
+                  this.logger.log("Successful painting!")
+               } else {
+                  this.logger.error(reply.error)
+               }
+            }
+         }
+      }
+      await close(this.artworkRequests)
+      await engineShutdown
+
       this.logger.log("Fin")
    }
 
