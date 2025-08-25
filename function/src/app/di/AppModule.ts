@@ -5,7 +5,7 @@ import {
    IpldPlottingModule,
    IpldPlottingModuleConfiguration,
 } from "../../plotting/ipld/index.js"
-import { PaintingModule } from "../../painting/index.js"
+// import { PaintingModule } from "../../painting/di/Module.js"
 import { AppService } from "../components/AppService.js"
 import { AppServiceTwo } from "../components/AppServiceTwo.js"
 import { SharedBlockstoresModule } from "./SharedBlockstoresModule.js"
