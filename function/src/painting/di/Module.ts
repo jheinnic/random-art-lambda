@@ -6,8 +6,6 @@ import {
 
 import { RandomArtTaskEngine } from "../components/RandomArtTaskEngine.js"
 
-import { IRegionMapRepository } from "../../plotting/interface/index.js"
-import { CoroutinesModule } from "../../coroutines/index.js"
 import { PaintingModuleConfiguration } from "./Configuration.js"
 import { PaintingModuleTypes } from "./Types.js"
 import * as Providers from "./Providers.js"

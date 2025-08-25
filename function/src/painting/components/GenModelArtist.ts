@@ -1,6 +1,6 @@
 import { Canvas, CanvasRenderingContext2D } from "canvas"
 import { computePixel, GenModel } from "./genjs6.js"
-import { IRegionPlotter } from "../../plotting/interface/index.js"
+import { IRegionPlotter } from "../../plotting/interface/IRegionPlotter.js"
 
 const CHARS: string[] = "0123456789ABCDEF".split("")
 const BYTES: string[] = Array(256)
