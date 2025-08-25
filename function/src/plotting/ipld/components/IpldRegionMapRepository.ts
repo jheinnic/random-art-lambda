@@ -10,19 +10,23 @@ import type { IRegionMapBuilder } from "../../interface/IRegionMapBuilder.js"
 import type { IRegionMapRepository } from "../../interface/IRegionMapRepository.js"
 import type {
    IDataBlockSerdes,
-   IModelEnvelopeSerdes,
-} from "../ipldmodel/index.js"
-import {
    DataBlock,
    DataBlockRepresentation,
-   EMPTY_DIMENSION,
-   FractionList,
+} from "../ipldmodel/DataBlock.js"
+import type {
+   IModelEnvelopeSerdes,
    ModelEnvelope,
    ModelEnvelopeRepresentation,
+} from "../ipldmodel/ModelEnvelope.js"
+import type { RegionMap } from "../ipldmodel/RegionMap.js"
+import type {
+   FractionList,
    RegionBoundaries,
    RegionBoundaryFractions,
-   RegionMap,
-} from "../ipldmodel/index.js"
+   WordSizes,
+} from "../ipldmodel/OtherDataTypes.js"
+
+import { EMPTY_DIMENSION } from "../ipldmodel/OtherDataTypes.js"
 import { AbstractRegionMap } from "../../components/AbstractRegionMap.js"
 import { IpldRegionMap } from "./IpldRegionMap.js"
 import {
@@ -32,7 +36,6 @@ import {
    paletteMaybe,
    rationalize,
    stats,
-   WordSizes,
    PaletteMaybe,
 } from "./RegionMapUtils.js"
 
@@ -214,8 +217,14 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
                paletteWordSizes,
             )
             const dataBlocks: readonly DataBlock[] = blockify(
-               _rows,
-               _cols,
+               {
+                  N: paletteMaybes.rowsN.data,
+                  D: paletteMaybes.rowsD.data,
+               },
+               {
+                  N: paletteMaybes.colsN.data,
+                  D: paletteMaybes.colsD.data,
+               },
                this._blockWriteSize,
                dataWordSizes,
             )
