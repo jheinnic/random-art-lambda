@@ -5,13 +5,30 @@ import { NestFactory } from "@nestjs/core"
 import { CliAppModule } from "./app/Module.js"
 import { GenericService } from "./main/components/GenericService.js"
 
+process.on("unhandledRejection", (reason, promise) => {
+   console.error("UNHANDLED REJECTION:", reason)
+   promise
+      .then((x) => {
+         console.error(x)
+      })
+      .catch((x) => {
+         console.error(x)
+      })
+   process.exit(2)
+   // throw reason;
+})
+process.on("uncaughtException", (error) => {
+   console.error("UNCAUGHT EXCEPTION:", error)
+   // Safely exit the process
+   process.exit(1)
+})
 
 async function bootstrap(): Promise<void> {
    try {
       console.log("Loading")
       const app = await NestFactory.createApplicationContext(CliAppModule, {
          abortOnError: false,
-         logger: ["error", "warn", "log", "verbose", "debug"],
+         logger: ["fatal", "error", "warn", "log", "verbose", "debug"],
       })
       const logger: Logger = app.get(Logger)
       logger.log("Application context loaded")
