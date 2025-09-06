@@ -1,7 +1,5 @@
 import { INestApplicationContext, Logger } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
-import { Chan, put, take } from "medium"
-import { CliChannelsModuleTypes } from "./channels/Types.js"
 import { CliAppModule } from "./app/Module.js"
 import { GenericService } from "./main/components/GenericService.js"
 
