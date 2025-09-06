@@ -26,25 +26,25 @@ export abstract class AbstractRegionMap implements IRegionMap {
       const yCols: readonly number[] = this.columnOrderedYCoordinates
 
       if (this.isUniform) {
-         let nextX: number = -1
-         while (++nextX < xMax) {
-            let nextY: number = -1
-            while (++nextY < yMax) {
+         let nextY: number = -1
+         while (++nextY < yMax) {
+            let nextX: number = -1
+            while (++nextX < xMax) {
                plotter.plot(nextX, nextY, xCols[nextX], yCols[nextY])
             }
          }
       } else {
          let ii: number = 0
-         let nextX: number = -1
-         while (++nextX < xMax) {
-            let nextY = -1
-            while (++nextY < yMax) {
-               // console.log(nextX, nextY, xCols[ii], yCols[ii])
-               plotter.plot(nextX, nextY, xCols[ii], yCols[ii++])
+         let nextY: number = -1
+         while (++nextY < yMax) {
+            let nextX = -1
+            while (++nextX < xMax) {
+               plotter.plot(nextX, nextY, xCols[ii], yCols[ii])
+               ii = ii + 1
             }
          }
       }
-      // plotter.finish()
+      plotter.finish()
    }
 
    public async oldDirectPlotter(plotter: IRegionPlotter): Promise<void> {
@@ -61,20 +61,20 @@ export abstract class AbstractRegionMap implements IRegionMap {
       const xCols: readonly number[] = this.columnOrderedXCoordinates
       const yCols: readonly number[] = this.columnOrderedYCoordinates
 
-      async function loopForX(nextX: number): Promise<void> {
-         let nextY: number = -1
-         while (++nextY < yMax) {
+      async function loopFoxY(nextY: number): Promise<void> {
+         let nextX: number = -1
+         while (++nextX < xMax) {
             plotter.plot(nextX, nextY, xCols[nextX], yCols[nextY])
          }
-         if (++nextX < xMax) {
-            // setTimeout(loopForX, 0, nextX)
-            await loopForX(nextX)
+         if (++nextY < yMax) {
+            // setTimeout(loopFoxY, 0, nextY)
+            await loopFoxY(nextY)
          } else {
             console.log("Done looping")
             // plotter.finish()
          }
       }
-      await loopForX(0)
+      await loopFoxY(0)
    }
 
    private async directVariable(plotter: IRegionPlotter): Promise<void> {
@@ -83,19 +83,20 @@ export abstract class AbstractRegionMap implements IRegionMap {
       const xCols: readonly number[] = this.columnOrderedXCoordinates
       const yCols: readonly number[] = this.columnOrderedYCoordinates
 
-      async function loopForXI(nextX: number, ii: number): Promise<void> {
-         let nextY = -1
-         while (++nextY < yMax) {
-            plotter.plot(nextX, nextY, xCols[ii], yCols[ii++])
+      async function loopFoxYI(nextY: number, ii: number): Promise<void> {
+         let nextX = -1
+         while (++nextX < xMax) {
+            plotter.plot(nextX, nextY, xCols[ii], yCols[ii])
+            ii = ii + 1
          }
-         if (++nextX < xMax) {
-            // setTimeout(loopForXI, 0, nextX, ii)
-            await loopForXI(nextX, ii)
+         if (++nextY < yMax) {
+            // setTimeout(loopFoxYI, 0, nextY, ii)
+            await loopFoxYI(nextY, ii)
          } else {
             console.log("Done looping")
-            // plotter.finish()
+            plotter.finish()
          }
       }
-      await loopForXI(0, 0)
+      await loopFoxYI(0, 0)
    }
 }
