@@ -82,10 +82,6 @@ export class GenericService {
     * @param options An object containing parsed options.
     */
    async run(): Promise<void> {
-      const tracking: Record<
-         string,
-         EnrollSourceFileCall | EnrollSourceFileReply
-      > = {}
       const sending = Promise.all(
          this.inputs.map(async (next: EnrollSourceFileCall) => {
             this.tracking[next.correlationId] = next
