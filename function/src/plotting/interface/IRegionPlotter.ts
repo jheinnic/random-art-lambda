@@ -11,7 +11,7 @@ export interface IRegionPlotter {
    ) => void
 
    /**
-   * Builder method that indicates all pixels have been plotted.
-  finish: () => void
-   */
+    * Builder method that indicates all pixels have been plotted.
+    */
+   finish: () => void
 }

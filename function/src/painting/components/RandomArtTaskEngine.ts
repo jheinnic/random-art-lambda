@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from "@nestjs/common"
-import { close, put, repeatTake, Chan, CLOSED } from "medium"
+import { close, put, repeatTake, Chan } from "medium"
 import { Canvas } from "canvas"
 
 import { PaintingModuleTypes } from "../di/Types.js"
@@ -16,7 +16,7 @@ import type {
 import type { IRandomArtTaskEngine } from "../interface/index.js"
 
 import { GenModelArtist } from "./GenModelArtist.js"
-import { GenModel, newPicture, oldPicture, substringChars } from "./genjs6.js"
+import { GenModel, newPicture, substringChars } from "./genjs6.js"
 import { ChannelWrapper } from "../../cli/channels/ChannelWrapper.js"
 
 @Injectable()
