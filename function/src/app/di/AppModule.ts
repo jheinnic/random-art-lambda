@@ -1,27 +1,32 @@
 import { Module } from "@nestjs/common"
 import { Blockstore } from "interface-blockstore"
 
-import { IpfsModule, IpfsModuleTypes } from "../../ipfs/di/index.js"
-import { PlottingModule, PlottingModuleConfiguration } from "../../plotting/di/index.js"
-import { PaintingModule } from "../../painting/di/index.js"
+import { IpldPlottingModule } from "../../plotting/ipld/di/Module.js"
+import { IpldPlottingModuleConfiguration } from "../../plotting/ipld/di/Configuration.js"
+// import { PaintingModule } from "../../painting/di/Module.js"
 import { AppService } from "../components/AppService.js"
 import { AppServiceTwo } from "../components/AppServiceTwo.js"
 import { SharedBlockstoresModule } from "./SharedBlockstoresModule.js"
 import { SharedBlockstoresModuleTypes } from "./SharedBlockstoresModuleTypes.js"
 
-@Module( {
-  imports: [
-    SharedBlockstoresModule,
-    PlottingModule.registerAsync( {
-      imports: [ SharedBlockstoresModule ],
-      useFactory: ( blockstore: Blockstore ): PlottingModuleConfiguration =>
-        new PlottingModuleConfiguration( blockstore ),
-      inject: [ SharedBlockstoresModuleTypes.SharedMapBlockstore ]
-    } ),
-    PaintingModule
-  ],
-  providers: [ AppService, AppServiceTwo ],
-  exports: [ AppServiceTwo, AppService, PlottingModule, PaintingModule ]
-} )
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
-export class AppModule { }
+@Module({
+   imports: [
+      SharedBlockstoresModule,
+      IpldPlottingModule.registerAsync({
+         imports: [SharedBlockstoresModule],
+         useFactory: (
+            blockstore: Blockstore,
+         ): IpldPlottingModuleConfiguration =>
+            new IpldPlottingModuleConfiguration(blockstore),
+         inject: [SharedBlockstoresModuleTypes.SharedMapBlockstore],
+      }),
+      // PaintingModule,
+   ],
+   providers: [AppService, AppServiceTwo],
+   exports: [
+      AppServiceTwo,
+      AppService,
+      IpldPlottingModule /* , PaintingModule */,
+   ],
+})
+export class AppModule {}

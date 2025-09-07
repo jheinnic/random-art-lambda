@@ -1,25 +1,12 @@
 {
   "javascript.preferences.quoteStyle": "double",
-  "javascript.format.insertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces": true,
-  "javascript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis": true,
-  "javascript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets": true,
-  "javascript.format.insertSpaceAfterOpeningAndBeforeClosingJsxExpressionBraces": false,
-  "javascript.format.insertSpaceAfterConstructor": true,
-  "vsintellicode.features.apiExamplests": "enabled",
+  "npm.enableRunFromFolder": true,
+  "npm.packageManager": "yarn",
   "javascript.preferences.importModuleSpecifierEnding": "js",
   "javascript.inlayHints.functionLikeReturnTypes.enabled": true,
   "javascript.format.semicolons": "remove",
-  "typescriptHero.verbosity": "info",
-  "typescriptHero.imports.stringQuoteStyle": "\"",
-  "typescriptHero.imports.organizeOnSave": true,
-  "typescriptHero.imports.organizeSortsByFirstSpecifier": true,
-  "typescriptHero.imports.insertSemicolons": false,
   "typescript.workspaceSymbols.scope": "currentProject",
-  "typescript.tsserver.useSyntaxServer": "always",
   "typescript.tsserver.maxTsServerMemory": 8192,
-  "typescript.tsserver.experimental.enableProjectDiagnostics": true,
-  "typescript.tsserver.enableTracing": false,
-  "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.suggest.completeFunctionCalls": true,
   "typescript.referencesCodeLens.showOnAllFunctions": true,
   "typescript.referencesCodeLens.enabled": true,
@@ -33,31 +20,26 @@
   "typescript.inlayHints.functionLikeReturnTypes.enabled": true,
   "typescript.inlayHints.enumMemberValues.enabled": true,
   "typescript.implementationsCodeLens.enabled": true,
-  "typescript.format.semicolons": "remove",
-  "typescript.format.insertSpaceAfterTypeAssertion": true,
-  "typescript.format.insertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces": true,
-  "typescript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis": true,
-  "typescript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets": true,
-  "typescript.format.insertSpaceAfterConstructor": true,
+  "typescript.tsdk": "./node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
-  "typescriptHero.imports.disableImportRemovalOnOrganize": true,
-  "typescriptHero.imports.removeTrailingIndex": false,
-  "java.saveActions.organizeImports": false,
   "importSorter.generalConfiguration.sortOnBeforeSave": true,
   "importSorter.importStringConfiguration.hasSemicolon": false,
   "importSorter.importStringConfiguration.quoteMark": "double",
-  "eslint.format.enable": true,
   "editor.formatOnType": true,
   "editor.formatOnPaste": true,
   "editor.formatOnSave": true,
+  "eslint.nodeEnv": "PRODUCTION",
+  "prettier.requireConfig": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.tabSize": 3,
   "[typescript]": {
-    // "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.defaultFormatter": "vscode.typescript-language-features",
     "typescript.suggest.enabled": true
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "cSpell.words": [
     "Blockstores",
     "cbor",
+    "fastseries",
     "fdoc",
     "ipldmodel",
     "Multihash",
@@ -67,8 +49,15 @@
     "Serdes",
     "sprintf",
     "strv",
-    "unblockify"
+    "tyriar",
+    "unblockify",
+    "xmptoolkit"
   ],
-  "typescript.tsserver.watchOptions": {},
-  "typescript.tsserver.log": "verbose"
+  "python-envs.pythonProjects": [
+    {
+      "path": "src/cli/main/main",
+      "envManager": "ms-python.python:venv",
+      "packageManager": "ms-python.python:pip"
+    }
+  ]
 }

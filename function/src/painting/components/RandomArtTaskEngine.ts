@@ -1,47 +1,116 @@
-import * as fs from "fs"
-import { CID } from "multiformats"
-import { Inject, Injectable } from "@nestjs/common"
+import { Inject, Injectable, Logger } from "@nestjs/common"
+import { close, put, repeatTake, Chan } from "medium"
 import { Canvas } from "canvas"
 
-import { PlottingModuleTypes } from "../../plotting/di/index.js"
-import { IRegionMap, IRegionMapRepository } from "../../plotting/interface/index.js"
-import { IPixelPainter, IRandomArtwork, IRandomArtTaskEngine, RandomArtTaskRequest } from "../interface/index.js"
-import { CanvasPixelPainter } from './CanvasPixelPainter.js'
-import { GenModelArtist } from './GenModelArtist.js'
-import { GenModel, newPicture } from "./genjs6.js"
+import { PaintingModuleTypes } from "../di/Types.js"
+import type {
+   IRegionMap,
+   IRegionMapRepository,
+} from "../../plotting/interface/index.js"
+import type {
+   AbstractRandomArtTaskCall,
+   RandomArtTaskCall,
+   RandomArtTaskReply,
+   RandomArtTaskWordsCall,
+} from "../message/index.js"
+import type { IRandomArtTaskEngine } from "../interface/index.js"
+
+import { GenModelArtist } from "./GenModelArtist.js"
+import { GenModel, newPicture, substringChars } from "./genjs6.js"
+import { ChannelWrapper } from "../../cli/channels/ChannelWrapper.js"
 
 @Injectable()
 export class RandomArtTaskEngine implements IRandomArtTaskEngine {
-  public constructor (
-    @Inject( PlottingModuleTypes.IRegionMapRepository )
-    private readonly RegionMapRepository: IRegionMapRepository
-  ) { }
+   private readonly requests: Chan<RandomArtTaskCall>
+   private readonly replies: Chan<RandomArtTaskReply>
+   private handles: Array<Promise<void>>
+   private readonly concurrency: number
+   private readonly logger: Logger = new Logger("RandomArtTaskEngine")
 
-  public async beginTask( request: RandomArtTaskRequest ): Promise<IRandomArtwork> {
-    const prefix = [ ...request.prefix ]
-    const suffix = [ ...request.suffix ]
+   public constructor(
+      @Inject(PaintingModuleTypes.InjectedRegionMapRepository)
+      private readonly regionMapRepository: IRegionMapRepository,
+      @Inject(PaintingModuleTypes.RandomArtTaskCallChannel)
+      readonly requestsWrapper: ChannelWrapper<RandomArtTaskCall>,
+      @Inject(PaintingModuleTypes.RandomArtTaskReplyChannel)
+      readonly repliesWrapper: ChannelWrapper<RandomArtTaskReply>,
+   ) {
+      this.concurrency = 4
+      this.handles = new Array<Promise<void>>(this.concurrency)
+      this.requests = requestsWrapper.unwrap()
+      this.replies = repliesWrapper.unwrap()
+   }
 
-    const regionMap: IRegionMap = await this.RegionMapRepository.load( request.regionMap )
-    const genModel: GenModel = newPicture( prefix, suffix )
-    const canvas: Canvas = new Canvas( regionMap.pixelWidth, regionMap.pixelHeight, 'image' )
-    const canvasPainter: IPixelPainter = new CanvasPixelPainter( canvas )
-    const artist: GenModelArtist = new GenModelArtist( genModel, canvasPainter )
-    regionMap.director( artist );
+   public async begin(): Promise<void> {
+      for (let ii = 1; ii <= this.concurrency; ii++) {
+         const seedRefs: WorkContext = {
+            regionMapRepo: this.regionMapRepository,
+            requests: this.requests,
+            replies: this.replies,
+            logger: new Logger(`SeedWorker${ii}`),
+            workerId: ii,
+         }
+         this.handles[ii] = repeatTake(
+            seedRefs.requests,
+            performPaintTask,
+            seedRefs,
+         )
+      }
 
-    // canvas.
-    const cid1 = CID.parse( 'QmXPV4uU34qMVnj3DhQFT1s1766eFK8y95DE7oFZvrbbZ3' )
-    const cid2 = CID.parse( 'QmQ9LT1MW4jfFbettuP7T9qxpNYDBfahvetf8y4ZqbiAtw' )
+      await Promise.all(this.handles)
+   }
 
-    return {
-      cid: cid1,
-      prefix: Uint8Array.from( [ 84, 81, 81, 190 ] ),
-      suffix: Uint8Array.from( [ 182, 81, 143, 94, 88, 104 ] ),
-      regionMap: cid2,
-      engineVersion: '0.0.1',
-      buffer: Buffer.from( [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ] ),
-      stream: fs.createReadStream( 'fdoc.proto' )
-    }
-  }
+   /**
+    * Force the service to complete by closing the Channel with its input requests.
+    */
+   public async stop(): Promise<void> {
+      await close(this.requests)
+   }
+}
 
+interface WorkContext {
+   readonly regionMapRepo: IRegionMapRepository
+   readonly requests: Chan<RandomArtTaskCall>
+   readonly replies: Chan<RandomArtTaskReply>
+   readonly logger: Logger
+   readonly workerId: number
+}
 
+async function performPaintTask(
+   nextTask: RandomArtTaskCall | RandomArtTaskWordsCall,
+   context: WorkContext,
+): Promise<false | WorkContext> {
+   const genModel: GenModel =
+      nextTask.inputKind === "PrefixSuffix"
+         ? newPicture(nextTask.prefix, nextTask.suffix)
+         : newPicture(
+              substringChars(nextTask.prefix, 0, nextTask.prefix.length),
+              substringChars(nextTask.suffix, 0, nextTask.suffix.length),
+           )
+   const request: AbstractRandomArtTaskCall = nextTask
+   try {
+      const regionMap: IRegionMap = await context.regionMapRepo.load(
+         request.regionMap,
+      )
+      const canvas: Canvas = new Canvas(
+         regionMap.pixelWidth,
+         regionMap.pixelHeight,
+         "image",
+      )
+      const artist: GenModelArtist = new GenModelArtist(genModel, canvas)
+      await regionMap.directPlotter(artist)
+      if (!(await put(context.replies, request.prepareReply(canvas)))) {
+         return false
+      }
+   } catch (error) {
+      const workerId: string = context.workerId.toString()
+      const errorMsg: string = error.toString()
+      context.logger.error(
+         `Error processing task in worker ${workerId}: ${errorMsg}`,
+      )
+      await put(context.replies, request.prepareError(errorMsg))
+      return false
+   }
+
+   return context
 }
