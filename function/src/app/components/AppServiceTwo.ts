@@ -19,6 +19,7 @@ import { IpldPlottingModuleTypes } from "../../plotting/ipld/di/Types.js"
 import { PBufRegionMapFactory } from "../../plotting/protobuf/components/PBufRegionMapFactory.js"
 import { ProtobufPlottingModuleTypes } from "../../plotting/protobuf/di/Types.js"
 import { PBufRegionMap } from "../../plotting/protobuf/components/PBufRegionMap.js"
+import { CanvasPersister } from "../../painting/components/CanvasPersister.js"
 
 interface Task {
    taskMessage: string
@@ -200,12 +201,11 @@ export class AppServiceTwo {
       const artist: GenModelArtist = new GenModelArtist(genModel, canvas)
       await regionMap.directPlotter(artist)
       const stream = fs.createWriteStream(fileName)
-      // const persister: CanvasPersister = new CanvasPersister(canvas, stream)
+      const persister: CanvasPersister = new CanvasPersister(canvas, stream)
       if (taskMessage !== "") {
          const sidecarFile = fileName.replace("png", "json")
          fs.writeFileSync(sidecarFile, taskMessage)
       }
-      // await persister.finish()
-      // TODO Write File Streams
+      await persister.finish()
    }
 }
