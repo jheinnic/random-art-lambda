@@ -132,7 +132,7 @@ export class AppServiceTwo {
       const workList: Array<{ phrase: string }> = JSON.parse(
          fs.readFileSync("source5B.list").toString(),
       )
-      return workList.map((task: { phrase: string }) => {
+      return workList.map((task: { phrase: string }): Task => {
          const fileName: string = crypto
             .createHash("md5")
             .update(task.phrase)
