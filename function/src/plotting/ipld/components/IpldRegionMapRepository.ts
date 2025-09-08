@@ -78,7 +78,7 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
          private _rowOrderY: readonly number[] = EMPTY_DIMENSION
 
          // TODO: This ought to be configurable/discoverable and shared
-         private readonly _blockWriteSize: number = 4096
+         private readonly _blockWriteSize: number = 512 * 1024
 
          constructor(private readonly self: IpldRegionMapRepository) {}
 

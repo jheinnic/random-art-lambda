@@ -89,10 +89,11 @@ export function paletteMaybe(src: readonly number[]): PaletteMaybe {
    asSet.forEach((value: number) => {
       srcMax = Math.max(srcMax, Math.abs(value))
    })
-   const paletteWordLen = Math.max(Math.ceil(Math.log2(asSet.size)), 1)
-   const baseWordLen = Math.ceil(Math.log2(srcMax))
-   const newSize = src.length * paletteWordLen + asSet.size * baseWordLen
-   const baseSize = src.length * baseWordLen
+   const paletteWordLen: number = Math.max(asSet.size.toString(2).length, 1)
+   const baseWordLen: number = srcMax.toString(2).length
+   const newSize: number =
+      src.length * paletteWordLen + asSet.size * baseWordLen
+   const baseSize: number = src.length * baseWordLen
    console.log(
       `${newSize} >?< ${baseSize}, ${paletteWordLen}, ${asSet.size}, ${baseWordLen}, ${src.length} :: ${srcMax}`,
    )
@@ -135,7 +136,7 @@ function measureSize(
       )
    }
 
-   return wordSize * numbers.length
+   return Math.ceil((wordSize * numbers.length) / 8.0)
 }
 
 const BLOCK_OVERHEAD = 16
