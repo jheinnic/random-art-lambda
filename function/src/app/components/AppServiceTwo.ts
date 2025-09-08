@@ -61,7 +61,7 @@ export class AppServiceTwo {
    public async testRepoSave(): Promise<void> {
       const adapter: PBufRegionMap =
          this.regionMapFactory.adapt("./qdoc2.proto")
-      const modelCid: CID = await this.mapRepo.import(adapter.directBuilder)
+      const modelCid: CID = await this.mapRepo.import(adapter.directBuilder())
       const origMap: IRegionMap = adapter
       console.log(origMap)
       console.log(modelCid)
