@@ -225,17 +225,29 @@ export function unblockify(
    selector: (x: Readonly<DataBlock>) => Uint8Array,
    coding: DimensionCoding,
 ): Palette {
-   const dataBytes: Buffer = Buffer.concat(dataBlocks.map(selector))
-   const paletteBytes: Buffer = Buffer.concat(paletteBlocks.map(selector))
-   let paletteArray: Palette = EMPTY_DIMENSION
+   const dataBytes: Uint8Array[] = dataBlocks.map(selector)
+   const paletteBytes: Uint8Array[] = paletteBlocks.map(selector)
+   let paletteArray: Palette = EMPTY_DIMENSION as number[]
    if (coding.paletteWordLen > 0) {
-      paletteArray = hydrate(
-         paletteBytes,
-         EMPTY_DIMENSION,
-         coding.paletteWordLen,
-      )
+      paletteArray = paletteBytes
+         .map((blockBytes): Palette => {
+            return hydrate(
+               Buffer.from(blockBytes),
+               EMPTY_DIMENSION,
+               coding.paletteWordLen,
+            )
+         })
+         .flat()
    }
-   return hydrate(dataBytes, paletteArray, coding.baseWordLen)
+   return dataBytes
+      .map((blockBytes): Palette => {
+         return hydrate(
+            Buffer.from(blockBytes),
+            paletteArray,
+            coding.baseWordLen,
+         )
+      })
+      .flat()
 }
 
 const NO_BYTES: Uint8Array = Uint8Array.of()
