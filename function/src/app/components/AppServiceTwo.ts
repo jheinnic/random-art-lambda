@@ -77,6 +77,39 @@ export class AppServiceTwo {
       await this.runCombinations(taskList, regionList)
    }
 
+   public async loadRepo(): Promise<void> {
+      ;[
+         "fdoc2",
+         "fdoc_big",
+         "fdoc",
+         "gdoc2",
+         "hdoc2",
+         "qdoc2",
+         "qdoc4",
+         "qdoc5",
+         "qdoc6",
+         "rdoc02",
+         "rdoc03",
+         "tdoc01",
+      ]
+         .map(async (regionName: string): Promise<void> => {
+            const adapter: PBufRegionMap = this.regionMapFactory.adapt(
+               "./" + regionName + ".proto",
+            )
+            const modelCid: CID = await this.mapRepo.import(
+               adapter.directBuilder(),
+            )
+            console.log(regionName + " :: " + modelCid.toString())
+         })
+         .forEach((clue: Promise<void>): void => {
+            clue
+               .then((_: unknown): void => {})
+               .catch((x: unknown): void => {
+                  console.error(x)
+               })
+         })
+   }
+
    public async testRun0(): Promise<void> {
       const beginString: string = "Happy Thanksgiving Burger"
       const beginBuf: Buffer = Buffer.from(beginString)
