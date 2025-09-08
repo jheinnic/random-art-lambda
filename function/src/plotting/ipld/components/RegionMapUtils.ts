@@ -207,7 +207,7 @@ export function blockify(
             wordSizes.colsN,
          ),
          colsD: translate(
-            cols.D.slice(colsDIdx, nextColsNIdx),
+            cols.D.slice(colsDIdx, nextColsDIdx),
             wordSizes.colsD,
          ),
       }
