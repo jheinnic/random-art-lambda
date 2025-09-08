@@ -10,7 +10,7 @@ import {
    RepresentModelEnvelopePair,
    RepresentDataBlockPair,
 } from "../ipldmodel/index.js"
-import { SerdesConfiguration } from "../../../ipld/index.js"
+import { IpldModuleExtras, SerdesConfiguration } from "../../../ipld/index.js"
 import { IpldPlottingModuleTypes } from "./Types.js"
 
 export const schemaDsl = `type ModelEnvelope union {
@@ -76,15 +76,17 @@ export interface ISerdesTypes {
    DataBlock: RepresentDataBlockPair
 }
 
-export const ipldModuleOptions: SerdesConfiguration = new SerdesConfiguration(
-   schemaDsl,
-   {
-      ModelEnvelope: IpldPlottingModuleTypes.IModelEnvelopeSerdes,
-      DataBlock: IpldPlottingModuleTypes.IDataBlockSerdes,
-   },
-   codec,
-   hasher,
-)
+export const ipldModuleOptions: IpldModuleExtras = {
+   serdes: new SerdesConfiguration(
+      schemaDsl,
+      {
+         ModelEnvelope: IpldPlottingModuleTypes.IModelEnvelopeSerdes,
+         DataBlock: IpldPlottingModuleTypes.IDataBlockSerdes,
+      },
+      codec,
+      hasher,
+   ),
+}
 
 // const modelBuf = fs.readFileSync("./fdoc.proto")
 // const plotDocument = PointPlotDocument.deserializeBinary(modelBuf)
