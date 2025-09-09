@@ -24,4 +24,3 @@ export type CliMainModuleOptions = typeof dynamicHost.OPTIONS_TYPE
    exports: [GenericService],
 })
 export class CliMainModule extends dynamicHost.ConfigurableModuleClass {}
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class

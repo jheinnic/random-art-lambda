@@ -1,5 +1,3 @@
 export class ModuleExportConfiguration {
-  constructor (
-    public readonly injectToken: symbol | string,
-  ) {}
+   constructor(public readonly injectToken: symbol | string) {}
 }

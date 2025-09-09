@@ -7,226 +7,231 @@ import { CID } from "multiformats"
 import { base58btc } from "multiformats/bases/base58"
 
 import { mkdir, readFile, stat, unlink, writeFile } from "fs/promises"
-import { mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "fs"
-import { Stats } from "fs"
+import { mkdirSync, statSync, Stats } from "fs"
 import { dirname, join } from "path"
 
 import { FsBlockstoreConfiguration, IpfsModuleTypes } from "../di/index.js"
 
 enum OpenState {
-  CLOSED = "closed",
-  OPENING = "opening",
-  OPEN = "open",
-  CLOSING = "closing"
+   CLOSED = "closed",
+   OPENING = "opening",
+   OPEN = "open",
+   CLOSING = "closing",
 }
 
 @Injectable()
 export class FsBlockstore extends BaseBlockstore {
-  private static readonly NO_OP_RELEASE: () => Promise<void> = async () => { }
+   private static readonly NO_OP_RELEASE: () => Promise<void> = async () => {}
 
-  private lockRelease: () => Promise<void> = FsBlockstore.NO_OP_RELEASE
-  private readonly rootPath: string
-  private openState: OpenState = OpenState.CLOSED
+   private readonly lockRelease: () => Promise<void> =
+      FsBlockstore.NO_OP_RELEASE
 
-  constructor (
-    @Inject( IpfsModuleTypes.FsBlockstoreConfiguration )
-    readonly config: FsBlockstoreConfiguration,
-    @Inject( IpfsModuleTypes.LruCache )
-    private readonly lruCache: LRUCache<string, Uint8Array>,
-  ) {
-    super()
-    this.rootPath = config.rootPath
-    console.log( "New FsBlockstore constructor call" )
+   private readonly rootPath: string
+   private readonly openState: OpenState = OpenState.CLOSED
 
-    this.openState = OpenState.OPENING
-    let rootStat: Stats
-    try {
-      rootStat = statSync( this.rootPath )
-    } catch {
-      // TODO: mkdir may throw!
-      mkdirSync( this.rootPath )
-      rootStat = statSync( this.rootPath )
-    }
-    if ( !rootStat.isDirectory() ) {
-      this.openState = OpenState.CLOSED
-      throw new Error(
-        `Root path, ${ this.rootPath }, must be a directory to open FsBlockStore!`,
-      )
-    }
-    lockfile.lockSync( this.rootPath, {
-      lockfilePath: join( this.rootPath, ".lock" ),
-    } )
-    console.log( "Lock acquired!" )
-    this.openState = OpenState.OPEN
-  }
+   constructor(
+      @Inject(IpfsModuleTypes.FsBlockstoreConfiguration)
+      readonly config: FsBlockstoreConfiguration,
+      @Inject(IpfsModuleTypes.LruCache)
+      private readonly lruCache: LRUCache<string, Uint8Array>,
+   ) {
+      super()
+      this.rootPath = config.rootPath
+      console.log("New FsBlockstore constructor call")
 
-  // async open(): Promise<void> {
-  //   if ( this.openState === OpenState.OPEN ) {
-  //     return
-  //   }
-  //   if ( this.openState !== OpenState.CLOSED ) {
-  //     throw new Error( `${ this.openState } transition in progress` )
-  //   }
+      this.openState = OpenState.OPENING
+      let rootStat: Stats
+      try {
+         rootStat = statSync(this.rootPath)
+      } catch {
+         // TODO: mkdir may throw!
+         mkdirSync(this.rootPath)
+         rootStat = statSync(this.rootPath)
+      }
+      if (!rootStat.isDirectory()) {
+         this.openState = OpenState.CLOSED
+         throw new Error(
+            `Root path, ${this.rootPath}, must be a directory to open FsBlockStore!`,
+         )
+      }
+      lockfile.lockSync(this.rootPath, {
+         lockfilePath: join(this.rootPath, ".lock"),
+      })
+      console.log("Lock acquired!")
+      this.openState = OpenState.OPEN
+   }
 
-  //   this.openState = OpenState.OPENING
-  //   let rootStat: Stats
-  //   try {
-  //     rootStat = await stat( this.rootPath )
-  //   } catch {
-  //     await mkdir( this.rootPath )
-  //     rootStat = await stat( this.rootPath )
-  //   }
-  //   if ( !rootStat.isDirectory() ) {
-  //     this.openState = OpenState.CLOSED
-  //     throw new Error(
-  //       `Root path, ${ this.rootPath }, must be a directory to open FsBlockStore!`,
-  //     )
-  //   }
-  //   this.lockRelease = await lockfile.lock( this.rootPath, {
-  //     lockfilePath: join( this.rootPath, ".lock" ),
-  //   } )
-  //   console.log( "Lock acquired!" )
-  //   this.openState = OpenState.OPEN
-  // }
+   // async open(): Promise<void> {
+   //   if ( this.openState === OpenState.OPEN ) {
+   //     return
+   //   }
+   //   if ( this.openState !== OpenState.CLOSED ) {
+   //     throw new Error( `${ this.openState } transition in progress` )
+   //   }
 
-  /**
-   * @returns {Promise<void>}
-   */
-  // async close(): Promise<void> {
-  //   if ( this.openState === OpenState.CLOSED ) {
-  //     return
-  //   }
-  //   if ( this.openState !== OpenState.OPEN ) {
-  //     throw Error( `${ this.openState } transition in progress` )
-  //   }
-  //   this.openState = OpenState.CLOSING
-  //   const releaseHandle = await this.lockRelease()
-  //   console.log( "Repository lock release initiated" )
-  //   const released = await releaseHandle
-  //   console.log( released )
-  //   console.log( releaseHandle )
-  //   console.log( "Repository lock released" )
-  //   this.lockRelease = FsBlockstore.NO_OP_RELEASE
-  //   this.openState = OpenState.CLOSED
-  // }
+   //   this.openState = OpenState.OPENING
+   //   let rootStat: Stats
+   //   try {
+   //     rootStat = await stat( this.rootPath )
+   //   } catch {
+   //     await mkdir( this.rootPath )
+   //     rootStat = await stat( this.rootPath )
+   //   }
+   //   if ( !rootStat.isDirectory() ) {
+   //     this.openState = OpenState.CLOSED
+   //     throw new Error(
+   //       `Root path, ${ this.rootPath }, must be a directory to open FsBlockStore!`,
+   //     )
+   //   }
+   //   this.lockRelease = await lockfile.lock( this.rootPath, {
+   //     lockfilePath: join( this.rootPath, ".lock" ),
+   //   } )
+   //   console.log( "Lock acquired!" )
+   //   this.openState = OpenState.OPEN
+   // }
 
-  /**
-   * @param {CID} key
-   * @param {Uint8Array} val
-   * @param {Options} [options]
-   * @returns {Promise<void>}
-   */
-  async put( key: CID, val: Uint8Array, options?: AbortOptions ): Promise<CID> {
-    // if (val.length < 1000) {
-    //   console.error(`${key.toString()} and ${JSON.stringify(val)}`)
-    // } else {
-    //   console.error(`${key.toString()} and ${val.length}`)
-    // }
-    this.assertIsOpen( options )
-    const cidStr = fromCidToString( key )
-    const blockPath = fromCidToPath( this.rootPath, cidStr )
-    await mkdir( dirname( blockPath ), { recursive: true, mode: "0700" } )
-    this.assertIsOpen( options )
-    try {
-      await writeFile( blockPath, val, {
-        signal: options?.signal,
-        mode: "0600",
-      } )
-      this.lruCache.set( cidStr, val )
-      return key
-    } catch ( err: any ) {
-      this.lruCache.delete( cidStr )
-      await unlink( blockPath )
-      throw err
-    }
-  }
+   /**
+    * @returns {Promise<void>}
+    */
+   // async close(): Promise<void> {
+   //   if ( this.openState === OpenState.CLOSED ) {
+   //     return
+   //   }
+   //   if ( this.openState !== OpenState.OPEN ) {
+   //     throw Error( `${ this.openState } transition in progress` )
+   //   }
+   //   this.openState = OpenState.CLOSING
+   //   const releaseHandle = await this.lockRelease()
+   //   console.log( "Repository lock release initiated" )
+   //   const released = await releaseHandle
+   //   console.log( released )
+   //   console.log( releaseHandle )
+   //   console.log( "Repository lock released" )
+   //   this.lockRelease = FsBlockstore.NO_OP_RELEASE
+   //   this.openState = OpenState.CLOSED
+   // }
 
-  /**
-   * @param {CID} key
-   * @param {Options} [options]
-   * @returns {Promise<Uint8Array>}
-   */
-  async get( key: CID, options?: AbortOptions ): Promise<Uint8Array> {
-    this.assertIsOpen( options )
-    let val: Uint8Array | undefined
-    const cidStr = fromCidToString( key )
-    if ( options?.signal === undefined ) {
-      val = await this.lruCache.fetch( cidStr )
+   /**
+    * @param {CID} key
+    * @param {Uint8Array} val
+    * @param {Options} [options]
+    * @returns {Promise<void>}
+    */
+   async put(key: CID, val: Uint8Array, options?: AbortOptions): Promise<CID> {
+      // if (val.length < 1000) {
+      //   console.error(`${key.toString()} and ${JSON.stringify(val)}`)
+      // } else {
+      //   console.error(`${key.toString()} and ${val.length}`)
+      // }
+      this.assertIsOpen(options)
+      const cidStr = fromCidToString(key)
+      const blockPath = fromCidToPath(this.rootPath, cidStr)
+      await mkdir(dirname(blockPath), { recursive: true, mode: "0700" })
+      this.assertIsOpen(options)
+      try {
+         await writeFile(blockPath, val, {
+            signal: options?.signal,
+            mode: "0600",
+         })
+         this.lruCache.set(cidStr, val)
+         return key
+      } catch (err: any) {
+         this.lruCache.delete(cidStr)
+         await unlink(blockPath)
+         throw err
+      }
+   }
+
+   /**
+    * @param {CID} key
+    * @param {Options} [options]
+    * @returns {Promise<Uint8Array>}
+    */
+   async get(key: CID, options?: AbortOptions): Promise<Uint8Array> {
+      this.assertIsOpen(options)
+      let val: Uint8Array | undefined
+      const cidStr = fromCidToString(key)
+      if (options?.signal === undefined) {
+         val = await this.lruCache.fetch(cidStr)
       } else {
          val = await this.lruCache.fetch(cidStr, { signal: options.signal })
       }
 
+      if (val === undefined) {
+         throw new Error(`${cidStr} not found!`)
+      }
+      return val
+   }
 
-  /**
-   * @param {CID} key
-   * @param {Options} [options]
-   * @returns {Promise<boolean>}
-   */
-  async has( key: CID, options?: AbortOptions ): Promise<boolean> {
-    this.assertIsOpen( options )
-    const cidStr: string = fromCidToString( key )
-    if ( this.lruCache.has( cidStr ) ) {
-      return true
-    }
-    const blockPath = fromCidToPath( this.rootPath, cidStr )
-    try {
-      await stat( blockPath )
-      return true
-    } catch {
-      return false
-    }
-  }
+   /**
+    * @param {CID} key
+    * @param {Options} [options]
+    * @returns {Promise<boolean>}
+    */
+   async has(key: CID, options?: AbortOptions): Promise<boolean> {
+      this.assertIsOpen(options)
+      const cidStr: string = fromCidToString(key)
+      if (this.lruCache.has(cidStr)) {
+         return true
+      }
+      const blockPath = fromCidToPath(this.rootPath, cidStr)
+      try {
+         await stat(blockPath)
+         return true
+      } catch {
+         return false
+      }
+   }
 
-  /**
-   * @param {CID} key
-   * @param {Options} [options]
-   * @returns {Promise<void>}
-   */
-  async delete( key: CID, options?: AbortOptions ): Promise<void> {
-    this.assertIsOpen( options )
-    const cidStr = fromCidToString( key )
-    const blockPath = fromCidToPath( this.rootPath, cidStr )
-    this.lruCache.delete( cidStr )
-    await unlink( blockPath )
-  }
+   /**
+    * @param {CID} key
+    * @param {Options} [options]
+    * @returns {Promise<void>}
+    */
+   async delete(key: CID, options?: AbortOptions): Promise<void> {
+      this.assertIsOpen(options)
+      const cidStr = fromCidToString(key)
+      const blockPath = fromCidToPath(this.rootPath, cidStr)
+      this.lruCache.delete(cidStr)
+      await unlink(blockPath)
+   }
 
-  private assertIsOpen( options?: AbortOptions ): void {
-    if ( this.openState !== OpenState.OPEN ) {
-      throw new Error( `${ this.openState } is not Open` )
-    }
-    if ( options != null ) {
-      const { signal }: { signal?: AbortSignal } = { ...options }
-      if ( signal?.aborted === true ) throw new Error( "Operation canceled" )
-    }
-  }
+   private assertIsOpen(options?: AbortOptions): void {
+      if (this.openState !== OpenState.OPEN) {
+         throw new Error(`${this.openState} is not Open`)
+      }
+      if (options != null) {
+         const { signal }: { signal?: AbortSignal } = { ...options }
+         if (signal?.aborted === true) throw new Error("Operation canceled")
+      }
+   }
 }
 
-function fromCidToString( cid: CID ): string {
-  try {
-    // return cid.toV0().toString()
-    return cid.toString( base58btc )
-  } catch {
-    return cid.toString()
-  }
+function fromCidToString(cid: CID): string {
+   try {
+      return cid.toString(base58btc)
+   } catch {
+      return cid.toString()
+   }
 }
 
-function fromCidToPath( rootPath: string, keyStr: string ): string
-function fromCidToPath( rootPath: string, cidKey: CID ): string
-function fromCidToPath( rootPath: string, key: string | CID ): string {
-  let keyStr: string = ""
-  if ( typeof key === "string" ) {
-    keyStr = key
-  } else {
-    keyStr = fromCidToString( key )
-  }
+function fromCidToPath(rootPath: string, keyStr: string): string
+function fromCidToPath(rootPath: string, cidKey: CID): string
+function fromCidToPath(rootPath: string, key: string | CID): string {
+   let keyStr: string = ""
+   if (typeof key === "string") {
+      keyStr = key
+   } else {
+      keyStr = fromCidToString(key)
+   }
 
-  return join(
-    rootPath,
-    keyStr.slice( -6, -4 ),
-    keyStr.slice( -4, -2 ),
-    keyStr.slice( -2 ),
-    keyStr.slice( 0, -6 ),
-  )
+   return join(
+      rootPath,
+      keyStr.slice(-6, -4),
+      keyStr.slice(-4, -2),
+      keyStr.slice(-2),
+      keyStr.slice(0, -6),
+   )
 }
 
 function curryFetchMethod(
@@ -256,11 +261,11 @@ function curryFetchMethod(
 }
 
 export function buildLruCache(
-  config: FsBlockstoreConfiguration,
+   config: FsBlockstoreConfiguration,
 ): LRUCache<string, Uint8Array, string> {
-  return new LRUCache<string, Uint8Array, string>( {
-    max: config.cacheSize,
-    // context: config.rootPath,
-    fetchMethod: curryFetchMethod( config.rootPath ),
-  } )
+   return new LRUCache<string, Uint8Array, string>({
+      max: config.cacheSize,
+      // context: config.rootPath,
+      fetchMethod: curryFetchMethod(config.rootPath),
+   })
 }
