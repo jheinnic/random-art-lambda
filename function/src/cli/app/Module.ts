@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common"
+
 import { PaintingModule } from "../../painting/di/Module.js"
-import { ProtobufPlottingModule } from "../../plotting/protobuf/di/Module.js"
+import { IpldPlottingModule } from "../../plotting/ipld/di/Module.js"
 import { CliChannelsModule } from "../channels/Module.js"
 import { CliMainModule } from "../main/di/Module.js"
 import {
@@ -19,7 +20,7 @@ import {
    providers: [],
    exports: [
       CliChannelsModule,
-      ProtobufPlottingModule,
+      IpldPlottingModule,
       PaintingModule,
       CliMainModule,
    ],

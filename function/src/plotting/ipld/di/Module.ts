@@ -24,9 +24,10 @@ export type IpldPlottingModuleOptions = typeof dynamicHost.OPTIONS_TYPE
 @Module({
    imports: [IpldModule.register(ipldModuleOptions)],
    providers: [
+      IpldRegionMapRepository,
       {
          provide: IpldPlottingModuleTypes.IpldRegionMapRepository,
-         useClass: IpldRegionMapRepository,
+         useExisting: IpldRegionMapRepository,
       },
       {
          provide: IpldPlottingModuleTypes.InjectedBlockStore,
@@ -41,6 +42,7 @@ export type IpldPlottingModuleOptions = typeof dynamicHost.OPTIONS_TYPE
       },
    ],
    exports: [
+      IpldRegionMapRepository,
       IpldPlottingModuleTypes.IpldRegionMapRepository,
       PlottingModuleTypes.IRegionMapRepository,
    ],

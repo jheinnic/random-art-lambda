@@ -13,7 +13,7 @@ import { SharedBlockstoresModuleTypes } from "./SharedBlockstoresModuleTypes.js"
       IpfsModule.register({
          rootPath: "/home/ionadmin/Documents/mapBlocks",
          cacheSize: 4000,
-         injectToken: SharedBlockstoresModuleTypes.SharedMapBlockstore,
+         injectToken: SharedBlockstoresModuleTypes.RegionMapBlockstore,
       }),
       IpfsModule.register({
          rootPath: "/home/ionadmin/Documents/taskBlocks",

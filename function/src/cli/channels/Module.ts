@@ -6,22 +6,6 @@ import { CliChannelsModuleTypes } from "./Types.js"
    imports: [],
    providers: [
       {
-         provide: CliChannelsModuleTypes.EnrollSourceFileCallChannel,
-         // useFactory: (): Chan => chan(1),
-         useFactory: (): { unwrap: () => Chan } => {
-            const channel: Chan = chan(1)
-            return { unwrap: () => channel }
-         },
-      },
-      {
-         provide: CliChannelsModuleTypes.EnrollSourceFileReplyChannel,
-         // useFactory: (): Chan => chan(1),
-         useFactory: (): { unwrap: () => Chan } => {
-            const channel: Chan = chan(1)
-            return { unwrap: () => channel }
-         },
-      },
-      {
          provide: CliChannelsModuleTypes.RandomArtTaskCallChannel,
          // useFactory: (): Chan => chan(1),
          useFactory: (): { unwrap: () => Chan } => {
@@ -39,8 +23,6 @@ import { CliChannelsModuleTypes } from "./Types.js"
       },
    ],
    exports: [
-      CliChannelsModuleTypes.EnrollSourceFileCallChannel,
-      CliChannelsModuleTypes.EnrollSourceFileReplyChannel,
       CliChannelsModuleTypes.RandomArtTaskCallChannel,
       CliChannelsModuleTypes.RandomArtTaskReplyChannel,
    ],

@@ -1,14 +1,10 @@
 import { DynamicModule } from "@nestjs/common"
+import { Blockstore } from "interface-blockstore"
 
 import { CliChannelsModuleTypes } from "../channels/Types.js"
 import { CliChannelsModule } from "../channels/Module.js"
 
 import { PlottingModuleTypes } from "../../plotting/di/Types.js"
-import { ProtobufPlottingModuleConfiguration } from "../../plotting/protobuf/di/Configuration.js"
-import {
-   ProtobufPlottingModule,
-   ProtobufPlottingModuleAsyncOptions,
-} from "../../plotting/protobuf/di/Module.js"
 import { IRegionMapRepository } from "../../plotting/index.js"
 
 import { PaintingModuleConfiguration } from "../../painting/di/Configuration.js"
@@ -23,34 +19,23 @@ import { CliMainModuleConfiguration } from "../main/di/Configuration.js"
 import { CliMainModuleAsyncOptions } from "../main/di/Module.js"
 
 import {
-   EnrollSourceFileCall,
-   EnrollSourceFileReply,
-} from "../../plotting/protobuf/message/index.js"
-import {
    RandomArtTaskCall,
    RandomArtTaskReply,
 } from "../../painting/message/index.js"
-import { ChannelWrapper } from "../channels/ChannelWrapper.js"
-import { PBufRegionMapRepository } from "../../plotting/protobuf/components/PBufRegionMapRepository.js"
+import { SharedBlockstoresModule } from "../../app/di/SharedBlockstoresModule.js"
+import { SharedBlockstoresModuleTypes } from "../../app/di/SharedBlockstoresModuleTypes.js"
+import { IpldPlottingModuleConfiguration } from "../../plotting/ipld/di/Configuration.js"
+import { IpldPlottingModule } from "../../plotting/ipld/di/Module.js"
 
-export const plottingModuleOptions: ProtobufPlottingModuleAsyncOptions = {
-   imports: [CliChannelsModule],
-   useFactory: (
-      enrollSourceFileCallChannel: ChannelWrapper<EnrollSourceFileCall>,
-      enrollSourceFileReplyChannel: ChannelWrapper<EnrollSourceFileReply>,
-   ): ProtobufPlottingModuleConfiguration => {
-      return new ProtobufPlottingModuleConfiguration(
-         enrollSourceFileCallChannel,
-         enrollSourceFileReplyChannel,
-      )
-   },
-   inject: [
-      CliChannelsModuleTypes.EnrollSourceFileCallChannel,
-      CliChannelsModuleTypes.EnrollSourceFileReplyChannel,
-   ],
-}
-export const plottingModule: DynamicModule =
-   ProtobufPlottingModule.registerAsync(plottingModuleOptions)
+import { IpldRegionMapRepository } from "../../plotting/ipld/components/IpldRegionMapRepository.js"
+import { ChannelWrapper } from "../channels/ChannelWrapper.js"
+
+export const plottingModule: DynamicModule = IpldPlottingModule.registerAsync({
+   imports: [SharedBlockstoresModule],
+   useFactory: (blockstore: Blockstore): IpldPlottingModuleConfiguration =>
+      new IpldPlottingModuleConfiguration(blockstore),
+   inject: [SharedBlockstoresModuleTypes.RegionMapBlockstore],
+})
 
 const paintingModuleOptions: PaintingModuleAsyncOptions = {
    imports: [CliChannelsModule, plottingModule],
@@ -80,9 +65,7 @@ export const cliMainModuleAsyncOptions: CliMainModuleAsyncOptions = {
    imports: [CliChannelsModule, plottingModule, paintingModule],
    useFactory: (
       randomArtTaskEngine: IRandomArtTaskEngine,
-      regionMapRepository: PBufRegionMapRepository,
-      enrollSourceFileCallChannel: ChannelWrapper<EnrollSourceFileCall>,
-      enrollSourceFileReplyChannel: ChannelWrapper<EnrollSourceFileReply>,
+      regionMapRepository: IpldRegionMapRepository,
       randomArtTaskCallChannel: ChannelWrapper<RandomArtTaskCall>,
       randomArtTaskReplyChannel: ChannelWrapper<RandomArtTaskReply>,
    ): CliMainModuleConfiguration => {
@@ -91,15 +74,11 @@ export const cliMainModuleAsyncOptions: CliMainModuleAsyncOptions = {
          regionMapRepository,
          randomArtTaskCallChannel,
          randomArtTaskReplyChannel,
-         enrollSourceFileCallChannel,
-         enrollSourceFileReplyChannel,
       )
    },
    inject: [
       RandomArtTaskEngine,
-      PBufRegionMapRepository,
-      CliChannelsModuleTypes.EnrollSourceFileCallChannel,
-      CliChannelsModuleTypes.EnrollSourceFileReplyChannel,
+      IpldRegionMapRepository,
       CliChannelsModuleTypes.RandomArtTaskCallChannel,
       CliChannelsModuleTypes.RandomArtTaskReplyChannel,
    ],
