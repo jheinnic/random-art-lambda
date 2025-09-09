@@ -152,24 +152,10 @@ export class FsBlockstore extends BaseBlockstore {
     const cidStr = fromCidToString( key )
     if ( options?.signal === undefined ) {
       val = await this.lruCache.fetch( cidStr )
-    } else {
-      const signal: AbortSignal = options.signal
-      const lruCache: LRUCache<string, Uint8Array> = this.lruCache
-      function abortFetch(): void {
-        // TODO: Validate expectation that this will also abort the async fetchMethod!
-        lruCache.delete( cidStr )
+      } else {
+         val = await this.lruCache.fetch(cidStr, { signal: options.signal })
       }
 
-      signal.addEventListener( "abort", abortFetch, { once: true } )
-      val = await this.lruCache.fetch( cidStr )
-      signal.removeEventListener( "abort", abortFetch )
-    }
-
-    if ( val === undefined ) {
-      throw new Error( `${ cidStr } not found!` )
-    }
-    return val
-  }
 
   /**
    * @param {CID} key
@@ -243,18 +229,30 @@ function fromCidToPath( rootPath: string, key: string | CID ): string {
   )
 }
 
-function curryFetchMethod( rootPath: string ) {
-  async function fetchMethod(
-    cidStr: string,
-    staleValue: Uint8Array | undefined,
-    { signal, context }: { signal: AbortSignal, context: string },
-  ): Promise<Uint8Array> {
-    console.log( rootPath, cidStr )
-    const blockPath = fromCidToPath( rootPath, cidStr )
-    const readBuf: Buffer = await readFile( blockPath, { signal } )
-    return Uint8Array.from( readBuf )
-  }
-  return fetchMethod
+function curryFetchMethod(
+   rootPath: string,
+): (
+   cidStr: string,
+   staleValue: Uint8Array | undefined,
+   opts: { signal: AbortSignal; context: string },
+) => Promise<Uint8Array> {
+   const fetchMethod = async (
+      cidStr: string,
+      staleValue: Uint8Array | undefined,
+      { signal }: { signal: AbortSignal; context: string },
+   ): Promise<Uint8Array> => {
+      console.log(rootPath, cidStr)
+      const blockPath = fromCidToPath(rootPath, cidStr)
+      try {
+         const readBuf: Buffer = await readFile(blockPath, { signal })
+         return Uint8Array.from(readBuf)
+      } catch (err) {
+         console.error("Failed to fetch " + cidStr + " :: ", err)
+         return staleValue ?? Uint8Array.of()
+      }
+   }
+
+   return fetchMethod
 }
 
 export function buildLruCache(
