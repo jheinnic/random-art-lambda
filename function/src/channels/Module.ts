@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common"
 import { Chan, chan } from "medium"
+import { Subject } from "rxjs"
 import { CliChannelsModuleTypes } from "./Types.js"
 
 @Module({
@@ -21,10 +22,20 @@ import { CliChannelsModuleTypes } from "./Types.js"
             return { unwrap: () => channel }
          },
       },
+      {
+         provide: CliChannelsModuleTypes.EnrollSourceFileCallChannel,
+         useClass: Subject,
+      },
+      {
+         provide: CliChannelsModuleTypes.EnrollSourceFileReplyChannel,
+         useClass: Subject,
+      },
    ],
    exports: [
       CliChannelsModuleTypes.RandomArtTaskCallChannel,
       CliChannelsModuleTypes.RandomArtTaskReplyChannel,
+      CliChannelsModuleTypes.EnrollSourceFileCallChannel,
+      CliChannelsModuleTypes.EnrollSourceFileReplyChannel,
    ],
 })
 export class CliChannelsModule {}

@@ -5,7 +5,7 @@ import { CID } from "multiformats"
 
 import { CliMainModuleTypes } from "../di/Types.js"
 import { IRandomArtTaskEngine } from "../../../painting/interface/index.js"
-import { ChannelWrapper } from "../../channels/ChannelWrapper.js"
+import { ChannelWrapper } from "../../../channels/ChannelWrapper.js"
 import {
    RandomArtTaskCall,
    RandomArtTaskReply,
