@@ -239,21 +239,23 @@ function curryFetchMethod(
 ): (
    cidStr: string,
    staleValue: Uint8Array | undefined,
-   opts: { signal: AbortSignal; context: string },
-) => Promise<Uint8Array> {
+   opts: { signal: AbortSignal },
+) => Promise<Uint8Array | undefined> {
    const fetchMethod = async (
       cidStr: string,
       staleValue: Uint8Array | undefined,
-      { signal }: { signal: AbortSignal; context: string },
-   ): Promise<Uint8Array> => {
+      opts: { signal: AbortSignal },
+   ): Promise<Uint8Array | undefined> => {
       console.log(rootPath, cidStr)
       const blockPath = fromCidToPath(rootPath, cidStr)
       try {
-         const readBuf: Buffer = await readFile(blockPath, { signal })
+         const readBuf: Buffer = await (opts?.signal !== undefined
+            ? readFile(blockPath, opts)
+            : readFile(blockPath, {}))
          return Uint8Array.from(readBuf)
       } catch (err) {
          console.error("Failed to fetch " + cidStr + " :: ", err)
-         return staleValue ?? Uint8Array.of()
+         return staleValue
       }
    }
 
@@ -265,7 +267,6 @@ export function buildLruCache(
 ): LRUCache<string, Uint8Array, string> {
    return new LRUCache<string, Uint8Array, string>({
       max: config.cacheSize,
-      // context: config.rootPath,
       fetchMethod: curryFetchMethod(config.rootPath),
    })
 }
