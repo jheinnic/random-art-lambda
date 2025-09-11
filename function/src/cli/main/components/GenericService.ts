@@ -12,6 +12,8 @@ import {
    RandomArtTaskWordsCall,
 } from "../../../painting/message/index.js"
 import { PBufRegionMapRepository } from "../../../plotting/protobuf/components/PBufRegionMapRepository.js"
+import { QueuedPaintingTypes } from "../../../painting/queue/di/Types.js"
+import { RandomArtFlowProducer } from "../../../painting/queue/components/RandomArtFlowProducer.js"
 
 /**
  * A sample CLI command that takes an option and uses it to configure a service.
@@ -33,6 +35,8 @@ export class GenericService {
       private readonly regionMapRepository: PBufRegionMapRepository,
       @Inject(CliMainModuleTypes.RandomArtTaskEngine)
       private readonly randomArtEngine: IRandomArtTaskEngine,
+      @Inject(QueuedPaintingTypes.FlowProducer)
+      private readonly flowProducer: RandomArtFlowProducer,
    ) {
       this.artworkRequests = artworkRequestsWrapper.unwrap()
       this.artworkReplies = artworkRepliesWrapper.unwrap()
@@ -54,6 +58,8 @@ export class GenericService {
             "bafyreiexe6npphnaou2tz7jdbwtgh2wnfdbsnbti22smksport4sqr7bgu",
          ),
       )
+      await this.flowProducer.doIt()
+      this.logger.log("Flowed")
       await put(this.artworkRequests, message)
       const reply: RandomArtTaskReply | symbol = await take(this.artworkReplies)
       if (typeof reply === "symbol") {
@@ -68,7 +74,6 @@ export class GenericService {
       }
       await close(this.artworkRequests)
       await engineShutdown
-
       this.logger.log("Fin")
    }
 }
