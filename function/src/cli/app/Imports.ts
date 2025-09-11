@@ -1,8 +1,8 @@
 import { DynamicModule } from "@nestjs/common"
 import { Blockstore } from "interface-blockstore"
 
-import { CliChannelsModuleTypes } from "../channels/Types.js"
-import { CliChannelsModule } from "../channels/Module.js"
+import { CliChannelsModuleTypes } from "../../channels/Types.js"
+import { CliChannelsModule } from "../../channels/Module.js"
 
 import { PlottingModuleTypes } from "../../plotting/di/Types.js"
 import { IRegionMapRepository } from "../../plotting/index.js"
@@ -28,7 +28,7 @@ import { IpldPlottingModuleConfiguration } from "../../plotting/ipld/di/Configur
 import { IpldPlottingModule } from "../../plotting/ipld/di/Module.js"
 
 import { IpldRegionMapRepository } from "../../plotting/ipld/components/IpldRegionMapRepository.js"
-import { ChannelWrapper } from "../channels/ChannelWrapper.js"
+import { ChannelWrapper } from "../../channels/ChannelWrapper.js"
 
 export const plottingModule: DynamicModule = IpldPlottingModule.registerAsync({
    imports: [SharedBlockstoresModule],

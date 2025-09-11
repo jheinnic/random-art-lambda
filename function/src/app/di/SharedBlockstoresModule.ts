@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common"
 
-import { IpfsModule } from "../../ipfs/di/IpfsModule.js"
+import { IpfsModule } from "../../ipfs/di/Module.js"
 import { SharedBlockstoresModuleTypes } from "./SharedBlockstoresModuleTypes.js"
 
 @Module({
