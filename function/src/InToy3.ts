@@ -1,9 +1,6 @@
 import { Module, Injectable, Inject, DynamicModule } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
-import {
-   DynamicConduitModule,
-   IConduitModuleBuilder,
-} from "./di/DynamicConduitModule.js"
+import { DynamicConduitModule, IConduitModuleBuilder } from "./modules/index.js"
 
 const theBoxOne: unique symbol = Symbol("TheOneBox")
 const anotherBoxOne: unique symbol = Symbol("AnotherOneBox")
@@ -50,24 +47,22 @@ export interface ConfigTwo {
 
 const conduitModule = DynamicConduitModule.registerModule(
    (builder: IConduitModuleBuilder): void => {
-      builder
-         .addProviders(
-            {
-               provide: theBox,
-               useFactory: () => {
-                  console.log("The 100 box")
-                  return new Box(100)
-               },
+      builder.exportProviders(
+         {
+            provide: theBox,
+            useFactory: () => {
+               console.log("The 100 box")
+               return new Box(100)
             },
-            {
-               provide: anotherBox,
-               useFactory: () => {
-                  console.log("The 150 box")
-                  return new Box(150)
-               },
+         },
+         {
+            provide: anotherBox,
+            useFactory: () => {
+               console.log("The 150 box")
+               return new Box(150)
             },
-         )
-         .addExports(theBox, anotherBox)
+         },
+      )
    },
 )
 

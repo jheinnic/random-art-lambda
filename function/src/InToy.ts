@@ -3,6 +3,7 @@ import {
    Injectable,
    Inject,
    ConfigurableModuleBuilder,
+   DynamicModule,
 } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
 
@@ -89,7 +90,7 @@ const hostC = new ConfigurableModuleBuilder<ConfigThree>({
       },
       Crate,
    ],
-   exports: [Crate],
+   exports: [Crate, configThree],
 })
 export class ModuleThree extends hostC.ConfigurableModuleClass {}
 
@@ -111,26 +112,35 @@ const sharedProvidersTwo = [
 ]
 
 @Module({
-   imports: [
-      ModuleThree.registerAsync({
-         // imports: [ModuleTwo],
-         useFactory: (x: Box, y: Box) => {
-            return {
-               theBox: x,
-               anotherBox: y,
-            }
-         },
-         inject: [theBoxTwo, anotherBoxTwo],
-         provideInjectionTokensFrom: [
-            ...sharedProvidersTwo,
-            { provide: configTwo, useExisting: configTwo },
-         ],
-      }),
-   ],
    providers: [...sharedProvidersTwo],
-   exports: [theBoxTwo, anotherBoxTwo, ModuleThree],
+   exports: [theBoxTwo, anotherBoxTwo, configTwo, ModuleThree],
 })
-export class ModuleTwo extends hostB.ConfigurableModuleClass {}
+export class ModuleTwo extends hostB.ConfigurableModuleClass {
+   static registerAsync(
+      options: typeof hostB.ASYNC_OPTIONS_TYPE,
+   ): DynamicModule {
+      const retVal: DynamicModule = super.registerAsync(options)
+      return {
+         ...retVal,
+         imports: [
+            ...(retVal.imports ?? []),
+            ModuleThree.registerAsync({
+               useFactory: (x: Box, y: Box) => {
+                  return {
+                     theBox: x,
+                     anotherBox: y,
+                  }
+               },
+               inject: [theBoxTwo, anotherBoxTwo],
+               provideInjectionTokensFrom: [
+                  ...(retVal.providers ?? []),
+                  ...sharedProvidersTwo,
+               ],
+            }),
+         ],
+      }
+   }
+}
 
 const sharedProvidersOne = [
    {
@@ -149,23 +159,35 @@ const sharedProvidersOne = [
 ]
 
 @Module({
-   imports: [
-      ModuleTwo.registerAsync({
-         // imports: [ModuleOne],
-         useFactory: (x: Box, y: Box) => {
-            return {
-               theBox: x,
-               anotherBox: y,
-            }
-         },
-         inject: [theBoxOne, anotherBoxOne],
-         provideInjectionTokensFrom: [...sharedProvidersOne],
-      }),
-   ],
    providers: [...sharedProvidersOne],
-   exports: [theBoxOne, anotherBoxOne, ModuleTwo],
+   exports: [theBoxOne, anotherBoxOne, configOne, ModuleTwo],
 })
-export class ModuleOne extends hostA.ConfigurableModuleClass {}
+export class ModuleOne extends hostA.ConfigurableModuleClass {
+   static registerAsync(
+      options: typeof hostA.ASYNC_OPTIONS_TYPE,
+   ): DynamicModule {
+      const retVal = super.registerAsync(options)
+      return {
+         ...retVal,
+         imports: [
+            ...(retVal.imports ?? []),
+            ModuleTwo.registerAsync({
+               useFactory: (x: Box, y: Box) => {
+                  return {
+                     theBox: x,
+                     anotherBox: y,
+                  }
+               },
+               inject: [theBoxOne, anotherBoxOne],
+               provideInjectionTokensFrom: [
+                  ...(retVal.providers ?? []),
+                  ...sharedProvidersOne,
+               ],
+            }),
+         ],
+      }
+   }
+}
 
 const sharedProvidersApp = [
    {

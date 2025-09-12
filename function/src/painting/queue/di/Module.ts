@@ -62,4 +62,4 @@ import { RandomArtStoreEventListener } from "../components/RandomArtStoreEventLi
       QueuedPaintingTypes.QueueListener,
    ],
 })
-export class QueuedPaintingModule {}
+export class QueueingPaintModule {}

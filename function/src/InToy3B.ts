@@ -1,9 +1,6 @@
 import { Module, Injectable, Inject, DynamicModule } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
-import {
-   DynamicConduitModule,
-   IConduitModuleBuilder,
-} from "./di/DynamicConduitModule.js"
+import { DynamicConduitModule, IConduitModuleBuilder } from "./modules/index.js"
 
 const theBoxOne: unique symbol = Symbol("TheOneBox")
 const anotherBoxOne: unique symbol = Symbol("AnotherOneBox")
@@ -131,35 +128,31 @@ export class ModuleOne {
 
 const innerConduitModule: DynamicModule = DynamicConduitModule.registerModule(
    (builder: IConduitModuleBuilder): void => {
-      builder
-         .identifyAs(DynamicConduitModule)
-         .addProviders(
-            {
-               provide: theBox,
-               useFactory: () => {
-                  console.log("The 100 box")
-                  return new Box(100)
-               },
+      builder.exportProviders(
+         {
+            provide: theBox,
+            useFactory: () => {
+               console.log("The 100 box")
+               return new Box(100)
             },
-            {
-               provide: anotherBox,
-               useFactory: () => {
-                  console.log("The 150 box")
-                  return new Box(150)
-               },
+         },
+         {
+            provide: anotherBox,
+            useFactory: () => {
+               console.log("The 150 box")
+               return new Box(150)
             },
-         )
-         .addExports(theBox, anotherBox)
+         },
+      )
    },
 )
-const temp = ModuleThree.register({ theConduit: innerConduitModule })
 const conduitModule = DynamicConduitModule.registerModule(
    (builder: IConduitModuleBuilder): void => {
       builder
-         .importModule(temp)
-         .importModule(innerConduitModule)
-         .addExports(temp, innerConduitModule)
-         .identifyAs(ModuleFour)
+         .exportModules(
+            ModuleThree.register({ theConduit: innerConduitModule }),
+         )
+         .exportModules(innerConduitModule)
    },
 )
 

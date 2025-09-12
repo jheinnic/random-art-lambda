@@ -8,10 +8,7 @@ import { PlottingModuleTypes } from "../../plotting/di/Types.js"
 import { IRegionMapRepository } from "../../plotting/index.js"
 
 import { PaintingModuleConfiguration } from "../../painting/di/Configuration.js"
-import {
-   PaintingModule,
-   PaintingModuleAsyncOptions,
-} from "../../painting/di/Module.js"
+import { PaintingModule } from "../../painting/di/Module.js"
 import { RandomArtTaskEngine } from "../../painting/components/RandomArtTaskEngine.js"
 import { IRandomArtTaskEngine } from "../../painting/interface/IRandomArtTaskEngine.js"
 
@@ -57,8 +54,13 @@ const paintingModuleOptions: PaintingModuleAsyncOptions = {
    ],
 }
 
-export const paintingModule: DynamicModule = PaintingModule.registerAsync(
-   paintingModuleOptions,
+export const paintingModule: DynamicModule = PaintingModule.forRoot(
+   plottingModule,
+   PlottingModuleTypes.IRegionMapRepository,
+   CliChannelsModule,
+   CliChannelsModuleTypes.RandomArtTaskCallChannel,
+   CliChannelsModule,
+   CliChannelsModuleTypes.RandomArtTaskReplyChannel,
 )
 
 export const cliMainModuleAsyncOptions: CliMainModuleAsyncOptions = {
