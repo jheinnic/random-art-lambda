@@ -41,16 +41,7 @@ const factory: IConduitModuleFactory<
    [],
    "root",
    "feature"
->({
-   rootProto: [
-      {} as unknown as DynamicModule,
-      PaintingModuleTypes.InjectedRegionMapRepository as unknown as InjectionToken<IRegionMapRepository>,
-      {} as unknown as DynamicModule,
-      {} as unknown as InjectionToken<ChannelWrapper<RandomArtTaskCall>>,
-      {} as unknown as DynamicModule,
-      {} as unknown as InjectionToken<ChannelWrapper<RandomArtTaskReply>>,
-   ],
-})
+>()
 const baseClass = factory
    .implementRootMethod(
       (
@@ -79,6 +70,10 @@ const baseClass = factory
                      useExisting: replyChanToken,
                   },
                )
+               .exportProviders({
+                  provide: PaintingModuleTypes.IRandomArtTaskEngine,
+                  useClass: RandomArtTaskEngine,
+               })
          }
       },
    )
@@ -90,9 +85,8 @@ const baseClass = factory
          })
       }
    })
+   .implementFeatureRootImport()
    .build()
 
-@Module({
-   imports: [PaintingModule.forFeature()],
-})
+@Module({})
 export class PaintingModule extends baseClass {}

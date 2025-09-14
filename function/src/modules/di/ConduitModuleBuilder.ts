@@ -7,10 +7,10 @@ import {
 } from "@nestjs/common"
 import { IConduitModuleBuilder } from "../interface/IConduitModuleBuilder.js"
 
-export class ConduitModuleBuilder implements IConduitModuleBuilder {
+export class DynamicModuleBuilder implements IConduitModuleBuilder {
    private global: boolean = false
+
    private built: boolean = false
-   private frozen: boolean = false
 
    private readonly imports: Array<
       Type<any> | DynamicModule | Promise<DynamicModule> | ForwardReference
@@ -28,20 +28,7 @@ export class ConduitModuleBuilder implements IConduitModuleBuilder {
       | Function
    > = []
 
-   constructor(
-      private module: Type<any>,
-      readonly staticPrecursor?: ConduitModuleBuilder,
-   ) {
-      if (staticPrecursor !== undefined) {
-         if (staticPrecursor.built || !staticPrecursor.frozen) {
-            throw new Error("Precursor has not been frozen for reuse")
-         }
-         this.global = staticPrecursor.global
-         this.imports = [...staticPrecursor.imports]
-         this.providers = [...staticPrecursor.providers]
-         this.exports = [...staticPrecursor.exports]
-      }
-   }
+   constructor(private module: Type<any>) {}
 
    identifyAs(module: Type<any>): IConduitModuleBuilder {
       this._verifyMutability()
@@ -103,23 +90,9 @@ export class ConduitModuleBuilder implements IConduitModuleBuilder {
       }
    }
 
-   freeze(): void {
-      if (this.built) {
-         throw new Error(
-            "Cannot freeze this for use as a precursor because it was already used for build()",
-         )
-      }
-      this.frozen = true
-   }
-
    private _verifyMutability(): void {
       if (this.built) {
          throw new Error("This unit has already been built.")
-      }
-      if (this.frozen) {
-         throw new Error(
-            "This unit has been frozen for use as a fixed precursor.",
-         )
       }
    }
 }

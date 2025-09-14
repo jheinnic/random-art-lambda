@@ -7,9 +7,14 @@ import { RandomArtPaintWorker } from "./../components/RandomArtPaintWorker.js"
 import { RandomArtPaintEventListener } from "../components/RandomArtPaintEventListener.js"
 import { RandomArtStoreWorker } from "../components/RandomArtStoreWorker.js"
 import { RandomArtStoreEventListener } from "../components/RandomArtStoreEventListener.js"
+import { PaintingModule } from "../../di/Module.js"
+
+import { paintingModule } from "../../../cli/app/Imports.js"
 
 @Module({
    imports: [
+      paintingModule,
+      PaintingModule.forFeature(),
       BullModule.forRoot({
          connection: {
             host: "localhost",
@@ -55,6 +60,9 @@ import { RandomArtStoreEventListener } from "../components/RandomArtStoreEventLi
          provide: QueuedPaintingTypes.QueueListener,
          useClass: RandomArtPaintEventListener,
       },
+      // {
+      //    provide: IRegionMapRepository,
+      // },
    ],
    exports: [
       QueuedPaintingTypes.FlowProducer,

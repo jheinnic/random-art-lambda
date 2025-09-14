@@ -14,6 +14,7 @@ import {
 import { PBufRegionMapRepository } from "../../../plotting/protobuf/components/PBufRegionMapRepository.js"
 import { QueuedPaintingTypes } from "../../../painting/queue/di/Types.js"
 import { RandomArtFlowProducer } from "../../../painting/queue/components/RandomArtFlowProducer.js"
+import { IRegionMapRepository } from "../../../plotting/index.js"
 
 /**
  * A sample CLI command that takes an option and uses it to configure a service.
@@ -31,8 +32,8 @@ export class GenericService {
       readonly artworkRequestsWrapper: ChannelWrapper<RandomArtTaskCall>,
       @Inject(CliMainModuleTypes.RandomArtTaskReplyChannel)
       readonly artworkRepliesWrapper: ChannelWrapper<RandomArtTaskReply>,
-      @Inject(CliMainModuleTypes.RegionMapRepository)
-      private readonly regionMapRepository: PBufRegionMapRepository,
+      // @Inject(CliMainModuleTypes.RegionMapRepository)
+      // private readonly regionMapRepository: IRegionMapRepository,
       @Inject(CliMainModuleTypes.RandomArtTaskEngine)
       private readonly randomArtEngine: IRandomArtTaskEngine,
       @Inject(QueuedPaintingTypes.FlowProducer)

@@ -5,7 +5,7 @@ import { IpfsModuleTypes } from "./Types.js"
 import { ModuleConfiguration } from "./Configuration.js"
 import { FsBlockstore, buildLruCache } from "../components/FsBlockstore.js"
 import {
-   DynamicConduitModule,
+   SimpleDynamicModule,
    IConduitModuleBuilder,
 } from "../../modules/index.js"
 
@@ -15,11 +15,12 @@ import {
 //    ]).build()
 
 @Module({})
-export class IpfsModule extends DynamicConduitModule {
+export class IpfsModule extends SimpleDynamicModule {
    public static register(moduleConfig: ModuleConfiguration): DynamicModule {
-      return DynamicConduitModule.registerModule(
+      return SimpleDynamicModule.registerModule(
          (builder: IConduitModuleBuilder) => {
             builder
+               .identifyAs(this)
                .defineProviders(
                   {
                      provide: IpfsModuleTypes.LruCache,

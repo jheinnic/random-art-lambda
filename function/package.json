@@ -72,7 +72,6 @@
         "medium": "^1.2.0",
         "multiformats": "^11.0.2",
         "nest-commander": "^3.19.0",
-        "nestjs-zod": "^5.0.1",
         "node-exceptions": "^4.0.1",
         "pngjs": "^6.0.0",
         "proper-lockfile": "^4.1.2",
@@ -82,7 +81,7 @@
         "simplytyped": "^3.3.0",
         "sprintf-js": "^1.1.2",
         "uuid": "^11.1.0",
-        "zod": "^4.1.5"
+        "zod": "4.1.7"
     },
     "devDependencies": {
         "@bazel/typescript": "^5.5.3",
@@ -107,7 +106,6 @@
         "eslint-plugin-prettier": "^5.5.4",
         "eslint-plugin-promise": "^6.0.0",
         "jest": "28.1.2",
-        "nestjs-zod-cli": "^1.0.4",
         "prettier": "^3.6.2",
         "rimraf": "3.0.2",
         "supertest": "6.2.4",
@@ -117,7 +115,7 @@
         "ts-protoc-gen": "^0.15.0",
         "tsconfig-paths": "4.0.0",
         "tsx": "^4.20.4",
-        "typescript": "^4.8.2",
+        "typescript": "^5.5.0",
         "webpack": "^5.0.0"
     },
     "suspended": {

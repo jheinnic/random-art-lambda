@@ -1,17 +1,17 @@
 import { DynamicModule } from "@nestjs/common"
 
-type RootConduitModule<
+export type RootConduitModule<
    RootParams extends unknown[],
    RootMethodName extends string,
 > = (new () => any) &
    Record<RootMethodName, (...args: RootParams) => DynamicModule>
-type FeatureConduitModule<
+export type FeatureConduitModule<
    FeatureParams extends unknown[],
    FeatureMethodName extends string,
 > = (new () => any) &
    Record<FeatureMethodName, (...args: FeatureParams) => DynamicModule>
 
-type RootAndFeatureConduitModule<
+export type RootAndFeatureConduitModule<
    RootParams extends unknown[],
    FeatureParams extends unknown[],
    RootMethodName extends string,

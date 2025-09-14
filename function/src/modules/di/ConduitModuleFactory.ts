@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-extraneous-class */
 import { DynamicModule, Type } from "@nestjs/common"
-import { ConduitModuleBuilder } from "./ConduitModuleBuilder.js"
+import { DynamicModuleBuilder } from "./ConduitModuleBuilder.js"
 import type {
    DefaultDirector,
    IConduitModuleFactory,
@@ -12,7 +12,6 @@ import {
    DefaultIdentity,
    DefaultParams,
    FeatureConduitModule,
-   ProtoParams,
    RootAndFeatureConduitModule,
    RootConduitModule,
 } from "../index.js"
@@ -50,15 +49,11 @@ export class ConduitModuleFactory<
       >
 {
    private built: boolean = false
-   private frozen: boolean = false
-   private staticRootBuilder?: ConduitModuleBuilder
-   private staticFeatureBuilder?: ConduitModuleBuilder
+
+   private useFeatureRootImport: boolean = false
 
    private rootFactoryImpl?: (...args: RootParams) => DefaultDirector
    private featureFactoryImpl?: (...args: FeatureParams) => DefaultDirector
-
-   protoRootParams: RootParams
-   protoFeatureParams: FeatureParams
 
    private readonly defaultRootProto: DefaultIdentity = (
       director: DefaultDirector,
@@ -67,13 +62,6 @@ export class ConduitModuleFactory<
    private readonly defaultFeatureProto: DefaultIdentity = (
       director: DefaultDirector,
    ): DefaultDirector => director
-
-   constructor(paramProtos: ProtoParams<RootParams, FeatureParams>) {
-      this.protoRootParams = paramProtos?.rootProto ?? [this.defaultRootProto]
-      this.protoFeatureParams = paramProtos?.featureProto ?? [
-         this.defaultFeatureProto,
-      ]
-   }
 
    implementRootMethod(
       body?: (...args: RootParams) => DefaultDirector,
@@ -86,11 +74,8 @@ export class ConduitModuleFactory<
       this._verifyMutability()
 
       if (body === undefined) {
-         if (
-            Array.isArray(this.protoRootParams) &&
-            this.protoRootParams.length === 1 &&
-            this.protoRootParams[0] === this.defaultRootProto
-         ) {
+         // eslint-disable-next-line no-constant-condition
+         if (false) {
             this.rootFactoryImpl = ((
                director: DefaultDirector,
             ): DefaultDirector => director) as unknown as (
@@ -119,11 +104,8 @@ export class ConduitModuleFactory<
       this._verifyMutability()
 
       if (body === undefined) {
-         if (
-            Array.isArray(this.protoFeatureParams) &&
-            this.protoFeatureParams.length === 1 &&
-            this.protoFeatureParams[0] === this.defaultFeatureProto
-         ) {
+         // eslint-disable-next-line no-constant-condition
+         if (true) {
             this.featureFactoryImpl = ((
                director: DefaultDirector,
             ): DefaultDirector => director) as unknown as (
@@ -141,35 +123,13 @@ export class ConduitModuleFactory<
       return this
    }
 
-   setStaticRootContent(
-      director: DefaultDirector,
-   ): ConduitModuleFactory<
+   public implementFeatureRootImport(): ConduitModuleFactory<
       RootParams,
       FeatureParams,
       RootMethodName,
       FeatureMethodName
    > {
-      this._verifyMutability()
-
-      this.staticRootBuilder = new ConduitModuleBuilder(ConduitModuleFactory)
-      director(this.staticRootBuilder)
-      this.staticRootBuilder.freeze()
-      return this
-   }
-
-   setStaticFeatureContent(
-      director: DefaultDirector,
-   ): ConduitModuleFactory<
-      RootParams,
-      FeatureParams,
-      RootMethodName,
-      FeatureMethodName
-   > {
-      this._verifyMutability()
-
-      this.staticFeatureBuilder = new ConduitModuleBuilder(ConduitModuleFactory)
-      director(this.staticFeatureBuilder)
-      this.staticFeatureBuilder.freeze()
+      this.useFeatureRootImport = true
       return this
    }
 
@@ -199,14 +159,9 @@ export class ConduitModuleFactory<
         > {
       this._verifyMutability()
 
-      const hasFeatureMethod = this.featureFactoryImpl !== undefined
-      if (!hasFeatureMethod && this.staticFeatureBuilder !== undefined) {
-         throw new Error(
-            "Cannot use static feature builder without a hasFeature() method",
-         )
-      }
-      const hasRootMethod =
-         this.staticRootBuilder !== undefined || this.rootFactoryImpl !== null
+      const hasFeatureMethod: boolean =
+         this.useFeatureRootImport || this.featureFactoryImpl !== undefined
+      const hasRootMethod: boolean = this.rootFactoryImpl !== undefined
       if (!hasFeatureMethod && !hasRootMethod) {
          throw new Error("Cannot build conduit module with no dynamic behavior")
       }
@@ -216,37 +171,21 @@ export class ConduitModuleFactory<
       const rootFactoryImpl:
          | ((...args: RootParams) => DefaultDirector)
          | undefined = this.rootFactoryImpl
-      const staticRootBuilder = this.staticRootBuilder
-      let selfActivateRoot = !hasRootMethod && staticRootBuilder !== undefined
-      let injectRootModule =
-         hasFeatureMethod && (hasRootMethod || staticRootBuilder !== undefined)
-      let rootResolver: (module: DynamicModule) => void
-      const rootPromise = injectRootModule
-         ? new Promise<DynamicModule>((resolve, _reject) => {
-              rootResolver = resolve
-           })
-         : undefined
-      const staticFeatureBuilder =
-         injectRootModule && this.staticFeatureBuilder === undefined
-            ? new ConduitModuleBuilder(
-                 ConduitModuleFactory,
-                 this.staticFeatureBuilder,
-              )
-            : this.staticFeatureBuilder
-      if (
-         injectRootModule &&
-         rootPromise !== undefined &&
-         staticFeatureBuilder !== undefined
-      ) {
-         staticFeatureBuilder.importModules(rootPromise)
-      }
+      const useFeatureRootImport = this.useFeatureRootImport
+      let resolveRootModule: (value: DynamicModule) => void
+      const rootImportPromise: Promise<DynamicModule> | undefined =
+         useFeatureRootImport
+            ? new Promise((resolve, _reject) => {
+                 resolveRootModule = resolve
+              })
+            : undefined
       let BaseDynamicConduitModule
+
       if (hasFeatureMethod && !hasRootMethod) {
          BaseDynamicConduitModule = class BaseDynamicConduitModule {
             static forFeature(...args: FeatureParams): DynamicModule {
-               const builder: ConduitModuleBuilder = new ConduitModuleBuilder(
+               const builder: DynamicModuleBuilder = new DynamicModuleBuilder(
                   this,
-                  staticFeatureBuilder,
                )
                if (featureFactoryImpl !== undefined) {
                   const director = featureFactoryImpl(...args)
@@ -254,10 +193,6 @@ export class ConduitModuleFactory<
                   if (director !== undefined) {
                      director(builder)
                   }
-               }
-               if (selfActivateRoot && staticRootBuilder !== undefined) {
-                  selfActivateRoot = false
-                  rootResolver(staticRootBuilder.build())
                }
 
                builder.identifyAs(this)
@@ -267,9 +202,8 @@ export class ConduitModuleFactory<
       } else if (!hasFeatureMethod && hasRootMethod) {
          BaseDynamicConduitModule = class BaseDynamicConduitModule {
             static forRoot(...args: RootParams): DynamicModule {
-               const builder: ConduitModuleBuilder = new ConduitModuleBuilder(
+               const builder: DynamicModuleBuilder = new DynamicModuleBuilder(
                   this,
-                  staticRootBuilder,
                )
 
                if (rootFactoryImpl !== undefined) {
@@ -287,9 +221,8 @@ export class ConduitModuleFactory<
       } else {
          BaseDynamicConduitModule = class BaseDynamicConduitModule {
             static forRoot(...args: RootParams): DynamicModule {
-               const builder: ConduitModuleBuilder = new ConduitModuleBuilder(
+               const builder: DynamicModuleBuilder = new DynamicModuleBuilder(
                   this,
-                  staticRootBuilder,
                )
 
                if (rootFactoryImpl !== undefined) {
@@ -302,17 +235,15 @@ export class ConduitModuleFactory<
 
                builder.identifyAs(this)
                const retVal = builder.build()
-               if (injectRootModule) {
-                  rootResolver(retVal)
-                  injectRootModule = false
+               if (resolveRootModule !== undefined) {
+                  resolveRootModule(retVal)
                }
                return retVal
             }
 
             static forFeature(...args: FeatureParams): DynamicModule {
-               const builder: ConduitModuleBuilder = new ConduitModuleBuilder(
+               const builder: DynamicModuleBuilder = new DynamicModuleBuilder(
                   this,
-                  staticFeatureBuilder,
                )
                if (featureFactoryImpl !== undefined) {
                   const director = featureFactoryImpl(...args)
@@ -320,6 +251,9 @@ export class ConduitModuleFactory<
                   if (director !== undefined) {
                      director(builder)
                   }
+               }
+               if (rootImportPromise !== undefined) {
+                  builder.importModules(rootImportPromise)
                }
 
                builder.identifyAs(this)
@@ -336,19 +270,5 @@ export class ConduitModuleFactory<
       if (this.built) {
          throw new Error("This unit has already been built.")
       }
-      if (this.frozen) {
-         throw new Error(
-            "This unit has been frozen for use as a fixed precursor.",
-         )
-      }
-   }
-
-   freeze(): void {
-      if (this.built) {
-         throw new Error(
-            "Cannot freeze this for use as a precursor because it was already used for build()",
-         )
-      }
-      this.frozen = true
    }
 }

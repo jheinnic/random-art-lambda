@@ -8,7 +8,7 @@ import { ISerdesModuleBuilder } from "./Extra.js"
 import { IpldModuleTypes } from "./Types.js"
 import { IpldSerdesFactory } from "../components/IpldSerdesFactory.js"
 import {
-   DynamicConduitModule,
+   SimpleDynamicModule,
    IConduitModuleBuilder,
 } from "../../modules/index.js"
 import {
@@ -35,7 +35,7 @@ export class IpldModule {
       )
       director(builder)
 
-      return DynamicConduitModule.registerModule(builder.build())
+      return SimpleDynamicModule.registerModule(builder.build())
    }
 }
 

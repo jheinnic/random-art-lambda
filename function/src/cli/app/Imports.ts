@@ -5,9 +5,7 @@ import { CliChannelsModuleTypes } from "../../channels/Types.js"
 import { CliChannelsModule } from "../../channels/Module.js"
 
 import { PlottingModuleTypes } from "../../plotting/di/Types.js"
-import { IRegionMapRepository } from "../../plotting/index.js"
 
-import { PaintingModuleConfiguration } from "../../painting/di/Configuration.js"
 import { PaintingModule } from "../../painting/di/Module.js"
 import { RandomArtTaskEngine } from "../../painting/components/RandomArtTaskEngine.js"
 import { IRandomArtTaskEngine } from "../../painting/interface/IRandomArtTaskEngine.js"
@@ -34,25 +32,25 @@ export const plottingModule: DynamicModule = IpldPlottingModule.registerAsync({
    inject: [SharedBlockstoresModuleTypes.RegionMapBlockstore],
 })
 
-const paintingModuleOptions: PaintingModuleAsyncOptions = {
-   imports: [CliChannelsModule, plottingModule],
-   useFactory: (
-      regionMapRepo: IRegionMapRepository,
-      randomArtTaskCallChannel: ChannelWrapper<RandomArtTaskCall>,
-      randomArtTaskReplyChannel: ChannelWrapper<RandomArtTaskReply>,
-   ): PaintingModuleConfiguration => {
-      return new PaintingModuleConfiguration(
-         regionMapRepo,
-         randomArtTaskCallChannel,
-         randomArtTaskReplyChannel,
-      )
-   },
-   inject: [
-      PlottingModuleTypes.IRegionMapRepository,
-      CliChannelsModuleTypes.RandomArtTaskCallChannel,
-      CliChannelsModuleTypes.RandomArtTaskReplyChannel,
-   ],
-}
+// const paintingModuleOptions: PaintingModuleAsyncOptions = {
+//    imports: [CliChannelsModule, plottingModule],
+//    useFactory: (
+//       regionMapRepo: IRegionMapRepository,
+//       randomArtTaskCallChannel: ChannelWrapper<RandomArtTaskCall>,
+//       randomArtTaskReplyChannel: ChannelWrapper<RandomArtTaskReply>,
+//    ): PaintingModuleConfiguration => {
+//       return new PaintingModuleConfiguration(
+//          regionMapRepo,
+//          randomArtTaskCallChannel,
+//          randomArtTaskReplyChannel,
+//       )
+//    },
+//    inject: [
+//       PlottingModuleTypes.IRegionMapRepository,
+//       CliChannelsModuleTypes.RandomArtTaskCallChannel,
+//       CliChannelsModuleTypes.RandomArtTaskReplyChannel,
+//    ],
+// }
 
 export const paintingModule: DynamicModule = PaintingModule.forRoot(
    plottingModule,

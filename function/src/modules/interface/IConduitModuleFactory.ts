@@ -28,19 +28,7 @@ export interface IConduitModuleFactory<
       RootMethodName,
       FeatureMethodName
    >
-
-   setStaticRootContent: (
-      director: DefaultDirector,
-   ) => IRootConduitFactory<
-      RootParams,
-      FeatureParams,
-      RootMethodName,
-      FeatureMethodName
-   >
-
-   setStaticFeatureContent: (
-      director: DefaultDirector,
-   ) => IFeatureConduitFactory<
+   implementFeatureRootImport: () => IRootAndFeatureConduitFactory<
       RootParams,
       FeatureParams,
       RootMethodName,
@@ -76,18 +64,7 @@ export interface IRootConduitFactory<
       FeatureMethodName
    >
 
-   setStaticRootContent: (
-      director: DefaultDirector,
-   ) => IRootConduitFactory<
-      RootParams,
-      FeatureParams,
-      RootMethodName,
-      FeatureMethodName
-   >
-
-   setStaticFeatureContent: (
-      director: DefaultDirector,
-   ) => IRootAndFeatureConduitFactory<
+   implementFeatureRootImport: () => IRootAndFeatureConduitFactory<
       RootParams,
       FeatureParams,
       RootMethodName,
@@ -121,18 +98,7 @@ export interface IFeatureConduitFactory<
       FeatureMethodName
    >
 
-   setStaticRootContent: (
-      director: DefaultDirector,
-   ) => IRootAndFeatureConduitFactory<
-      RootParams,
-      FeatureParams,
-      RootMethodName,
-      FeatureMethodName
-   >
-
-   setStaticFeatureContent: (
-      director: DefaultDirector,
-   ) => IFeatureConduitFactory<
+   implementFeatureRootImport: () => IRootAndFeatureConduitFactory<
       RootParams,
       FeatureParams,
       RootMethodName,
@@ -166,18 +132,7 @@ export interface IRootAndFeatureConduitFactory<
       FeatureMethodName
    >
 
-   setStaticRootContent: (
-      director: DefaultDirector,
-   ) => IRootAndFeatureConduitFactory<
-      RootParams,
-      FeatureParams,
-      RootMethodName,
-      FeatureMethodName
-   >
-
-   setStaticFeatureContent: (
-      director: DefaultDirector,
-   ) => IRootAndFeatureConduitFactory<
+   implementFeatureRootImport: () => IRootAndFeatureConduitFactory<
       RootParams,
       FeatureParams,
       RootMethodName,
