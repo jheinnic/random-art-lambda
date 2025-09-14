@@ -4,7 +4,7 @@ import { BullModule } from "@nestjs/bullmq"
 import { QueuedPaintingTypes } from "./Types.js"
 import { RandomArtFlowProducer } from "./../components/RandomArtFlowProducer.js"
 import { RandomArtPaintWorker } from "./../components/RandomArtPaintWorker.js"
-import { RandomArtQueueListener } from "./../components/RandomArtQueueListener.js"
+import { RandomArtPaintEventListener } from "../components/RandomArtPaintEventListener.js"
 import { RandomArtStoreWorker } from "../components/RandomArtStoreWorker.js"
 import { RandomArtStoreEventListener } from "../components/RandomArtStoreEventListener.js"
 
@@ -53,7 +53,7 @@ import { RandomArtStoreEventListener } from "../components/RandomArtStoreEventLi
       },
       {
          provide: QueuedPaintingTypes.QueueListener,
-         useClass: RandomArtQueueListener,
+         useClass: RandomArtPaintEventListener,
       },
    ],
    exports: [
