@@ -7,10 +7,10 @@
       {
          "type": "node",
          "request": "launch",
-         "name": "Launch Program",
+         "name": "Launch Built Program",
          "skipFiles": ["<node_internals>/**"],
          "runtimeExecutable": "/home/ionadmin/.nvm/versions/node/v20.14.0/bin/node",
-         "program": "${workspaceFolder}/build/src/app/components/Main.js",
+         "program": "${workspaceFolder}/build/app/components/Main.js",
          "outFiles": ["${workspaceFolder}/**/*.js"]
       },
       {
@@ -38,7 +38,16 @@
          "skipFiles": ["<node_internals>/**"],
          "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/tsx",
          "program": "${workspaceFolder}/src/app/components/Main.ts",
-         "outFiles": ["${workspaceFolder}/**/*.js"]
+         "outFiles": ["${workspaceFolder}/build/**/*.js"]
+      },
+      {
+         "type": "node",
+         "request": "launch",
+         "name": "InToy4",
+         "skipFiles": ["<node_internals>/**"],
+         "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/tsx",
+         "program": "${workspaceFolder}/src/InToy4.ts",
+         "outFiles": ["${workspaceFolder}/build/**/*.js"]
       }
    ]
 }

@@ -17,7 +17,7 @@ import type { IRandomArtTaskEngine } from "../interface/index.js"
 
 import { GenModelArtist } from "./GenModelArtist.js"
 import { GenModel, newPicture, substringChars } from "./genjs6.js"
-import { ChannelWrapper } from "../../cli/channels/ChannelWrapper.js"
+import { ChannelWrapper } from "../../channels/ChannelWrapper.js"
 
 @Injectable()
 export class RandomArtTaskEngine implements IRandomArtTaskEngine {

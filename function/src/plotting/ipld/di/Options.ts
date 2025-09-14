@@ -1,20 +1,15 @@
-// import { Injectable } from "@nestjs/common"
-// import { IRegionMapSchemaDsl } from "../interface/IRegionMapSchemaDsl.js"
-// import { DataBlock, RegionMap } from "../interface/RegionMapSchemaTypes.js"
-// import { create, createValidate, fromDSL } from "./IpldSchemaTools.mjs"
-// import { create, fromDsl } from "./IpldSchemaTools.mjs"
-import { sha256 as hasher } from "multiformats/hashes/sha2"
-import * as codec from "@ipld/dag-cbor"
+// import { sha256 as hasher } from "multiformats/hashes/sha2"
+// import * as codec from "@ipld/dag-cbor"
 
 import {
    RepresentModelEnvelopePair,
-   RepresentDataBlockPair,
+   RepresentDataBlockTuple,
 } from "../ipldmodel/index.js"
-import { SerdesConfiguration } from "../../../ipld/index.js"
-import { IpldPlottingModuleTypes } from "./Types.js"
+import { UnionizeProperties } from "simplytyped"
 
 export const schemaDsl = `type ModelEnvelope union {
   | RegionMap "RegionMap_1.0.0"
+  | RegionMap2 "RegionMap_2.0.0"
 } representation envelope {
   discriminantKey "version"
   contentKey "model"
@@ -28,6 +23,18 @@ type RegionMap struct {
   codings DimensionLayouts
   palettes [&DataBlock]
   data [&DataBlock]
+} representation tuple
+
+type RegionMap2 struct {
+  pixelRef RefPoint2
+  imageSize ImageSize
+  regionBoundary RegionBoundaryFractions
+  codings DimensionLayouts
+  palettes [&DataBlock]
+  data [&DataBlock]
+  pixelSize ImageSize
+  rowsPerBatch [Int]
+  batchCount Int
 } representation tuple
 
 type BitLayout struct {
@@ -63,6 +70,12 @@ type RefPoint enum {
   | TopLeft    ("2")
 } representation int
 
+type RefPoint2 enum {
+  | Center     ("1")
+  | TopLeft    ("2")
+  | Rolling    ("3")
+} representation int
+
 type DataBlock struct {
   rowsN Bytes
   rowsD Bytes
@@ -71,48 +84,25 @@ type DataBlock struct {
 } representation tuple
 `
 
-export interface ISerdesTypes {
+interface ISerdesTypes {
    ModelEnvelope: RepresentModelEnvelopePair
-   DataBlock: RepresentDataBlockPair
+   DataBlock: RepresentDataBlockTuple
 }
 
-export const ipldModuleOptions: SerdesConfiguration = new SerdesConfiguration(
-   schemaDsl,
-   {
-      ModelEnvelope: IpldPlottingModuleTypes.IModelEnvelopeSerdes,
-      DataBlock: IpldPlottingModuleTypes.IDataBlockSerdes,
-   },
-   codec,
-   hasher,
-)
+export type SerdesRepresentDomainTuples = UnionizeProperties<ISerdesTypes>
 
-// const modelBuf = fs.readFileSync("./fdoc.proto")
-// const plotDocument = PointPlotDocument.deserializeBinary(modelBuf)
-// const plotData = plotDocument.getData()
-// if (plotData === undefined || plotData === null) {
-// throw new Error("Plot Data subunit must be defined!")
-// }
-
-// @Injectable()
-// export class IpldRegionMapSchemaDsl implements IRegionMapSchemaDsl {
-// private readonly schemaDmt = fromDSL( schemaDsl )
-// private readonly rootTyped = create( this.schemaDmt, "ModelEnvelope" )
-// private readonly dataTyped = create( this.schemaDmt, "DataBlock" )
-// private readonly validate = createValidate( this.schemaDmt )
-
-// public toRegionMapRepresentation( typed: RegionMap ): unknown {
-//   return this.rootTyped.toRepresentation( typed )
-// }
-
-// public toRegionMapTyped( representation: unknown ): RegionMap {
-//   return this.rootTyped.toTyped( representation )
-// }
-
-// public toDataBlockRepresentation( typed: DataBlock ): unknown {
-//   return this.dataTyped.toRepresentation( typed )
-// }
-
-// public toDataBlockTyped( representation: unknown ): DataBlock {
-//   return this.dataTyped.toTyped( representation )
-// }
+// export const ipldModuleOptions: IpldModuleExtras<
+//    RepresentDataBlockTuple | RepresentModelEnvelopePair
+// > = {
+//    serdes: new SerdesConfiguration<
+//       RepresentModelEnvelopePair | RepresentDataBlockTuple
+//    >(
+//       schemaDsl,
+//       {
+//          ModelEnvelope: IpldPlottingModuleTypes.IModelEnvelopeSerdes,
+//          DataBlock: IpldPlottingModuleTypes.IDataBlockSerdes,
+//       },
+//       codec,
+//       hasher,
+//    ),
 // }

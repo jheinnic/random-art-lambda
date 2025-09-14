@@ -19,6 +19,7 @@ import { IpldPlottingModuleTypes } from "../../plotting/ipld/di/Types.js"
 import { PBufRegionMapFactory } from "../../plotting/protobuf/components/PBufRegionMapFactory.js"
 import { ProtobufPlottingModuleTypes } from "../../plotting/protobuf/di/Types.js"
 import { PBufRegionMap } from "../../plotting/protobuf/components/PBufRegionMap.js"
+import { CanvasPersister } from "../../painting/components/CanvasPersister.js"
 
 interface Task {
    taskMessage: string
@@ -60,7 +61,7 @@ export class AppServiceTwo {
    public async testRepoSave(): Promise<void> {
       const adapter: PBufRegionMap =
          this.regionMapFactory.adapt("./qdoc2.proto")
-      const modelCid: CID = await this.mapRepo.import(adapter.directBuilder)
+      const modelCid: CID = await this.mapRepo.import(adapter.directBuilder())
       const origMap: IRegionMap = adapter
       console.log(origMap)
       console.log(modelCid)
@@ -74,6 +75,39 @@ export class AppServiceTwo {
          { name: "qdoc2", regionMap: this.cidCache.get(modelCid) },
       ]
       await this.runCombinations(taskList, regionList)
+   }
+
+   public async loadRepo(): Promise<void> {
+      ;[
+         "fdoc2",
+         "fdoc_big",
+         "fdoc",
+         "gdoc2",
+         "hdoc2",
+         "qdoc2",
+         "qdoc4",
+         "qdoc5",
+         "qdoc6",
+         "rdoc02",
+         "rdoc03",
+         "tdoc01",
+      ]
+         .map(async (regionName: string): Promise<void> => {
+            const adapter: PBufRegionMap = this.regionMapFactory.adapt(
+               "./" + regionName + ".proto",
+            )
+            const modelCid: CID = await this.mapRepo.import(
+               adapter.directBuilder(),
+            )
+            console.log(regionName + " :: " + modelCid.toString())
+         })
+         .forEach((clue: Promise<void>): void => {
+            clue
+               .then((_: unknown): void => {})
+               .catch((x: unknown): void => {
+                  console.error(x)
+               })
+         })
    }
 
    public async testRun0(): Promise<void> {
@@ -131,7 +165,7 @@ export class AppServiceTwo {
       const workList: Array<{ phrase: string }> = JSON.parse(
          fs.readFileSync("source5B.list").toString(),
       )
-      return workList.map((task: { phrase: string }) => {
+      return workList.map((task: { phrase: string }): Task => {
          const fileName: string = crypto
             .createHash("md5")
             .update(task.phrase)
@@ -200,12 +234,11 @@ export class AppServiceTwo {
       const artist: GenModelArtist = new GenModelArtist(genModel, canvas)
       await regionMap.directPlotter(artist)
       const stream = fs.createWriteStream(fileName)
-      // const persister: CanvasPersister = new CanvasPersister(canvas, stream)
+      const persister: CanvasPersister = new CanvasPersister(canvas, stream)
       if (taskMessage !== "") {
          const sidecarFile = fileName.replace("png", "json")
          fs.writeFileSync(sidecarFile, taskMessage)
       }
-      // await persister.finish()
-      // TODO Write File Streams
+      await persister.finish()
    }
 }

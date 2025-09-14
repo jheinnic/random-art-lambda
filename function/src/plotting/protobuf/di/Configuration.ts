@@ -1,4 +1,4 @@
-import { ChannelWrapper } from "../../../cli/channels/ChannelWrapper.js"
+import { ChannelWrapper } from "../../../channels/ChannelWrapper.js"
 import {
    EnrollSourceFileCall,
    EnrollSourceFileReply,

@@ -1,7 +1,7 @@
 import { NestFactory } from "@nestjs/core"
-import { sha256 as hash } from "multiformats/hashes/sha2"
+// import { sha256 as hash } from "multiformats/hashes/sha2"
 
-import { CID } from "multiformats"
+// import { CID } from "multiformats"
 import { AppModule } from "../di/index.js"
 import { AppServiceTwo } from "./AppServiceTwo.js"
 
@@ -26,8 +26,8 @@ async function bootstrap(): Promise<void> {
    // const regionMap = appSvc.testRepo( CID.parse( "bafyreicqvrftolzvv3jhmqptkezch7f7dlfomu6mmv3cihqmerg274x3ky" ) )
    // console.log( regionMap )
 
-   //appSvc.testRepoSave()
+   // appSvc.testRepoSave()
 }
 
-bootstrap().catch((x) => console.error(x))
+bootstrap().catch((x: unknown): void => console.error(x))
 // tn / 9V / 1v / zdpuAsQEbAYrfbrgcR7EgDarTSGePziWyX3m8jL4gmJ
