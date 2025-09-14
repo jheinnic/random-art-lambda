@@ -1,4 +1,4 @@
-import { IpldRegionMapRepository } from "./../../../plotting/ipld/components/IpldRegionMapRepository"
+import { IpldRegionMapRepository } from "./../../../plotting/ipld/components/IpldRegionMapRepository.js"
 import { Inject, Logger } from "@nestjs/common"
 import { Processor, WorkerHost } from "@nestjs/bullmq"
 import { Job } from "bullmq"
@@ -7,6 +7,7 @@ import { PaintingModuleTypes } from "./../../di/Types.js"
 import { RandomArtTaskEngine } from "./../../components/RandomArtTaskEngine.js"
 import { IpldModuleTypes } from "../../../ipld/index.js"
 import { IpldPlottingModuleTypes } from "../../../plotting/ipld/di/Types.js"
+import { PlottingModuleTypes } from "../../../plotting/di/Types.js"
 
 @Processor("paintTasks")
 export class RandomArtPaintWorker extends WorkerHost {
@@ -15,7 +16,7 @@ export class RandomArtPaintWorker extends WorkerHost {
    constructor(
       @Inject(PaintingModuleTypes.IRandomArtTaskEngine)
       private readonly taskEngine: RandomArtTaskEngine,
-      @Inject(IpldPlottingModuleTypes.IpldRegionMapRepository)
+      @Inject(PlottingModuleTypes.IRegionMapRepository)
       private readonly regionMapRepo: IpldRegionMapRepository,
    ) {
       super()

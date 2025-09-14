@@ -15,6 +15,10 @@ export type DataBlockRepresentation = [
    Uint8Array,
 ]
 
-export type RepresentDataBlockPair = [DataBlockRepresentation, DataBlock]
+export type RepresentDataBlockTuple = [
+   "DataBlock",
+   DataBlockRepresentation,
+   DataBlock,
+]
 
-export type IDataBlockSerdes = ISerdes<RepresentDataBlockPair>
+export type IDataBlockSerdes = ISerdes<RepresentDataBlockTuple>

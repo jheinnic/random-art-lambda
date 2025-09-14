@@ -203,7 +203,6 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
             console.log(paletteMaybes)
             console.log(paletteWordSizes)
             console.log(dataWordSizes)
-            // const chunkHeight: number = this._chunkHeight > -1 ? this._chunkHeight : this._pixelHeight
             const paletteBlocks: readonly DataBlock[] = blockify(
                {
                   N: paletteMaybes.rowsN.palette,
@@ -267,7 +266,9 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
    private async commitRoot(source: RegionMap): Promise<CID> {
       // validate and transform
       const value: BlockView<ModelEnvelopeRepresentation> =
-         await this.modelEnvelopeSerdes.encodeModel({ RegionMap: source })
+         await this.modelEnvelopeSerdes.encodeModel({
+            "RegionMap_1.0.0": source,
+         })
 
       // const rootBlock = await encode( { codec, hasher, value } )
       const rootCid: CID = value.cid // rootBlock.cid;
@@ -295,14 +296,14 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
       // const decodedRootBlock: BlockView<ModelEnvelopeRepresentation > =
       // await decode( { codec, hasher, bytes: rootEncodingBytes } )
       const modelEnvelope: ModelEnvelope =
-         await this.modelEnvelopeSerdes.bytesToDomain(rootEncodingBytes)
+         await this.modelEnvelopeSerdes.decodeBytes(rootEncodingBytes)
       if (modelEnvelope === undefined) {
          throw new TypeError(
             "Invalid deserialized representation, did follow from schema",
          )
       }
       console.log(modelEnvelope)
-      const rootObject: RegionMap = modelEnvelope.RegionMap
+      const rootObject: RegionMap = modelEnvelope["RegionMap_1.0.0"]
       console.log(rootObject)
       const paletteBlocks: readonly DataBlock[] = await Promise.all(
          rootObject.palettes.map(async (cidLink: CID) => {
@@ -310,7 +311,7 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
                await this.blockStore.get(cidLink)
             // const decodedDataBlock: BlockView<DataBlockRepresentation> =
             // await decode( { codec, hasher, bytes: dataEncodingBytes } )
-            return await this.dataBlockSerdes.bytesToDomain(dataEncodingBytes)
+            return await this.dataBlockSerdes.decodeBytes(dataEncodingBytes)
          }),
       )
       const dataBlocks: readonly DataBlock[] = await Promise.all(
@@ -319,7 +320,7 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
                await this.blockStore.get(cidLink)
             // const decodedDataBlock: BlockView<DataBlockRepresentation> =
             // await decode( { codec, hasher, bytes: dataEncodingBytes } )
-            return await this.dataBlockSerdes.bytesToDomain(dataEncodingBytes)
+            return await this.dataBlockSerdes.decodeBytes(dataEncodingBytes)
          }),
       )
       return new IpldRegionMap(rootObject, paletteBlocks, dataBlocks)
