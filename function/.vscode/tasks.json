@@ -7,8 +7,7 @@
          "option": "watch",
          "problemMatcher": ["$tsc-watch"],
          "group": "build",
-         "label": "tsc: watch - tsconfig.json",
-         "detail": "/Users/john.heinnickel/Git/lambdas/random-art-lambda/function/node_modules/typescript/bin/tsc"
+         "label": "tsc: watch - tsconfig.json"
       },
       {
          "type": "typescript",
@@ -27,23 +26,29 @@
       },
       {
          "type": "npm",
-         "script": "build/cli/main.js plot",
+         "script": "runPlot",
          "group": "test",
          "problemMatcher": [],
-         "label": "npm: runPlot",
-         "detail": "cli"
+         "label": "shell: run CLI Plot"
       },
       {
          "type": "npm",
          "script": "build",
+         "group": "build",
+         "problemMatcher": [],
+         "label": "npm: build"
+      },
+      {
+         "type": "npm",
+         "script": "cleanBuild",
          "path": ".",
          "group": {
             "kind": "build",
             "isDefault": true
          },
          "problemMatcher": [],
-         "label": "npm: build",
-         "detail": "npm run clean && tsc -b src && echo `pwd`"
+         "label": "npm: cleanBuild",
+         "detail": "npm run clean && npm run build"
       }
    ]
 }

@@ -3,7 +3,7 @@ export const SHARED_ART_BLOCKSTORE: unique symbol = Symbol(
    "SharedArtBlockstore",
 )
 export const SHARED_MAP_BLOCKSTORE: unique symbol = Symbol(
-   "SharedMapBlockstore",
+   "RegionMapBlockstore",
 )
 export const SHARED_TASK_BLOCKSTORE: unique symbol = Symbol(
    "SharedTaskBlockstore",
@@ -18,12 +18,12 @@ export const IPLD_PLOT_REGION_TASK_SERDES: unique symbol = Symbol(
 
 export const SharedBlockstoresModuleTypes = {
    SharedArtBlockstore: SHARED_ART_BLOCKSTORE,
-   SharedMapBlockstore: SHARED_MAP_BLOCKSTORE,
+   RegionMapBlockstore: SHARED_MAP_BLOCKSTORE,
    SharedTaskBlockstore: SHARED_TASK_BLOCKSTORE,
 }
 
 export const SharedBlockStoreSerdesMap = {
    SharedArtBlockstore: [IPLD_ARTWORK_ITEM_SERDES],
-   SharedMapBlockStore: [IPLD_REGION_MAP_SERDES],
+   RegionMapBlockstore: [IPLD_REGION_MAP_SERDES],
    SharedTaskBlockstore: [IPLD_PAINT_TASK_SERDES, IPLD_PLOT_REGION_TASK_SERDES],
 }

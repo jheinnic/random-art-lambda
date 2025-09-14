@@ -18,7 +18,7 @@ import { SharedBlockstoresModuleTypes } from "./SharedBlockstoresModuleTypes.js"
             blockstore: Blockstore,
          ): IpldPlottingModuleConfiguration =>
             new IpldPlottingModuleConfiguration(blockstore),
-         inject: [SharedBlockstoresModuleTypes.SharedMapBlockstore],
+         inject: [SharedBlockstoresModuleTypes.RegionMapBlockstore],
       }),
       PaintingModule,
    ],
