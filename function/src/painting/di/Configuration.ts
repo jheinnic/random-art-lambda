@@ -1,5 +1,5 @@
 // import { InjectionToken } from "@nestjs/common"
-import { ChannelWrapper } from "../../cli/channels/ChannelWrapper.js"
+import { ChannelWrapper } from "../../channels/ChannelWrapper.js"
 import { IRegionMapRepository } from "../../plotting/interface/index.js"
 import { RandomArtTaskCall } from "../message/RandomArtTaskCall.js"
 import { RandomArtTaskReply } from "../message/RandomArtTaskReply.js"

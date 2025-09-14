@@ -89,10 +89,11 @@ export function paletteMaybe(src: readonly number[]): PaletteMaybe {
    asSet.forEach((value: number) => {
       srcMax = Math.max(srcMax, Math.abs(value))
    })
-   const paletteWordLen = Math.max(Math.ceil(Math.log2(asSet.size)), 1)
-   const baseWordLen = Math.ceil(Math.log2(srcMax))
-   const newSize = src.length * paletteWordLen + asSet.size * baseWordLen
-   const baseSize = src.length * baseWordLen
+   const paletteWordLen: number = Math.max(asSet.size.toString(2).length, 1)
+   const baseWordLen: number = srcMax.toString(2).length
+   const newSize: number =
+      src.length * paletteWordLen + asSet.size * baseWordLen
+   const baseSize: number = src.length * baseWordLen
    console.log(
       `${newSize} >?< ${baseSize}, ${paletteWordLen}, ${asSet.size}, ${baseWordLen}, ${src.length} :: ${srcMax}`,
    )
@@ -135,7 +136,7 @@ function measureSize(
       )
    }
 
-   return wordSize * numbers.length
+   return Math.ceil((wordSize * numbers.length) / 8.0)
 }
 
 const BLOCK_OVERHEAD = 16
@@ -206,7 +207,7 @@ export function blockify(
             wordSizes.colsN,
          ),
          colsD: translate(
-            cols.D.slice(colsDIdx, nextColsNIdx),
+            cols.D.slice(colsDIdx, nextColsDIdx),
             wordSizes.colsD,
          ),
       }
@@ -224,17 +225,29 @@ export function unblockify(
    selector: (x: Readonly<DataBlock>) => Uint8Array,
    coding: DimensionCoding,
 ): Palette {
-   const dataBytes: Buffer = Buffer.concat(dataBlocks.map(selector))
-   const paletteBytes: Buffer = Buffer.concat(paletteBlocks.map(selector))
-   let paletteArray: Palette = EMPTY_DIMENSION
+   const dataBytes: Uint8Array[] = dataBlocks.map(selector)
+   const paletteBytes: Uint8Array[] = paletteBlocks.map(selector)
+   let paletteArray: Palette = EMPTY_DIMENSION as number[]
    if (coding.paletteWordLen > 0) {
-      paletteArray = hydrate(
-         paletteBytes,
-         EMPTY_DIMENSION,
-         coding.paletteWordLen,
-      )
+      paletteArray = paletteBytes
+         .map((blockBytes): Palette => {
+            return hydrate(
+               Buffer.from(blockBytes),
+               EMPTY_DIMENSION,
+               coding.paletteWordLen,
+            )
+         })
+         .flat()
    }
-   return hydrate(dataBytes, paletteArray, coding.baseWordLen)
+   return dataBytes
+      .map((blockBytes): Palette => {
+         return hydrate(
+            Buffer.from(blockBytes),
+            paletteArray,
+            coding.baseWordLen,
+         )
+      })
+      .flat()
 }
 
 const NO_BYTES: Uint8Array = Uint8Array.of()

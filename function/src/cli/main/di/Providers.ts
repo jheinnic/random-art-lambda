@@ -4,16 +4,11 @@ import { CliMainModuleConfiguration } from "./Configuration.js"
 import { CliMainModuleTypes } from "./Types.js"
 
 import {
-   EnrollSourceFileCall,
-   EnrollSourceFileReply,
-} from "../../../plotting/protobuf/message/index.js"
-
-import {
    RandomArtTaskCall,
    RandomArtTaskReply,
 } from "../../../painting/message/index.js"
 import { IRandomArtTaskEngine } from "../../../painting/interface/IRandomArtTaskEngine.js"
-import { PBufRegionMapRepository } from "../../../plotting/protobuf/components/PBufRegionMapRepository.js"
+import { IpldRegionMapRepository } from "../../../plotting/ipld/components/IpldRegionMapRepository.js"
 
 const unpackRandomArtTaskCallChannel = {
    provide: CliMainModuleTypes.RandomArtTaskCallChannel,
@@ -29,25 +24,9 @@ const unpackRandomArtTaskReplyChannel = {
    inject: [CliMainModuleTypes.ModuleConfiguration],
 }
 
-const unpackEnrollSourceFileCallChannel = {
-   provide: CliMainModuleTypes.EnrollSourceFileCallChannel,
-   useFactory: (
-      config: CliMainModuleConfiguration,
-   ): Chan<EnrollSourceFileCall> => config.enrollSourceFileCallChannel,
-   inject: [CliMainModuleTypes.ModuleConfiguration],
-}
-
-const unpackEnrollSourceFileReplyChannel = {
-   provide: CliMainModuleTypes.EnrollSourceFileReplyChannel,
-   useFactory: (
-      config: CliMainModuleConfiguration,
-   ): Chan<EnrollSourceFileReply> => config.enrollSourceFileReplyChannel,
-   inject: [CliMainModuleTypes.ModuleConfiguration],
-}
-
 const unpackRegionMapRepository = {
    provide: CliMainModuleTypes.RegionMapRepository,
-   useFactory: (config: CliMainModuleConfiguration): PBufRegionMapRepository =>
+   useFactory: (config: CliMainModuleConfiguration): IpldRegionMapRepository =>
       config.regionMapRepository,
    inject: [CliMainModuleTypes.ModuleConfiguration],
 }
@@ -60,8 +39,6 @@ const unpackRandomArtEngine = {
 }
 
 export const allProviders = [
-   unpackEnrollSourceFileCallChannel,
-   unpackEnrollSourceFileReplyChannel,
    unpackRandomArtTaskCallChannel,
    unpackRandomArtTaskReplyChannel,
    unpackRegionMapRepository,
