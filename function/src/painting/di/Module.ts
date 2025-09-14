@@ -45,12 +45,16 @@ const factory: IConduitModuleFactory<
 const baseClass = factory
    .implementRootMethod(
       (
-         repoModule: DynamicModule,
-         repoToken: InjectionToken,
-         callChanModule: DynamicModule,
-         callChanToken: InjectionToken<ChannelWrapper<RandomArtTaskCall>>,
-         replyChanModule: DynamicModule,
-         replyChanToken: InjectionToken<ChannelWrapper<RandomArtTaskReply>>,
+         repoModule: Type<any> | DynamicModule,
+         repoToken: Type<any> | InjectionToken,
+         callChanModule: Type<any> | DynamicModule,
+         callChanToken:
+            | Type<any>
+            | InjectionToken<ChannelWrapper<RandomArtTaskCall>>,
+         replyChanModule: Type<any> | DynamicModule,
+         replyChanToken:
+            | Type<any>
+            | InjectionToken<ChannelWrapper<RandomArtTaskReply>>,
       ): DefaultDirector => {
          // TODO: Replace with actual DefaultDirector construction logic
          return (builder: IConduitModuleBuilder): void => {
