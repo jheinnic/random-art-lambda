@@ -6,19 +6,28 @@ import type {
    MultihashHasher,
 } from "multiformats"
 import { encode, decode } from "multiformats/block"
-import type { RepresentDomainPair, ISerdes } from "../interface/index.js"
+import type {
+   RepresentDomainTuple,
+   ISerdes,
+   RepresentationOf,
+   DomainModelOf,
+} from "../interface/index.js"
 
 @Injectable()
 export class IpldSerdes<
-   RDP extends RepresentDomainPair,
+   RDP extends RepresentDomainTuple<string, unknown, unknown>,
    Code extends number,
    Hash extends number,
 > implements ISerdes<RDP>
 {
    constructor(
-      private readonly toRepresentation: (source: RDP[1]) => RDP[0],
-      private readonly toDomainModel: (source: RDP[0]) => RDP[1],
-      private readonly codec: BlockCodec<Code, RDP[0]>,
+      private readonly toRepresentation: (
+         source: DomainModelOf<RDP>,
+      ) => RepresentationOf<RDP>,
+      private readonly toDomainModel: (
+         source: RepresentationOf<RDP>,
+      ) => DomainModelOf<RDP>,
+      private readonly codec: BlockCodec<Code, RepresentationOf<RDP>>,
       private readonly hasher: MultihashHasher<Hash>,
       // private validate: () => true
    ) {}
@@ -26,15 +35,21 @@ export class IpldSerdes<
    /**
     * Transform-to-representation and Encode
     */
-   public async encodeModel(typed: RDP[1]): Promise<BlockView<RDP[0]>> {
+   public async encodeModel(
+      typed: DomainModelOf<RDP>,
+   ): Promise<BlockView<RepresentationOf<RDP>>> {
       const specData = this.toRepresentation(typed)
       if (specData === undefined) {
          throw new TypeError("Invalid typed form, does not match schema")
       }
-      // const block: BlockView<RDP[0]> = await encode<RDP[0], 113, 18>(
+      // const block: BlockView<RepresentationOf<RDP>> = await encode<RepresentationOf<RDP>, 113, 18>(
       const codec = this.codec
       const hasher = this.hasher
-      const block: BlockView<RDP[0]> = await encode<RDP[0], Code, Hash>({
+      const block: BlockView<RepresentationOf<RDP>> = await encode<
+         RepresentationOf<RDP>,
+         Code,
+         Hash
+      >({
          codec,
          hasher,
          value: specData,
@@ -43,16 +58,34 @@ export class IpldSerdes<
    }
 
    /**
+    * Decode and Transform-to-domain
+    * @param bytes
+    * @returns Domain model from a decoded block
+    */
+   public async decodeBytes(
+      bytes: ByteView<RepresentationOf<RDP>>,
+   ): Promise<DomainModelOf<RDP>> {
+      const domainModel = await this.blockToDomain(
+         await this.bytesToBlock(bytes),
+      )
+      return domainModel
+   }
+
+   /**
     * Decode
     * @param bytes
     * @returns Decoded Block
     */
-   public async bytesToBlock(
-      bytes: ByteView<RDP[0]>,
-   ): Promise<BlockView<RDP[0]>> {
+   private async bytesToBlock(
+      bytes: ByteView<RepresentationOf<RDP>>,
+   ): Promise<BlockView<RepresentationOf<RDP>>> {
       const codec = this.codec
       const hasher = this.hasher
-      const block = await decode<RDP[0], Code, Hash>({ codec, hasher, bytes })
+      const block = await decode<RepresentationOf<RDP>, Code, Hash>({
+         codec,
+         hasher,
+         bytes,
+      })
       if (block === undefined) {
          throw new TypeError(
             "Invalid deserialized representation, did not follow from schema",
@@ -62,23 +95,13 @@ export class IpldSerdes<
    }
 
    /**
-    * Decode and Transform-to-domain
-    * @param bytes
-    * @returns Domain model from a decoded block
-    */
-   public async bytesToDomain(bytes: ByteView<RDP[0]>): Promise<RDP[1]> {
-      const domainModel = await this.blockToDomain(
-         await this.bytesToBlock(bytes),
-      )
-      return domainModel
-   }
-
-   /**
     * Transform-to-domain
     * @param block
     * @returns Domain model
     */
-   public async blockToDomain(block: BlockView<RDP[0]>): Promise<RDP[1]> {
+   private async blockToDomain(
+      block: BlockView<RepresentationOf<RDP>>,
+   ): Promise<DomainModelOf<RDP>> {
       const domainModel = this.toDomainModel(block.value)
       if (domainModel === undefined) {
          throw new TypeError(

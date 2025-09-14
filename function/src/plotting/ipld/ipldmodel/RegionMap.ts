@@ -26,7 +26,7 @@ export type RegionMapRepresentation = [
    string[],
 ]
 
-export type RepresentRegionMapPair = [
+export type RepresentRegionMapTuple = [
    "RegionMap",
    RegionMapRepresentation,
    RegionMap,

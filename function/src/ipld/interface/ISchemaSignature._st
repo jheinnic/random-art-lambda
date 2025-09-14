@@ -1,0 +1,18 @@
+import { UnionizeProperties } from "simplytyped"
+import {
+   RepresentationOf,
+   RepresentDomainTuple,
+} from "./RepresentDomainPair.js"
+
+export type ISchemaSignature<
+   K extends string,
+   D extends Record<K, any>,
+   R extends Record<K, any>,
+> = Record<K, RepresentDomainPair<D[K], R[K]>>
+
+export type ISchemaRepresentations<
+   K extends string,
+   S extends ISchemaSignature<K, any, any>,
+> = UnionizeProperties<{
+   [K in keyof S]: RepresentationOf<S[K]>
+}>

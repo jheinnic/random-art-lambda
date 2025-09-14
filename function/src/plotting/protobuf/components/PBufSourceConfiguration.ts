@@ -10,7 +10,7 @@ import {
    EnrollSourceFileCall,
    EnrollSourceFileReply,
 } from "../message/index.js"
-import { ChannelWrapper } from "../../../cli/channels/ChannelWrapper.js"
+import { ChannelWrapper } from "../../../channels/ChannelWrapper.js"
 
 @Injectable()
 export class PBufSourceConfiguration implements ISourceConfiguration {

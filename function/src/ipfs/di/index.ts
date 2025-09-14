@@ -1,6 +1,3 @@
-export { FsBlockstoreConfiguration } from "./FsBlockstoreConfiguration.js"
-export { IpfsModule } from "./IpfsModule.js"
-export { IpfsModuleTypes } from "./IpfsModuleTypes.js"
-
-export * from "./IpfsModuleDefinition.js"
-export * from "./ModuleExportConfiguration.js"
+export { IpfsModuleTypes } from "./Types.js"
+export { FsBlockstoreConfiguration } from "./Configuration.js"
+export { IpfsModule } from "./Module.js"

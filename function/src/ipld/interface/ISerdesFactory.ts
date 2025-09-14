@@ -1,9 +1,15 @@
 import { StringKeys } from "simplytyped"
 import { ISerdes } from "./ISerdes.js"
-import { ISchemaSignature } from "./ISchemaSignature.js"
+import {
+   RepresentDomainTuple,
+   RepresentDomainTupleByName,
+   SchemaNameOf,
+} from "./RepresentDomainPair.js"
 
-export interface ISerdesFactory<RDS extends ISchemaSignature> {
-   getProduction: <P extends StringKeys<RDS>>(
+export interface ISerdesFactory<
+   RDS extends RepresentDomainTuple<string, unknown, unknown>,
+> {
+   getProduction: <P extends SchemaNameOf<RDS>>(
       rootProduction: P,
-   ) => ISerdes<RDS[P]>
+   ) => ISerdes<RepresentDomainTupleByName<P, RDS>>
 }

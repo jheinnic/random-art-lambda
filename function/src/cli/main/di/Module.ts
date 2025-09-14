@@ -6,6 +6,7 @@ import { allProviders } from "./Providers.js"
 
 // import { PlotCommand } from "../components/PlotCommand.js"
 import { GenericService } from "../components/GenericService.js"
+import { QueueingPaintModule } from "../../../painting/queue/di/Module.js"
 
 const dynamicHost = new ConfigurableModuleBuilder<CliMainModuleConfiguration>({
    moduleName: "CliMainModule",
@@ -19,9 +20,8 @@ export type CliMainModuleOptions = typeof dynamicHost.OPTIONS_TYPE
 // console.log(allProviders)
 
 @Module({
-   imports: [],
+   imports: [QueueingPaintModule],
    providers: [...allProviders, GenericService],
    exports: [GenericService],
 })
 export class CliMainModule extends dynamicHost.ConfigurableModuleClass {}
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class

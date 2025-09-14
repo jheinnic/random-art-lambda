@@ -1,7 +1,10 @@
 import { Module } from "@nestjs/common"
+import { SharedBlockstoresModule } from "../../app/di/SharedBlockstoresModule.js"
+
 import { PaintingModule } from "../../painting/di/Module.js"
-import { ProtobufPlottingModule } from "../../plotting/protobuf/di/Module.js"
-import { CliChannelsModule } from "../channels/Module.js"
+import { QueueingPaintModule } from "../../painting/queue/di/Module.js"
+import { IpldPlottingModule } from "../../plotting/ipld/di/Module.js"
+import { CliChannelsModule } from "../../channels/Module.js"
 import { CliMainModule } from "../main/di/Module.js"
 import {
    plottingModule,
@@ -11,6 +14,7 @@ import {
 
 @Module({
    imports: [
+      SharedBlockstoresModule,
       CliChannelsModule,
       plottingModule,
       paintingModule,
@@ -19,7 +23,7 @@ import {
    providers: [],
    exports: [
       CliChannelsModule,
-      ProtobufPlottingModule,
+      IpldPlottingModule,
       PaintingModule,
       CliMainModule,
    ],
