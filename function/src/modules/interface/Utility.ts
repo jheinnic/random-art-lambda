@@ -1,5 +1,5 @@
 import { If, IsType } from "simplytyped"
-import { DefaultDirector } from "./IConduitModuleFactory.js"
+import { DefaultDirector } from "./IModuleBaseClassBlueprint.js"
 
 export type Identity<T> = (director: T) => T
 

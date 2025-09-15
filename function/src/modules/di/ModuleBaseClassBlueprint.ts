@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-extraneous-class */
 import { DynamicModule, Type } from "@nestjs/common"
-import { DynamicModuleBuilder } from "./ConduitModuleBuilder.js"
+import { DynamicModuleBlueprint } from "./DynamicModuleBlueprint.js"
 import type {
    DefaultDirector,
-   IConduitModuleFactory,
-   IFeatureConduitFactory,
-   IRootConduitFactory,
-   IRootAndFeatureConduitFactory,
-} from "../interface/IConduitModuleFactory.js"
+   IModuleBaseClassBlueprint,
+   IFeatureModuleClassBlueprint,
+   IRootModuleClassBlueprint,
+   IRootFeatureModuleClassBlueprint,
+} from "../interface/IModuleBaseClassBlueprint.js"
 import {
    DefaultIdentity,
    DefaultParams,
@@ -16,32 +16,32 @@ import {
    RootConduitModule,
 } from "../index.js"
 
-export class ConduitModuleFactory<
+export class ModuleClassBlueprint<
       RootParams extends unknown[] = DefaultParams,
       FeatureParams extends unknown[] = DefaultParams,
       RootMethodName extends string = "forRoot",
       FeatureMethodName extends string = "forFeature",
    >
    implements
-      IConduitModuleFactory<
+      IModuleBaseClassBlueprint<
          RootParams,
          FeatureParams,
          RootMethodName,
          FeatureMethodName
       >,
-      IRootConduitFactory<
+      IRootModuleClassBlueprint<
          RootParams,
          FeatureParams,
          RootMethodName,
          FeatureMethodName
       >,
-      IFeatureConduitFactory<
+      IFeatureModuleClassBlueprint<
          RootParams,
          FeatureParams,
          RootMethodName,
          FeatureMethodName
       >,
-      IRootAndFeatureConduitFactory<
+      IRootFeatureModuleClassBlueprint<
          RootParams,
          FeatureParams,
          RootMethodName,
@@ -65,7 +65,7 @@ export class ConduitModuleFactory<
 
    implementRootMethod(
       body?: (...args: RootParams) => DefaultDirector,
-   ): ConduitModuleFactory<
+   ): ModuleClassBlueprint<
       RootParams,
       FeatureParams,
       RootMethodName,
@@ -95,7 +95,7 @@ export class ConduitModuleFactory<
 
    implementFeatureMethod(
       body?: (...args: FeatureParams) => DefaultDirector,
-   ): ConduitModuleFactory<
+   ): ModuleClassBlueprint<
       RootParams,
       FeatureParams,
       RootMethodName,
@@ -123,7 +123,7 @@ export class ConduitModuleFactory<
       return this
    }
 
-   public implementFeatureRootImport(): ConduitModuleFactory<
+   public implementFeatureRootImport(): ModuleClassBlueprint<
       RootParams,
       FeatureParams,
       RootMethodName,
@@ -184,9 +184,8 @@ export class ConduitModuleFactory<
       if (hasFeatureMethod && !hasRootMethod) {
          BaseDynamicConduitModule = class BaseDynamicConduitModule {
             static forFeature(...args: FeatureParams): DynamicModule {
-               const builder: DynamicModuleBuilder = new DynamicModuleBuilder(
-                  this,
-               )
+               const builder: DynamicModuleBlueprint =
+                  new DynamicModuleBlueprint(this)
                if (featureFactoryImpl !== undefined) {
                   const director = featureFactoryImpl(...args)
 
@@ -202,9 +201,8 @@ export class ConduitModuleFactory<
       } else if (!hasFeatureMethod && hasRootMethod) {
          BaseDynamicConduitModule = class BaseDynamicConduitModule {
             static forRoot(...args: RootParams): DynamicModule {
-               const builder: DynamicModuleBuilder = new DynamicModuleBuilder(
-                  this,
-               )
+               const builder: DynamicModuleBlueprint =
+                  new DynamicModuleBlueprint(this)
 
                if (rootFactoryImpl !== undefined) {
                   const director = rootFactoryImpl(...args)
@@ -221,9 +219,8 @@ export class ConduitModuleFactory<
       } else {
          BaseDynamicConduitModule = class BaseDynamicConduitModule {
             static forRoot(...args: RootParams): DynamicModule {
-               const builder: DynamicModuleBuilder = new DynamicModuleBuilder(
-                  this,
-               )
+               const builder: DynamicModuleBlueprint =
+                  new DynamicModuleBlueprint(this)
 
                if (rootFactoryImpl !== undefined) {
                   const director: DefaultDirector = rootFactoryImpl(...args)
@@ -242,9 +239,8 @@ export class ConduitModuleFactory<
             }
 
             static forFeature(...args: FeatureParams): DynamicModule {
-               const builder: DynamicModuleBuilder = new DynamicModuleBuilder(
-                  this,
-               )
+               const builder: DynamicModuleBlueprint =
+                  new DynamicModuleBlueprint(this)
                if (featureFactoryImpl !== undefined) {
                   const director = featureFactoryImpl(...args)
 

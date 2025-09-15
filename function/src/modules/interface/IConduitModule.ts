@@ -1,10 +1,14 @@
 import { DynamicModule } from "@nestjs/common"
 
+type RCM<in RootParams extends {}, in RootMethodName extends string> = {
+   [K in RootMethodName]: (...args: [RootParams]) => DynamicModule
+}
+
 export type RootConduitModule<
-   RootParams extends unknown[],
+   RootParams extends {},
    RootMethodName extends string,
-> = (new () => any) &
-   Record<RootMethodName, (...args: RootParams) => DynamicModule>
+> = (new () => any) & RCM<RootParams, RootMethodName>
+
 export type FeatureConduitModule<
    FeatureParams extends unknown[],
    FeatureMethodName extends string,
