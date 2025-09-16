@@ -1,5 +1,6 @@
 import { Type, DynamicModule, InjectionToken } from "@nestjs/common"
-import { objectKeys } from "simplytyped"
+import { CombineObjects, objectKeys } from "simplytyped"
+import * as z4 from "zod/v4/core"
 import { z } from "zod"
 
 import { zInjectionToken, zModule, zProvider } from "../components/ZodNest.js"
@@ -10,60 +11,98 @@ import {
    IZodModuleClassBlueprint,
 } from "../interface/IZodModuleClassBlueprint.js"
 import { DefaultDirector } from "../interface/IModuleBaseClassBlueprint.js"
+import { objectProperty } from "../interface/IZodModuleClassBuilder.js"
 
 const validPropertyNames: z.ZodString = z.string().regex(/^[a-z][a-zA-Z0-9]+$/)
 
+type NextTokens<Imports extends {}, Name extends string> = CombineObjects<
+   Imports,
+   Record<Name, z.infer<typeof objectProperty>>
+>
+
 export class ZodModuleClassBlueprint<
+   in out ZodInternal extends {},
+   in out ZodImports extends {},
    in out MethodName extends string = "forRootImpl",
 > implements
-      IZodModuleClassBlueprint<MethodName, ZodModuleClassBlueprint<MethodName>>
+      IZodModuleClassBlueprint<
+         ZodInternal,
+         ZodImports,
+         MethodName,
+         ZodModuleClassBlueprint<ZodInternal, ZodImports, MethodName>
+      >
 {
    private global: boolean = false
    private built: boolean = false
 
-   private readonly reservedNames: Set<string>
-   private readonly configObject: z.ZodObject
-   private readonly importsShape: any
-   private readonly importTokens: Record<string, InjectionToken> = {}
    private hasImports = false
 
-   constructor(
-      readonly configObj: z.ZodObject,
+   private constructor(
+      readonly configObject: z.ZodObject<ZodInternal>,
+      readonly importsObject: z.ZodObject<ZodImports>,
       private readonly forRootImplName: MethodName,
-   ) {
-      this.reservedNames = new Set(objectKeys(configObj.shape))
-      this.configObject = z.object({ ...configObj.shape })
+      private readonly reservedNames: Set<string>,
+      private readonly importTokens: Record<string, InjectionToken>,
+   ) {}
+
+   static begin<
+      ZodInternal extends {},
+      MethodName extends string = "forRootImpl",
+   >(
+      configObj: z.ZodObject<ZodInternal>,
+      methodName: MethodName,
+   ): ZodModuleClassBlueprint<ZodInternal, {}, MethodName> {
+      return new ZodModuleClassBlueprint(
+         configObj,
+         z.object({}),
+         methodName,
+         new Set(),
+         {},
+      )
    }
 
-   requireValue<T>(
-      name: string,
+   requireValue<T, Name extends string>(
+      name: Name,
       token: string | symbol | Type<T>,
       schema?: z.ZodType | ((value: unknown) => boolean),
-   ): ZodModuleClassBlueprint<MethodName> {
+   ): ZodModuleClassBlueprint<
+      ZodInternal,
+      NextTokens<ZodImports, Name>,
+      MethodName
+   > {
       this._verifyMutability()
       this.validateName(name)
       const trueValidator: z.ZodType = this.createTrueValidator(schema)
-      this.importsShape[name] = this.createImportProperty(
-         trueValidator,
-         token,
-         true,
-      )
       this.importTokens[name] = token
       this.reservedNames.add(name)
       this.hasImports = true
 
-      return this
+      // const shape: Record<Name, typeof objectProperty> = {
+      const shape = {
+         [name]: objectProperty,
+      }
+      return new ZodModuleClassBlueprint<
+         ZodInternal,
+         NextTokens<ZodImports, Name>,
+         MethodName
+      >(
+         this.configObject,
+         this.importsObject.extend(z.object(shape)),
+         this.forRootImplName,
+         this.reservedNames,
+         this.importTokens,
+      )
    }
 
    requireObject<T extends object>(
       name: string,
       token: string | symbol | Type<T>,
       validator?:
-         | z.ZodObject
-         | z.ZodArray
-         | z.ZodCustom
+         | z4.$ZodObject
+         | z4.$ZodArray
+         | z4.$ZodCustom
          | ((item: unknown) => boolean),
-   ): ZodModuleClassBlueprint<MethodName> {
+   ): ZodModuleClassBlueprint<ZodInternal, MethodName> {
       this._verifyMutability()
       this.validateName(name)
       const trueValidator: z.ZodType =
@@ -77,7 +116,7 @@ export class ZodModuleClassBlueprint<
       return this
    }
 
-   makeGlobal(): ZodModuleClassBlueprint<MethodName> {
+   makeGlobal(): ZodModuleClassBlueprint<ZodInternal, MethodName> {
       this._verifyMutability()
       this.global = true
       return this
@@ -118,7 +157,7 @@ export class ZodModuleClassBlueprint<
       forSchema: z.ZodType,
       toToken: string | symbol | Type,
       expectValue: boolean = false,
-   ): z.ZodUnion {
+   ): z4.$ZodUnion {
       return z.union([
          expectValue
             ? forSchema.pipe(
@@ -192,46 +231,43 @@ export class ZodModuleClassBlueprint<
       ])
    }
 
-   get internalConfig(): z.ZodObject {
-      return this.configObject
-   }
+   // get internalConfig(): z.infer<typeof this.configObject> {
+   //    throw new Error()
+   // }
 
-   get externalConfig(): z.ZodObject {
-      return this.configObject.extend(this.importsObject)
-   }
+   // get _external(): z.infer<typeof this.externalConfig> {
+   //    throw new Error()
+   // }
+   // o
+   // get externalConfig() {
+   //    return z.object({ ...this.importsShape }).extend(this.configObject)
+   // }
 
-   get importsObject(): z.ZodObject {
-      return z.object(...this.importsShape)
-   }
+   // get internal(): z.infer<typeof this.internalConfig> {
+   //    throw new Error("For Type Only")
+   // }
 
-   private get internal(): z.infer<typeof this.internalConfig> {
-      throw new Error("For Type Only")
-   }
-
-   private get external(): z.infer<typeof this.externalConfig> {
-      throw new Error("For Type Only")
-   }
+   // get external(): z.infer<typeof this.externalConfig> {
+   //    throw new Error("For Type Only")
+   // }
 
    // build<External extends z.infer(typeof this.externalConfig), Internal extends z.infer(typeof this.internalConfig)>
-   build<
-      External extends {} = typeof this.external,
-      Internal extends {} = typeof this.internal,
-   >(): BaseZodModule<External, Internal, MethodName> {
+   build(): BaseZodModule<
+      CombineObjects<ZodInternal, ZodImports>,
+      ZodInternal,
+      MethodName
+   > {
       // this._verifyMutability()
       const importsObject = this.importsObject
-      const internalConfigObject = this.internalConfig
-      const externalConfigObject = this.externalConfig
+      const internalConfigObject = this.configObject
+      const externalConfigObject = this.configObject.extend(this.importObject)
 
-      type ExternalConfig = typeof this.external
-      type InternalConfig = typeof this.internal
-      type ImportsObject = z.infer<typeof importsObject>
-
+      type ExternalConfig = z.infer<typeof externalConfigObject>
       const extractImports = externalConfigObject
          .pipe(
-            z.transform((externalInput: ExternalConfig): ImportsObject => {
-               let key
-               const retVal: ImportsObject = {} as unknown as ImportsObject
-               for (key of objectKeys(importsObject)) {
+            z.transform((externalInput: ExternalConfig): ZodImports => {
+               const retVal: ZodImports = {} as unknown as ZodImports
+               for (const key of objectKeys(importsObject)) {
                   retVal[key] = externalInput[key]
                }
                return retVal

@@ -1,19 +1,25 @@
+import { CombineObjects } from "simplytyped"
 import { DefaultDirector } from "./IModuleBaseClassBlueprint.js"
 import { IZodModuleClassBuilder } from "./IZodModuleClassBuilder.js"
 import { DynamicModule } from "@nestjs/common"
 
 export interface IZodModuleClassBlueprint<
+   in out Internal extends {},
+   in out Imports extends {},
    in out M extends string,
-   out B extends IZodModuleClassBuilder<M> = IZodModuleClassBlueprint<
-      M,
-      IZodModuleClassBlueprint<M, any>
-   >,
-> extends IZodModuleClassBuilder<M, B> {
-   build: <External extends {}, Internal extends {}>() => BaseZodModule<
-      External,
+   out B extends IZodModuleClassBlueprint<
       Internal,
-      M
-   >
+      Imports,
+      M,
+      any
+   > = IZodModuleClassBlueprint<
+      Internal,
+      Imports,
+      M,
+      IZodModuleClassBlueprint<Internal, Imports, M, any>
+   >,
+> extends IZodModuleClassBuilder<Internal, Imports, M, B> {
+   build: () => BaseZodModule<CombineObjects<Internal, Imports>, Internal, M>
 }
 
 interface DynamicModulePart<in Params extends {}> {
