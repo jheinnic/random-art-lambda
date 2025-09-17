@@ -3,9 +3,9 @@ import {
    RootAndFeatureConduitModule,
    RootConduitModule,
 } from "./IConduitModule.js"
-import { IConduitModuleBuilder } from "./IConduitModuleBuilder.js"
+import { DefaultDirector } from "./IDynamicModuleBuilder.js"
 
-export interface IConduitModuleFactory<
+export interface IModuleBaseClassBlueprint<
    RootParams extends unknown[],
    FeatureParams extends unknown[],
    RootMethodName extends string,
@@ -13,7 +13,7 @@ export interface IConduitModuleFactory<
 > {
    implementRootMethod: (
       body?: (...args: RootParams) => DefaultDirector,
-   ) => IRootConduitFactory<
+   ) => IRootModuleClassBlueprint<
       RootParams,
       FeatureParams,
       RootMethodName,
@@ -22,13 +22,13 @@ export interface IConduitModuleFactory<
 
    implementFeatureMethod: (
       body?: (...args: FeatureParams) => DefaultDirector,
-   ) => IFeatureConduitFactory<
+   ) => IFeatureModuleClassBlueprint<
       RootParams,
       FeatureParams,
       RootMethodName,
       FeatureMethodName
    >
-   implementFeatureRootImport: () => IRootAndFeatureConduitFactory<
+   implementFeatureRootImport: () => IRootFeatureModuleClassBlueprint<
       RootParams,
       FeatureParams,
       RootMethodName,
@@ -36,11 +36,7 @@ export interface IConduitModuleFactory<
    >
 }
 
-export type Director<T> = (builder: T) => void
-
-export type DefaultDirector = Director<IConduitModuleBuilder>
-
-export interface IRootConduitFactory<
+export interface IRootModuleClassBlueprint<
    RootParams extends unknown[],
    FeatureParams extends unknown[],
    RootMethodName extends string,
@@ -48,7 +44,7 @@ export interface IRootConduitFactory<
 > {
    implementRootMethod: (
       body?: (...args: RootParams) => DefaultDirector,
-   ) => IRootConduitFactory<
+   ) => IRootModuleClassBlueprint<
       RootParams,
       FeatureParams,
       RootMethodName,
@@ -57,14 +53,14 @@ export interface IRootConduitFactory<
 
    implementFeatureMethod: (
       body?: (...args: FeatureParams) => DefaultDirector,
-   ) => IRootAndFeatureConduitFactory<
+   ) => IRootFeatureModuleClassBlueprint<
       RootParams,
       FeatureParams,
       RootMethodName,
       FeatureMethodName
    >
 
-   implementFeatureRootImport: () => IRootAndFeatureConduitFactory<
+   implementFeatureRootImport: () => IRootFeatureModuleClassBlueprint<
       RootParams,
       FeatureParams,
       RootMethodName,
@@ -74,7 +70,7 @@ export interface IRootConduitFactory<
    build: () => RootConduitModule<RootParams, RootMethodName>
 }
 
-export interface IFeatureConduitFactory<
+export interface IFeatureModuleClassBlueprint<
    RootParams extends unknown[],
    FeatureParams extends unknown[],
    RootMethodName extends string,
@@ -82,7 +78,7 @@ export interface IFeatureConduitFactory<
 > {
    implementRootMethod: (
       body?: (...args: RootParams) => DefaultDirector,
-   ) => IRootAndFeatureConduitFactory<
+   ) => IRootFeatureModuleClassBlueprint<
       RootParams,
       FeatureParams,
       RootMethodName,
@@ -91,14 +87,14 @@ export interface IFeatureConduitFactory<
 
    implementFeatureMethod: (
       body?: (...args: FeatureParams) => DefaultDirector,
-   ) => IFeatureConduitFactory<
+   ) => IFeatureModuleClassBlueprint<
       RootParams,
       FeatureParams,
       RootMethodName,
       FeatureMethodName
    >
 
-   implementFeatureRootImport: () => IRootAndFeatureConduitFactory<
+   implementFeatureRootImport: () => IRootFeatureModuleClassBlueprint<
       RootParams,
       FeatureParams,
       RootMethodName,
@@ -108,7 +104,7 @@ export interface IFeatureConduitFactory<
    build: () => FeatureConduitModule<FeatureParams, FeatureMethodName>
 }
 
-export interface IRootAndFeatureConduitFactory<
+export interface IRootFeatureModuleClassBlueprint<
    RootParams extends unknown[],
    FeatureParams extends unknown[],
    RootMethodName extends string,
@@ -116,7 +112,7 @@ export interface IRootAndFeatureConduitFactory<
 > {
    implementRootMethod: (
       body?: (...args: RootParams) => DefaultDirector,
-   ) => IRootAndFeatureConduitFactory<
+   ) => IRootFeatureModuleClassBlueprint<
       RootParams,
       FeatureParams,
       RootMethodName,
@@ -125,14 +121,14 @@ export interface IRootAndFeatureConduitFactory<
 
    implementFeatureMethod: (
       body?: (...args: FeatureParams) => DefaultDirector,
-   ) => IRootAndFeatureConduitFactory<
+   ) => IRootFeatureModuleClassBlueprint<
       RootParams,
       FeatureParams,
       RootMethodName,
       FeatureMethodName
    >
 
-   implementFeatureRootImport: () => IRootAndFeatureConduitFactory<
+   implementFeatureRootImport: () => IRootFeatureModuleClassBlueprint<
       RootParams,
       FeatureParams,
       RootMethodName,
