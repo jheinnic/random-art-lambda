@@ -1,5 +1,5 @@
 import { Type, DynamicModule, InjectionToken } from "@nestjs/common"
-import { CombineObjects, objectKeys } from "simplytyped"
+import { objectKeys } from "simplytyped"
 
 import { IDynamicModuleBlueprint } from "../interface/IDynamicModuleBlueprint.js"
 import { DynamicModuleBlueprint } from "./DynamicModuleBlueprint.js"
@@ -8,7 +8,7 @@ import {
    ExternalConfig,
    IInjectableModuleClassFactory,
    InjectionConfig,
-   ModuleDependencyOption,
+   ModuleDependenciesOption,
 } from "../interface/IInjectableModuleClassFactory.js"
 import { DefaultDirector } from "../interface/IDynamicModuleBuilder.js"
 
@@ -35,7 +35,7 @@ export class InjectableModuleClassFactory<
          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
          objectKeys(importTokens).map((key) => [
             key,
-            {} as unknown as ModuleDependencyOption,
+            {} as unknown as ModuleDependenciesOption,
          ]),
       ) as InjectionConfig<ImportTokens>
 
@@ -90,11 +90,6 @@ export class InjectableModuleClassFactory<
                }),
             ) as InjectionConfig<ImportTokens>
             const internalCfg: InternalConfig = arg as InternalConfig
-
-            const director = (this as any)[methodName](internalCfg)
-            if (director !== undefined) {
-               director(builder)
-            }
 
             Object.keys(injectConfig).forEach((tokenConfigKey): void => {
                const provideToToken: InjectionToken =
@@ -200,6 +195,15 @@ export class InjectableModuleClassFactory<
                   }
                }
             })
+
+            const director = (this as any)[methodName](
+               internalCfg,
+               injectConfig,
+            )
+            if (director !== undefined) {
+               director(builder)
+            }
+
             if (global) {
                builder.makeGlobal()
             }

@@ -61,7 +61,7 @@ export interface UseValueInjection {
    value: any
 }
 
-export type ModuleDependencyOption =
+export type ModuleDependenciesOption =
    | UseTokenForValueInjection
    | UseTokenForFactoryInjection
    | UseProviderForValueInjection
@@ -69,29 +69,34 @@ export type ModuleDependencyOption =
    | UseFunctionInjection
    | UseValueInjection
 
-export type ModuleDependents = Record<string, string | symbol | Type>
+export type ModuleDependencies = Record<string, string | symbol | Type>
 
-export type InjectionConfig<ImportTokens extends ModuleDependents> = Record<
+export type InjectionConfig<ImportTokens extends ModuleDependencies> = Record<
    keyof ImportTokens,
-   ModuleDependencyOption
+   ModuleDependenciesOption
 >
-
 export type ExternalConfig<
    InternalConfig extends {},
-   ImportTokens extends ModuleDependents,
+   ImportTokens extends ModuleDependencies,
 > = CombineObjects<InternalConfig, InjectionConfig<ImportTokens>>
 
 interface DynamicModulePart<
    in InternalConfig extends {},
-   in ImportTokens extends ModuleDependents,
+   in ImportTokens extends ModuleDependencies,
 > {
    forRoot: (
       ...args: [ExternalConfig<InternalConfig, ImportTokens>]
    ) => DynamicModule
 }
 
-type ExtensionPart<in Params extends {}, in MethodName extends string> = {
-   [K in MethodName]: (...args: [Params]) => DefaultDirector
+type ExtensionPart<
+   in Params extends {},
+   in MethodName extends string,
+   in InjectConfig extends Record<string, ModuleDependenciesOption>,
+> = {
+   [K in MethodName]:
+      | ((...args: [Params, InjectConfig]) => DefaultDirector)
+      | ((...args: [Params]) => DefaultDirector)
 }
 
 /**
@@ -102,9 +107,9 @@ type ExtensionPart<in Params extends {}, in MethodName extends string> = {
  * ExternalConfig, that combines the configuration interface provided when the
  * InjectableModuleClassFactory that created this was created with a set of
  * methods that collect Module and InjectionToken pair for each dynamic import
- * dependency that was also defined at that time.
+ * dependencies that was also defined at that time.
  *
- * The dependency information is used to wire module imports and at least an
+ * The dependencies information is used to wire module imports and at least an
  * alias Provider mapping such that the exported offerings named through that part
  * of the External interface are bound to the injection Tokens the subclass
  * of this abstract Module class will be aware of because they were supplied
@@ -123,7 +128,7 @@ type ExtensionPart<in Params extends {}, in MethodName extends string> = {
  * logic that interprets the data object and adds content needed to serve its
  * specification, as well as any standard routine Providers, Imports, Exports,
  * or other Nest components that are part of its business definition.  These are
- * the portions that the specified dependency import exist to support.
+ * the portions that the specified dependencies import exist to support.
  *
  * For example, in the case of the Ipld-based RegionMap repository, the
  * module that registers the concrete repository class as a Provider does so
@@ -133,7 +138,7 @@ type ExtensionPart<in Params extends {}, in MethodName extends string> = {
  * used--we can provide a File based one, and S3-based one, local Memory cached one,
  * or even a Redis-backed Blockstore.  The implementation that accepts the
  * Blockstore implementation chosen by the root deployment module mediator is
- * found in the dependency binding logic from the concrete repository providing
+ * found in the dependencies binding logic from the concrete repository providing
  * Module's base class, which is an instance of this class.
  *
  * This interface is public for the audience of Module developers that are building
@@ -157,7 +162,11 @@ export type AbstractInjectableModule<
    ExtensionMethodName extends string,
 > = (new () => any) &
    DynamicModulePart<InternalConfig, ImportTokens> &
-   ExtensionPart<InternalConfig, ExtensionMethodName>
+   ExtensionPart<
+      InternalConfig,
+      ExtensionMethodName,
+      InjectionConfig<ImportTokens>
+   >
 
 export interface IInjectableModuleClassFactory<
    InternalConfig extends {},

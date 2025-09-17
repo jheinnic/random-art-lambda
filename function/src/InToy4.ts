@@ -4,6 +4,7 @@ import {
    SimpleDynamicModule,
    IDynamicModuleBuilder,
    DefaultDirector,
+   InjectionConfig,
 } from "./modules/index.js"
 import { InjectableModuleClassFactory } from "./modules/di/InjectableModuleClassFactory.js"
 
@@ -70,7 +71,16 @@ const ModuleThreeBase = moduleThreeHost.build()
 export class ModuleThree extends ModuleThreeBase {
    public static forRootImpl(_config: ConfigOne): DefaultDirector {
       return (builder: IDynamicModuleBuilder) => {
-         builder.exportProviders(Crate)
+         builder
+            .exportProviders(Crate)
+            .exportProviders({
+               provide: theBoxThree,
+               useExisting: theBox,
+            })
+            .exportProviders({
+               provide: anotherBoxThree,
+               useExisting: anotherBox,
+            })
       }
    }
 }
@@ -81,21 +91,16 @@ export class ModuleFour extends new InjectableModuleClassFactory<
    typeof importTokens,
    "forRootImpl"
 >(importTokens, "forRootImpl").build() {
-   public static forRootImpl(_config: ConfigOne): DefaultDirector {
+   public static forRootImpl(
+      _config: ConfigOne,
+      injectConfig: InjectionConfig<typeof importTokens>,
+   ): DefaultDirector {
       return (builder: IDynamicModuleBuilder) => {
          builder.exportModules(
             ModuleThree.forRoot({
                value: "thrown",
-               anotherBox: {
-                  use: "token",
-                  for: "value",
-                  token: anotherBox,
-               },
-               theBox: {
-                  use: "token",
-                  for: "value",
-                  token: theBox,
-               },
+               anotherBox: injectConfig.anotherBox,
+               theBox: injectConfig.theBox,
             }),
          )
       }
