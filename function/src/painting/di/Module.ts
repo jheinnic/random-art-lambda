@@ -1,17 +1,17 @@
 import { ChannelWrapper } from "../../channels/ChannelWrapper"
 import { DynamicModule, InjectionToken, Module, Type } from "@nestjs/common"
 import {
-   ConduitModuleFactory,
+   ModuleClassBlueprint,
    DefaultDirector,
-   IConduitModuleBuilder,
-   IConduitModuleFactory,
+   IDynamicModuleBuilder,
+   IModuleBaseClassBlueprint,
 } from "../../modules/index.js"
 import { IRegionMapRepository } from "../../plotting/index.js"
 import { RandomArtTaskCall, RandomArtTaskReply } from "../message/index.js"
 import { PaintingModuleTypes } from "./Types.js"
 import { RandomArtTaskEngine } from "../components/RandomArtTaskEngine.js"
 
-const factory: IConduitModuleFactory<
+const factory: IModuleBaseClassBlueprint<
    [
       Type<any> | DynamicModule,
       Type<IRegionMapRepository> | InjectionToken,
@@ -29,7 +29,7 @@ const factory: IConduitModuleFactory<
    [],
    "forRoot",
    "forFeature"
-> = new ConduitModuleFactory<
+> = new ModuleClassBlueprint<
    [
       DynamicModule,
       InjectionToken,
@@ -57,7 +57,7 @@ const baseClass = factory
             | InjectionToken<ChannelWrapper<RandomArtTaskReply>>,
       ): DefaultDirector => {
          // TODO: Replace with actual DefaultDirector construction logic
-         return (builder: IConduitModuleBuilder): void => {
+         return (builder: IDynamicModuleBuilder): void => {
             builder
                .importModules(repoModule, callChanModule, replyChanModule)
                .defineProviders(
@@ -82,7 +82,7 @@ const baseClass = factory
       },
    )
    .implementFeatureMethod((): DefaultDirector => {
-      return (builder: IConduitModuleBuilder): void => {
+      return (builder: IDynamicModuleBuilder): void => {
          builder.exportProviders({
             provide: PaintingModuleTypes.IRandomArtTaskEngine,
             useClass: RandomArtTaskEngine,
