@@ -1,6 +1,6 @@
 import { CombineObjects } from "simplytyped"
 import { DefaultDirector } from "./IModuleBaseClassBlueprint.js"
-import { IZodModuleClassBuilder } from "./IZodModuleClassBuilder.js"
+import { IZodModuleClassBuilder } from "./IZodModuleClassBuilder.t_st"
 import { DynamicModule } from "@nestjs/common"
 
 export interface IZodModuleClassBlueprint<

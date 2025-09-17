@@ -1,103 +1,105 @@
 import { Type, DynamicModule, InjectionToken } from "@nestjs/common"
-import { objectKeys, StringKeys } from "simplytyped"
-import * as z4 from "zod/v4/core"
-import { z } from "zod"
+import { CombineObjects, objectKeys } from "simplytyped"
 
 import { IDynamicModuleBlueprint } from "../interface/IDynamicModuleBlueprint.js"
 import { DynamicModuleBlueprint } from "./DynamicModuleBlueprint.js"
-import { BaseZodModule } from "../interface/IZodModuleClassBlueprint.js"
-import { DefaultDirector } from "../interface/IModuleBaseClassBlueprint.js"
-import { objectProperty } from "../interface/IZodModuleClassBuilder.js"
+import {
+   AbstractInjectableModule,
+   ExternalConfig,
+   IInjectableModuleClassFactory,
+   InjectionConfig,
+   ModuleDependencyOption,
+} from "../interface/IInjectableModuleClassFactory.js"
+import { DefaultDirector } from "../interface/IDynamicModuleBuilder.js"
 
 // const validPropertyNames: z.ZodString = z.string().regex(/^[a-z][a-zA-Z0-9]+$/)
 
 export class InjectableModuleClassFactory<
-   in out ZodInternalConfig extends z.ZodObject,
+   in out InternalConfig extends {},
    in out ImportTokens extends Record<string, string | symbol | Type>,
    in out MethodName extends string = "forRootImpl",
-> {
+> implements
+      IInjectableModuleClassFactory<InternalConfig, ImportTokens, MethodName>
+{
    private built: boolean = false
 
-   private readonly importsObject
-   private readonly externalConfig
+   readonly injectConfigShape: InjectionConfig<ImportTokens>
+   readonly externalConfigShape: ExternalConfig<InternalConfig, ImportTokens>
 
    constructor(
-      private readonly internalConfig: ZodInternalConfig,
       private readonly importTokens: ImportTokens,
       private readonly forRootImplName: MethodName,
       private readonly global: boolean = false,
    ) {
-      const importApiShape = Object.fromEntries(
-         objectKeys(importTokens).map((key) => [key, objectProperty]),
-      ) as Record<keyof ImportTokens, typeof objectProperty>
+      this.injectConfigShape = Object.fromEntries(
+         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+         objectKeys(importTokens).map((key) => [
+            key,
+            {} as unknown as ModuleDependencyOption,
+         ]),
+      ) as InjectionConfig<ImportTokens>
 
-      this.importsObject = z.object(importApiShape)
-      this.externalConfig = this.internalConfig.extend(this.importsObject.shape)
+      // this.importsObject = z.object(importApiShape)
+      this.externalConfigShape = {} as unknown as ExternalConfig<
+         InternalConfig,
+         ImportTokens
+      >
    }
 
-   get externalConfigType(): z.infer<typeof this.externalConfig> {
+   get externalConfigType(): typeof this.externalConfigShape {
       throw new Error("Inspect this for typeof information only")
    }
 
-   get internalConfigType(): z.infer<typeof this.internalConfig> {
+   get injectConfigType(): typeof this.injectConfigShape {
       throw new Error("Inspect this for typeof information only")
    }
 
-   build(): BaseZodModule<
-      z.infer<typeof this.externalConfig>,
-      z.infer<typeof this.internalConfig>,
-      MethodName
-   > {
-      const importsObject = this.importsObject
-      const internalConfig = this.internalConfig
-      const externalConfig = this.externalConfig
+   get internalConfigType(): InternalConfig {
+      throw new Error("Inspect this for typeof information only")
+   }
 
-      type ExternalConfig = z.infer<typeof externalConfig>
-      type InternalConfig = z.infer<typeof internalConfig>
-      type ImportsObject = z.infer<typeof importsObject>
+   build(): AbstractInjectableModule<InternalConfig, ImportTokens, MethodName> {
+      type ExternalConfig = typeof this.externalConfigType
+      // type InternalConfig = InternalConfig
+      type InjectConfig = typeof this.injectConfigType
 
-      const internalKeys: Set<string> = new Set(
-         objectKeys(internalConfig.shape),
-      ) as unknown as Set<StringKeys<InternalConfig>>
-      const importKeys: Set<string> = new Set(
-         objectKeys(importsObject.shape),
-      ) as unknown as Set<StringKeys<ImportsObject>>
+      const importKeys: Set<keyof ImportTokens> = new Set(
+         objectKeys(this.importTokens),
+      )
 
       const importTokens = this.importTokens
       const methodName = this.forRootImplName
       const global = this.global
 
-      const ZodBaseDynamicModule = class ZodBaseDynamicModule {
+      const AbstractInjectableModule = class AbstractInjectableModule {
          private readonly __I_LIKE_TO_COMPILE: unknown
 
          static forRoot(arg: ExternalConfig): DynamicModule {
             const builder: IDynamicModuleBlueprint = new DynamicModuleBlueprint(
                this,
             )
-            const config: InternalConfig = Object.fromEntries(
-               [...internalKeys].map((key) => [
-                  key,
-                  arg[key as keyof ExternalConfig],
-               ]),
-            ) as InternalConfig
-            const internalCfg: InternalConfig = internalConfig.parse(config)
+            const sourceEntries = Object.entries(arg)
+            const injectConfig: InjectConfig = Object.fromEntries(
+               sourceEntries.filter((entry) => {
+                  if (importKeys.has(entry[0])) {
+                     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+                     delete arg[entry[0]]
+                     return true
+                  }
+                  return false
+               }),
+            ) as InjectionConfig<ImportTokens>
+            const internalCfg: InternalConfig = arg as InternalConfig
 
             const director = (this as any)[methodName](internalCfg)
             if (director !== undefined) {
                director(builder)
             }
 
-            const imports: ImportsObject = Object.fromEntries(
-               [...importKeys].map((key) => [
-                  key,
-                  arg[key as keyof ExternalConfig],
-               ]),
-            ) as ImportsObject
-            const importsCfg: ImportsObject = importsObject.parse(imports)
-            objectKeys(importsCfg).forEach((tokenConfigKey): void => {
+            Object.keys(injectConfig).forEach((tokenConfigKey): void => {
                const provideToToken: InjectionToken =
                   importTokens[tokenConfigKey]
-               const diConfig = importsCfg[tokenConfigKey] as any
+               const diConfig = injectConfig[tokenConfigKey] as any
                switch (diConfig.use) {
                   case "token": {
                      if (diConfig.module !== undefined) {
@@ -211,9 +213,9 @@ export class InjectableModuleClassFactory<
       }
       this.built = true
 
-      return ZodBaseDynamicModule as BaseZodModule<
-         ExternalConfig,
+      return AbstractInjectableModule as AbstractInjectableModule<
          InternalConfig,
+         ImportTokens,
          MethodName
       >
    }

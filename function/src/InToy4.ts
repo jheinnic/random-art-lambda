@@ -5,8 +5,6 @@ import {
    IDynamicModuleBuilder,
    DefaultDirector,
 } from "./modules/index.js"
-import z from "zod"
-import { ZodModuleClassBlueprint } from "./modules/di/ZodModuleClassBlueprint.js"
 import { InjectableModuleClassFactory } from "./modules/di/InjectableModuleClassFactory.js"
 
 const theBoxOne: unique symbol = Symbol("TheOneBox")
@@ -42,24 +40,35 @@ export class CrateService {
    constructor(public readonly crate: Crate) {}
 }
 
-const configOne = z.object()
+// const configOne = z.object()
 
-// export interface ConfigOne {
-// theConduit: DynamicModule
+export interface ConfigOne {
+   value: string
+   // theConduit: DynamicModule
+}
+const importTokens = {
+   theBox,
+   anotherBox,
+} as const
+const moduleThreeHost = new InjectableModuleClassFactory<
+   ConfigOne,
+   typeof importTokens,
+   "forRootImpl"
+>(importTokens, "forRootImpl")
+
+// type foo = typeof moduleZeroHost.externalConfigType
+// const af: foo = {
+//    value: "false",
+// theBox: { use: "value", a: 8, value: theBoxTwo },
+// anotherBox: { use: "token", token: anotherBoxThree },
 // }
-const moduleThreeHost = new InjectableModuleClassFactory(
-   configOne,
-   { theBox, anotherBox },
-   "forRootImpl",
-)
-
-type ConfigOneExternal = typeof moduleThreeHost.externalConfigType
-type ConfigOne = typeof moduleThreeHost.internalConfigType
+// type ConfigOneExternal = typeof moduleThreeHost.externalConfigType
+// type ConfigOne = typeof moduleThreeHost.internalConfigType
 const ModuleThreeBase = moduleThreeHost.build()
 
 @Module({})
 export class ModuleThree extends ModuleThreeBase {
-   public static forRootImpl(config: ConfigOne): DefaultDirector {
+   public static forRootImpl(_config: ConfigOne): DefaultDirector {
       return (builder: IDynamicModuleBuilder) => {
          builder.exportProviders(Crate)
       }
@@ -67,113 +76,142 @@ export class ModuleThree extends ModuleThreeBase {
 }
 
 @Module({})
-export class ModuleFour extends new InjectableModuleClassFactory(
-   configOne,
-   { theBox, anotherBox },
-   "forRootImpl",
-).build() {
-   public static forRootImpl(config: ConfigOne): DefaultDirector {
-      return {
-         module: ModuleFour,
-         imports: [config.theConduit, ModuleThree.register(config)],
-         providers: [
-            {
-               provide: anotherBoxTwo,
-               useExisting: anotherBox,
-            },
-            {
-               provide: theBoxTwo,
-               useExisting: theBox,
-            },
-         ],
-         exports: [theBoxTwo, anotherBoxTwo, ModuleThree],
+export class ModuleFour extends new InjectableModuleClassFactory<
+   ConfigOne,
+   typeof importTokens,
+   "forRootImpl"
+>(importTokens, "forRootImpl").build() {
+   public static forRootImpl(_config: ConfigOne): DefaultDirector {
+      return (builder: IDynamicModuleBuilder) => {
+         builder.exportModules(
+            ModuleThree.forRoot({
+               value: "thrown",
+               anotherBox: {
+                  use: "token",
+                  for: "value",
+                  token: anotherBox,
+               },
+               theBox: {
+                  use: "token",
+                  for: "value",
+                  token: theBox,
+               },
+            }),
+         )
       }
    }
 }
 
+const injectionTwo = {
+   anotherBox: anotherBoxTwo,
+}
 @Module({})
-export class ModuleTwo {
-   public static register(config: ConfigOne): DynamicModule {
-      return {
-         module: ModuleTwo,
-         imports: [config.theConduit, ModuleThree.register(config)],
-         providers: [
-            {
-               provide: anotherBoxTwo,
-               useExisting: anotherBox,
-            },
-            {
-               provide: theBoxTwo,
-               useExisting: theBox,
-            },
-         ],
-         exports: [theBoxTwo, anotherBoxTwo, ModuleThree],
+class ModuleTwo extends new InjectableModuleClassFactory<
+   ConfigOne,
+   typeof injectionTwo,
+   "forRootImpl"
+>(injectionTwo, "forRootImpl", false).build() {
+   public static forRootImpl(_config: ConfigOne): DefaultDirector {
+      return (builder: IDynamicModuleBuilder) => {
+         builder.exportProviders({
+            provide: anotherBoxOne,
+            useExisting: anotherBoxTwo,
+         })
       }
    }
 }
 
+const injectionOne = {
+   theBox: theBoxOne,
+}
 @Module({})
-export class ModuleOne {
-   public static register(config: ConfigOne): DynamicModule {
-      return {
-         module: ModuleOne,
-         imports: [config.theConduit, ModuleFour.register(config)],
-         providers: [
-            {
-               provide: theBoxOne,
-               useExisting: theBox,
-            },
-            {
-               provide: anotherBoxOne,
-               useExisting: anotherBox,
-            },
-         ],
-         exports: [theBoxOne, anotherBoxOne, ModuleFour],
+class ModuleOne extends new InjectableModuleClassFactory<
+   ConfigOne,
+   typeof injectionOne,
+   "forRootImpl"
+>(injectionOne, "forRootImpl", false).build() {
+   public static forRootImpl(_config: ConfigOne): DefaultDirector {
+      return (builder: IDynamicModuleBuilder) => {
+         builder.exportProviders({
+            provide: theBoxTwo,
+            useExisting: theBoxOne,
+         })
       }
    }
 }
 
 const innerConduitModule: DynamicModule = SimpleDynamicModule.registerModule(
    (builder: IDynamicModuleBuilder): void => {
-      builder.exportProviders(
-         {
-            provide: theBox,
-            useFactory: () => {
-               console.log("The 100 box")
-               return new Box(100)
-            },
+      builder.exportProviders({
+         provide: theBox,
+         useFactory: () => {
+            console.log("The 100 box")
+            return new Box(100)
          },
-         {
+      })
+   },
+)
+
+class ModuleZero extends new InjectableModuleClassFactory<
+   ConfigOne,
+   {},
+   "forRootImpl"
+>({}, "forRootImpl", false).build() {
+   static forRootImpl(_config: ConfigOne): DefaultDirector {
+      return (builder: IDynamicModuleBuilder): void => {
+         builder.exportProviders({
             provide: anotherBox,
             useFactory: () => {
                console.log("The 150 box")
                return new Box(150)
             },
-         },
-      )
-   },
-)
-const conduitModule = SimpleDynamicModule.registerModule(
-   (builder: IDynamicModuleBuilder): void => {
-      builder
-         .exportModules(
-            ModuleThree.register({ theConduit: innerConduitModule }),
-         )
-         .exportModules(innerConduitModule)
-   },
-)
+         })
+      }
+   }
+}
 
+const appImports = [
+   innerConduitModule,
+   ModuleOne.forRoot({
+      value: "thing",
+      theBox: {
+         use: "token",
+         for: "value",
+         token: theBox,
+         module: innerConduitModule,
+      },
+   }),
+   ModuleTwo.forRoot({
+      value: "water",
+      anotherBox: {
+         use: "token",
+         for: "value",
+         token: anotherBox,
+         module: ModuleZero.forRoot({
+            value: "zero",
+         }),
+      },
+   }),
+]
+appImports.push(
+   ModuleFour.forRoot({
+      value: "truth",
+      theBox: {
+         use: "token",
+         for: "value",
+         token: theBoxOne,
+         module: appImports[1],
+      },
+      anotherBox: {
+         use: "token",
+         for: "value",
+         token: theBoxTwo,
+         module: appImports[2],
+      },
+   }),
+)
 @Module({
-   imports: [
-      innerConduitModule,
-      conduitModule,
-      ModuleOne.register({
-         theConduit: conduitModule,
-      }),
-      ModuleTwo.register({
-         theConduit: innerConduitModule,
-      }),
-   ],
+   imports: appImports,
    providers: [CrateService],
    exports: [CrateService],
 })

@@ -3,7 +3,7 @@ import {
    RootAndFeatureConduitModule,
    RootConduitModule,
 } from "./IConduitModule.js"
-import { IDynamicModuleBuilder } from "./IDynamicModuleBuilder.js"
+import { DefaultDirector } from "./IDynamicModuleBuilder.js"
 
 export interface IModuleBaseClassBlueprint<
    RootParams extends unknown[],
@@ -35,10 +35,6 @@ export interface IModuleBaseClassBlueprint<
       FeatureMethodName
    >
 }
-
-export type Director<T> = (builder: T) => void
-
-export type DefaultDirector = Director<IDynamicModuleBuilder>
 
 export interface IRootModuleClassBlueprint<
    RootParams extends unknown[],

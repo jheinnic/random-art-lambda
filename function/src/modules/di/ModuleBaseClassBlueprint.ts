@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-extraneous-class */
-import { DynamicModule, Type } from "@nestjs/common"
+import { DynamicModule } from "@nestjs/common"
 import { DynamicModuleBlueprint } from "./DynamicModuleBlueprint.js"
 import type {
-   DefaultDirector,
    IModuleBaseClassBlueprint,
    IFeatureModuleClassBlueprint,
    IRootModuleClassBlueprint,
    IRootFeatureModuleClassBlueprint,
 } from "../interface/IModuleBaseClassBlueprint.js"
 import {
+   DefaultDirector,
    DefaultIdentity,
    DefaultParams,
    FeatureConduitModule,

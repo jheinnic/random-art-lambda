@@ -231,27 +231,6 @@ export class ZodModuleClassBlueprint<
       ])
    }
 
-   // get internalConfig(): z.infer<typeof this.configObject> {
-   //    throw new Error()
-   // }
-
-   // get _external(): z.infer<typeof this.externalConfig> {
-   //    throw new Error()
-   // }
-   // o
-   // get externalConfig() {
-   //    return z.object({ ...this.importsShape }).extend(this.configObject)
-   // }
-
-   // get internal(): z.infer<typeof this.internalConfig> {
-   //    throw new Error("For Type Only")
-   // }
-
-   // get external(): z.infer<typeof this.externalConfig> {
-   //    throw new Error("For Type Only")
-   // }
-
-   // build<External extends z.infer(typeof this.externalConfig), Internal extends z.infer(typeof this.internalConfig)>
    build(): BaseZodModule<
       CombineObjects<ZodInternal, ZodImports>,
       ZodInternal,

@@ -1,4 +1,5 @@
 import { DynamicModule, ForwardReference, Provider, Type } from "@nestjs/common"
+import { Director, Identity } from "./Utility.js"
 
 export interface IDynamicModuleBuilder<
    B extends IDynamicModuleBuilder = IDynamicModuleBuilder<any>,
@@ -18,3 +19,7 @@ export interface IDynamicModuleBuilder<
    exportProviders: (...provider: Array<Type<any> | Provider<unknown>>) => B
    makeGlobal: () => B
 }
+
+export type DefaultDirector = Director<IDynamicModuleBuilder>
+export type DefaultIdentity = Identity<DefaultDirector>
+export type DefaultParams = [DefaultDirector]
