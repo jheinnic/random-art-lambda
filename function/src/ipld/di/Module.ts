@@ -9,7 +9,7 @@ import { IpldModuleTypes } from "./Types.js"
 import { IpldSerdesFactory } from "../components/IpldSerdesFactory.js"
 import {
    SimpleDynamicModule,
-   IConduitModuleBuilder,
+   IDynamicModuleBuilder,
 } from "../../modules/index.js"
 import {
    ISerdes,
@@ -82,7 +82,7 @@ class IpldSerdesModuleBuilder<
       return newThis
    }
 
-   build(): (builder: IConduitModuleBuilder) => void {
+   build(): (builder: IDynamicModuleBuilder) => void {
       const productions: Record<SchemaNameOf<T>, InjectionToken> = this
          .productions as Record<SchemaNameOf<T>, InjectionToken>
       const schemaNames: Array<SchemaNameOf<T>> = objectKeys(productions)
@@ -90,7 +90,7 @@ class IpldSerdesModuleBuilder<
       const hasher: MultihashHasher<Hash> = this.hasher
       const schemaDsl = this.schemaDsl
 
-      return (builder: IConduitModuleBuilder): void => {
+      return (builder: IDynamicModuleBuilder): void => {
          builder
             .identifyAs(this.module)
             .defineProviders({

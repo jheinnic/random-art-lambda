@@ -5,9 +5,9 @@ import {
    Provider,
    Abstract,
 } from "@nestjs/common"
-import { IConduitModuleBuilder } from "../interface/IConduitModuleBuilder.js"
+import { IDynamicModuleBlueprint } from "../interface/IDynamicModuleBlueprint.js"
 
-export class DynamicModuleBuilder implements IConduitModuleBuilder {
+export class DynamicModuleBlueprint implements IDynamicModuleBlueprint {
    private global: boolean = false
 
    private built: boolean = false
@@ -30,7 +30,7 @@ export class DynamicModuleBuilder implements IConduitModuleBuilder {
 
    constructor(private module: Type<any>) {}
 
-   identifyAs(module: Type<any>): IConduitModuleBuilder {
+   identifyAs(module: Type<any>): IDynamicModuleBlueprint {
       this._verifyMutability()
       this.module = module
       return this
@@ -40,7 +40,7 @@ export class DynamicModuleBuilder implements IConduitModuleBuilder {
       ...modules: Array<
          Type<any> | DynamicModule | Promise<DynamicModule> | ForwardReference
       >
-   ): IConduitModuleBuilder {
+   ): IDynamicModuleBlueprint {
       this._verifyMutability()
       this.imports.unshift(...modules)
       return this
@@ -48,7 +48,7 @@ export class DynamicModuleBuilder implements IConduitModuleBuilder {
 
    exportModules(
       ...modules: Array<Type<any> | DynamicModule | ForwardReference>
-   ): IConduitModuleBuilder {
+   ): IDynamicModuleBlueprint {
       this._verifyMutability()
       this.imports.unshift(...modules)
       this.exports.unshift(...modules)
@@ -57,7 +57,7 @@ export class DynamicModuleBuilder implements IConduitModuleBuilder {
 
    defineProviders(
       ...providers: Array<Type<any> | Provider<unknown>>
-   ): IConduitModuleBuilder {
+   ): IDynamicModuleBlueprint {
       this._verifyMutability()
       this.providers.unshift(...providers)
       return this
@@ -65,14 +65,14 @@ export class DynamicModuleBuilder implements IConduitModuleBuilder {
 
    exportProviders(
       ...providers: Array<Type<any> | Provider<unknown>>
-   ): IConduitModuleBuilder {
+   ): IDynamicModuleBlueprint {
       this._verifyMutability()
       this.providers.unshift(...providers)
       this.exports.unshift(...providers)
       return this
    }
 
-   makeGlobal(): IConduitModuleBuilder {
+   makeGlobal(): IDynamicModuleBlueprint {
       this._verifyMutability()
       this.global = true
       return this

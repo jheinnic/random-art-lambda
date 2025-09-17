@@ -1,21 +1,23 @@
 import { DynamicModule, ForwardReference, Provider, Type } from "@nestjs/common"
+import { IDynamicModuleBuilder } from "./IDynamicModuleBuilder.js"
 
-export interface IConduitModuleBuilder {
-   identifyAs: (module: Type<any>) => IConduitModuleBuilder
+export interface IDynamicModuleBlueprint extends IDynamicModuleBuilder {
+   build: () => DynamicModule
+   identifyAs: (module: Type<any>) => IDynamicModuleBuilder
 
    importModules: (
       ...module: Array<
          Type<any> | DynamicModule | Promise<DynamicModule> | ForwardReference
       >
-   ) => IConduitModuleBuilder
+   ) => IDynamicModuleBuilder
    exportModules: (
       ...module: Array<Type<any> | DynamicModule | ForwardReference>
-   ) => IConduitModuleBuilder
+   ) => IDynamicModuleBuilder
    defineProviders: (
       ...providers: Array<Type<any> | Provider<unknown>>
-   ) => IConduitModuleBuilder
+   ) => IDynamicModuleBuilder
    exportProviders: (
       ...provider: Array<Type<any> | Provider<unknown>>
-   ) => IConduitModuleBuilder
-   makeGlobal: () => IConduitModuleBuilder
+   ) => IDynamicModuleBuilder
+   makeGlobal: () => IDynamicModuleBuilder
 }
