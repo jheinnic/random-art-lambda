@@ -1,3 +1,12 @@
+/**
+ * First attempt to create dynamic modules a different way.   This used generics to declare the
+ * signature types and then required implementing and supplying providers to satisfy that contract.
+ * The Module could then be used to inject the provided dependencies.
+ *
+ * No provision for imports and very low automation return.  Later replaced by the SimpleDynamicModule
+ * and its DynamicModuleBlueprint that was later reused as a part of InjectableModuleClassFactory as
+ * well.
+ */
 import {
    Module,
    Injectable,
@@ -6,7 +15,7 @@ import {
    DynamicModule,
 } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
-import { DynamicConduitModule } from "./modules/di/DynamicConduitModule.js"
+import { LegacyConduitModuleFactory } from "./modules/di/ConduitModuleFactory.js"
 
 const theBoxApp: unique symbol = Symbol("TheAppBox")
 
@@ -27,12 +36,15 @@ export class Box {
 
 @Injectable()
 export class Crate {
+   public readonly value: number = Math.random()
    constructor(
       @Inject(theBoxThree)
       public readonly boxOne: Box,
       @Inject(anotherBoxThree)
       public readonly boxTwo: Box,
-   ) {}
+   ) {
+      console.log("This crate is: " + this.value.toString())
+   }
 }
 
 @Injectable()
@@ -55,13 +67,13 @@ export interface ConfigThree {
 }
 
 @Module({})
-class TheBoxConduitModule extends new ConduitModuleFactory<[Box]>(
+class TheBoxConduitModule extends new LegacyConduitModuleFactory<[Box]>(
    "TheBoxConduitModule",
    [theBox],
 ).build() {}
 
 @Module({})
-class AnotherBoxConduitModule extends new ConduitModuleFactory<[Box]>(
+class AnotherBoxConduitModule extends new LegacyConduitModuleFactory<[Box]>(
    "AnotherBoxConduitModule",
    [anotherBox],
 ).build() {}
@@ -127,9 +139,8 @@ const sharedProvidersOne: [Provider<Box>] = [
       },
    },
 ]
-const anotherBoxConduit: DynamicModule = DynamicConduitModule.registerModule(
-   (x) => x.exportProviders(...sharedProvidersOne),
-)
+const anotherBoxConduit: DynamicModule =
+   AnotherBoxConduitModule.forProviders(sharedProvidersOne)
 
 @Module({
    imports: [anotherBoxConduit],
@@ -167,9 +178,8 @@ const sharedProvidersApp: [Provider<Box>] = [
       },
    },
 ]
-const theBoxConduit: DynamicModule = DynamicConduitModule.registerModule((x) =>
-   x.exportProviders(...sharedProvidersApp),
-)
+const theBoxConduit: DynamicModule =
+   TheBoxConduitModule.forProviders(sharedProvidersApp)
 
 @Module({
    imports: [
