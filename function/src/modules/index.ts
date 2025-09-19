@@ -1,6 +1,5 @@
 export * from "./interface/IConduitModule.js"
 export * from "./interface/IDynamicModuleBuilder.js"
-export * from "./interface/IDynamicModuleBlueprint.js"
 export * from "./interface/IModuleClassBlueprint.js"
 export * from "./interface/IInjectableModuleClassFactory.js"
 export * from "./interface/Utility.js"
