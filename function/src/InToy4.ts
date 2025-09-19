@@ -1,12 +1,28 @@
-import { Module, Injectable, Inject, DynamicModule } from "@nestjs/common"
-import { NestFactory } from "@nestjs/core"
+/**
+ * The ExtensibleModuleFactory was a precursor to the Zod refactoring attempt and was an
+ * attempt to inject dependency token handlers by adding them to the forRoot() registration
+ * function Tuple.  This was complicated, and did not have a solution for accepting data
+ * configuration or for combining that with dependency injection.   It was abandoned to
+ * attempt to use zod to manipulate a single schema object.   Focusing on a single object
+ * interface would prove to be a better, but zod was unnecessary and problematic, so
+ * the InjectableModuleClassFactory that follows dropped the use of a Fluent API for
+ * contract definition and is found in InToy5.ts
+ */
 import {
-   SimpleDynamicModule,
-   IDynamicModuleBuilder,
-   DefaultDirector,
-   InjectionConfig,
-} from "./modules/index.js"
-import { InjectableModuleClassFactory } from "./modules/di/InjectableModuleClassFactory.js"
+   Module,
+   Injectable,
+   Inject,
+   DynamicModule,
+   Logger,
+} from "@nestjs/common"
+import { NestFactory } from "@nestjs/core"
+import { SimpleDynamicModule } from "./modules/di/SimpleDynamicModule.js"
+
+import {
+   DependencySolution,
+   DependentModuleFactory,
+} from "../attic/common/di/ExtensibleModuleFactory.js"
+import { IDynamicModuleBuilder } from "./modules/index.js"
 
 const theBoxOne: unique symbol = Symbol("TheOneBox")
 const anotherBoxOne: unique symbol = Symbol("AnotherOneBox")
@@ -27,9 +43,9 @@ export class Box {
 export class Crate {
    public readonly value: number = Math.random()
    constructor(
-      @Inject(theBoxThree)
+      @Inject(theBox)
       public readonly boxOne: Box,
-      @Inject(anotherBoxThree)
+      @Inject(anotherBox)
       public readonly boxTwo: Box,
    ) {
       console.log("This crate is: " + this.value.toString())
@@ -41,214 +57,165 @@ export class CrateService {
    constructor(public readonly crate: Crate) {}
 }
 
-// const configOne = z.object()
-
 export interface ConfigOne {
-   value: string
-   // theConduit: DynamicModule
+   theConduit: DynamicModule
 }
-const importTokens = {
+
+interface DependentsThree {
+   [theBox]: Box
+   [anotherBox]: Box
+}
+
+export const ModuleThreeHost = new DependentModuleFactory<DependentsThree>([
    theBox,
    anotherBox,
-} as const
-const moduleThreeHost = new InjectableModuleClassFactory<
-   ConfigOne,
-   typeof importTokens,
-   "forRootImpl"
->(importTokens, "forRootImpl")
+]).build()
 
-// type foo = typeof moduleZeroHost.externalConfigType
-// const af: foo = {
-//    value: "false",
-// theBox: { use: "value", a: 8, value: theBoxTwo },
-// anotherBox: { use: "token", token: anotherBoxThree },
-// }
-// type ConfigOneExternal = typeof moduleThreeHost.externalConfigType
-// type ConfigOne = typeof moduleThreeHost.internalConfigType
-const ModuleThreeBase = moduleThreeHost.build()
+@Module({
+   providers: [
+      Crate,
+      ModuleThreeHost.dependentProviders[theBox],
+      ModuleThreeHost.dependentProviders[anotherBox],
+   ],
+   exports: [Crate],
+})
+export class ModuleThree extends ModuleThreeHost.moduleClass {
+   static forRoot(options: DependencySolution<DependentsThree>): DynamicModule {
+      const retVal = super.forRoot(options)
+      return {
+         ...retVal,
+         module: ModuleThree,
+      }
+   }
+}
+
+@Module({
+   imports: [ModuleThree],
+   exports: [Crate],
+})
+export class ModuleFour {}
 
 @Module({})
-export class ModuleThree extends ModuleThreeBase {
-   public static forRootImpl(_config: ConfigOne): DefaultDirector {
-      return (builder: IDynamicModuleBuilder) => {
-         builder
-            .exportProviders(Crate)
-            .exportProviders({
-               provide: theBoxThree,
-               useExisting: theBox,
-            })
-            .exportProviders({
-               provide: anotherBoxThree,
+export class ModuleTwo {
+   public static register(config: ConfigOne): DynamicModule {
+      return {
+         module: ModuleTwo,
+         imports: [config.theConduit, ModuleThree],
+         providers: [
+            {
+               provide: anotherBoxTwo,
                useExisting: anotherBox,
-            })
+            },
+            {
+               provide: theBoxTwo,
+               useExisting: theBox,
+            },
+         ],
+         exports: [theBoxTwo, anotherBoxTwo],
       }
    }
 }
 
 @Module({})
-export class ModuleFour extends new InjectableModuleClassFactory<
-   ConfigOne,
-   typeof importTokens,
-   "forRootImpl"
->(importTokens, "forRootImpl").build() {
-   public static forRootImpl(
-      _config: ConfigOne,
-      injectConfig: InjectionConfig<typeof importTokens>,
-   ): DefaultDirector {
-      return (builder: IDynamicModuleBuilder) => {
-         builder.exportModules(
-            ModuleThree.forRoot({
-               value: "thrown",
-               anotherBox: injectConfig.anotherBox,
-               theBox: injectConfig.theBox,
-            }),
-         )
-      }
-   }
-}
-
-const injectionTwo = {
-   anotherBox: anotherBoxTwo,
-}
-@Module({})
-class ModuleTwo extends new InjectableModuleClassFactory<
-   ConfigOne,
-   typeof injectionTwo,
-   "forRootImpl"
->(injectionTwo, "forRootImpl", false).build() {
-   public static forRootImpl(_config: ConfigOne): DefaultDirector {
-      return (builder: IDynamicModuleBuilder) => {
-         builder.exportProviders({
-            provide: anotherBoxOne,
-            useExisting: anotherBoxTwo,
-         })
-      }
-   }
-}
-
-const injectionOne = {
-   theBox: theBoxOne,
-}
-@Module({})
-class ModuleOne extends new InjectableModuleClassFactory<
-   ConfigOne,
-   typeof injectionOne,
-   "forRootImpl"
->(injectionOne, "forRootImpl", false).build() {
-   public static forRootImpl(_config: ConfigOne): DefaultDirector {
-      return (builder: IDynamicModuleBuilder) => {
-         builder.exportProviders({
-            provide: theBoxTwo,
-            useExisting: theBoxOne,
-         })
+export class ModuleOne {
+   public static register(config: ConfigOne): DynamicModule {
+      return {
+         module: ModuleOne,
+         imports: [config.theConduit],
+         providers: [
+            {
+               provide: theBoxOne,
+               useExisting: theBox,
+            },
+            {
+               provide: anotherBoxOne,
+               useExisting: anotherBox,
+            },
+         ],
+         exports: [theBoxOne, anotherBoxOne],
       }
    }
 }
 
 const innerConduitModule: DynamicModule = SimpleDynamicModule.registerModule(
+   "InnerConduitModule",
    (builder: IDynamicModuleBuilder): void => {
-      builder.exportProviders({
-         provide: theBox,
-         useFactory: () => {
-            console.log("The 100 box")
-            return new Box(100)
+      builder.exportProviders(
+         {
+            provide: theBox,
+            useFactory: () => {
+               console.log("The 100 box")
+               return new Box(100)
+            },
          },
-      })
-   },
-)
-
-class ModuleZero extends new InjectableModuleClassFactory<
-   ConfigOne,
-   {},
-   "forRootImpl"
->({}, "forRootImpl", false).build() {
-   static forRootImpl(_config: ConfigOne): DefaultDirector {
-      return (builder: IDynamicModuleBuilder): void => {
-         builder.exportProviders({
+         {
             provide: anotherBox,
             useFactory: () => {
                console.log("The 150 box")
                return new Box(150)
             },
-         })
-      }
-   }
-}
-
-const appImports = [
-   innerConduitModule,
-   ModuleOne.forRoot({
-      value: "thing",
-      theBox: {
-         use: "token",
-         for: "value",
-         token: theBox,
-         module: innerConduitModule,
-      },
-   }),
-   ModuleTwo.forRoot({
-      value: "water",
-      anotherBox: {
-         use: "token",
-         for: "value",
-         token: anotherBox,
-         module: ModuleZero.forRoot({
-            value: "zero",
-         }),
-      },
-   }),
-]
-appImports.push(
-   ModuleFour.forRoot({
-      value: "truth",
-      theBox: {
-         use: "token",
-         for: "value",
-         token: theBoxOne,
-         module: appImports[1],
-      },
-      anotherBox: {
-         use: "token",
-         for: "value",
-         token: theBoxTwo,
-         module: appImports[2],
-      },
-   }),
+         },
+      )
+   },
 )
+const temp = ModuleThree.forRoot({
+   [theBox]: { module: innerConduitModule, export: theBox },
+   [anotherBox]: { module: innerConduitModule, export: theBox },
+})
+
 @Module({
-   imports: appImports,
+   imports: [
+      innerConduitModule,
+      temp,
+      ModuleOne.register({
+         theConduit: innerConduitModule,
+      }),
+      ModuleTwo.register({
+         theConduit: innerConduitModule,
+      }),
+      ModuleThree,
+   ],
    providers: [CrateService],
-   exports: [CrateService],
+   exports: [temp, CrateService],
 })
 export class AppModule {}
 
 async function bootstrap(): Promise<void> {
-   const app = await NestFactory.createApplicationContext(AppModule)
-   const theBoxInst = app.get(theBox)
-   const theBoxOneA = app.get(theBoxOne)
-   const anotherBoxOneA = app.get(anotherBoxOne)
-   const theBoxTwoA = app.get(theBoxTwo)
-   const anotherBoxTwoA = app.get(anotherBoxTwo)
-   const theBoxThreeA = app.get(theBoxThree)
-   const anotherBoxThreeA = app.get(anotherBoxThree)
-   console.log([
-      theBoxInst,
-      theBoxOneA,
-      anotherBoxOneA,
-      theBoxTwoA,
-      anotherBoxTwoA,
-      theBoxThreeA,
-      anotherBoxThreeA,
-   ])
-   const appSvc = app.get(CrateService)
-   console.log(appSvc)
-   console.log(appSvc.crate)
-   console.log(appSvc.crate.boxOne)
-   console.log(appSvc.crate.boxOne.value)
-   console.log(appSvc.crate.boxTwo)
-   console.log(appSvc.crate.boxTwo.value)
-   console.log(appSvc.crate.value)
-   console.log("Done")
+   try {
+      const app = await NestFactory.createApplicationContext(AppModule, {
+         abortOnError: false,
+         snapshot: true,
+      })
+      // const theBoxInst = app.get(theBox)
+      // const theBoxOneA = app.get(theBoxOne)
+      // const anotherBoxOneA = app.get(anotherBoxOne)
+      // const theBoxTwoA = app.get(theBoxTwo)
+      // const anotherBoxTwoA = app.get(anotherBoxTwo)
+      // const theBoxThreeA = app.get(theBoxThree)
+      // const anotherBoxThreeA = app.get(anotherBoxThree)
+      // console.log([
+      //    theBoxInst,
+      //    theBoxOneA,
+      //    anotherBoxOneA,
+      //    theBoxTwoA,
+      //    anotherBoxTwoA,
+      //    theBoxThreeA,
+      //    anotherBoxThreeA,
+      // ])
+      console.log("Application context is ready!")
+      const appSvc = app.get(CrateService)
+      console.log(appSvc)
+      console.log(appSvc.crate)
+      console.log(appSvc.crate.boxOne)
+      console.log(appSvc.crate.boxOne.value)
+      console.log(appSvc.crate.boxTwo)
+      console.log(appSvc.crate.boxTwo.value)
+      console.log(appSvc.crate.value)
+      console.log("Done")
+   } catch (err) {
+      const logger = new Logger("root")
+      logger.error(err)
+   }
 }
 
 bootstrap().catch((x: unknown): void => console.error(x))

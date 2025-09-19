@@ -16,6 +16,14 @@ import {
    RootConduitModule,
 } from "../index.js"
 
+/**
+ * This obsolete Class creational pattern has a very different style to creating Module classes than
+ * its successor, the InjectableModuleClassFactory.  Both use the DynamicModuleBlueprint for the DynamicModule
+ * metadata work, but have different ideas about how to create reusable Classes.
+ *
+ * The Root to Feature sharing concept attempted here does not seem to work, beware.  This will be removed when its
+ * last consumer has been migrated away!
+ */
 export class ModuleClassBlueprint<
       RootParams extends unknown[] = DefaultParams,
       FeatureParams extends unknown[] = DefaultParams,

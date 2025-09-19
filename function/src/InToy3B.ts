@@ -1,6 +1,10 @@
+/**
+ * Raised the bar slightly from InToy3A by splitting the dependencies into
+ * two conduits.
+ */
 import { Module, Injectable, Inject, DynamicModule } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
-import { SimpleDynamicModule, IDynamicModuleBuilder } from "./modules/index.js"
+import { IDynamicModuleBuilder, SimpleDynamicModule } from "./modules/index.js"
 
 const theBoxOne: unique symbol = Symbol("TheOneBox")
 const anotherBoxOne: unique symbol = Symbol("AnotherOneBox")
@@ -38,6 +42,34 @@ export class CrateService {
 export interface ConfigOne {
    theConduit: DynamicModule
 }
+
+export interface ConfigTwo {
+   theBox: DynamicModule
+   anotherBox: DynamicModule
+   moduleThree: DynamicModule
+}
+
+const conduitModule = SimpleDynamicModule.registerModule(
+   "BoxConduitModule",
+   (builder: IDynamicModuleBuilder): void => {
+      builder.exportProviders(
+         {
+            provide: theBox,
+            useFactory: () => {
+               console.log("The 100 box")
+               return new Box(100)
+            },
+         },
+         {
+            provide: anotherBox,
+            useFactory: () => {
+               console.log("The 150 box")
+               return new Box(150)
+            },
+         },
+      )
+   },
+)
 
 @Module({})
 export class ModuleThree {
@@ -126,45 +158,17 @@ export class ModuleOne {
    }
 }
 
-const innerConduitModule: DynamicModule = SimpleDynamicModule.registerModule(
-   (builder: IDynamicModuleBuilder): void => {
-      builder.exportProviders(
-         {
-            provide: theBox,
-            useFactory: () => {
-               console.log("The 100 box")
-               return new Box(100)
-            },
-         },
-         {
-            provide: anotherBox,
-            useFactory: () => {
-               console.log("The 150 box")
-               return new Box(150)
-            },
-         },
-      )
-   },
-)
-const conduitModule = SimpleDynamicModule.registerModule(
-   (builder: IDynamicModuleBuilder): void => {
-      builder
-         .exportModules(
-            ModuleThree.register({ theConduit: innerConduitModule }),
-         )
-         .exportModules(innerConduitModule)
-   },
-)
-
 @Module({
    imports: [
-      innerConduitModule,
       conduitModule,
       ModuleOne.register({
          theConduit: conduitModule,
       }),
       ModuleTwo.register({
-         theConduit: innerConduitModule,
+         theConduit: conduitModule,
+      }),
+      ModuleThree.register({
+         theConduit: conduitModule,
       }),
    ],
    providers: [CrateService],
