@@ -27,13 +27,7 @@ export class SimpleDynamicModule {
          enumerable: false,
          configurable: true,
       })
-      const aDecoratedModuleClass = Module({})(aModuleClass)
-      if (aDecoratedModuleClass !== undefined) {
-         aModuleClass = aDecoratedModuleClass
-      } else {
-         throw new Error("Failed to decorate generated module class?")
-      }
-
+      Module({})(aModuleClass)
       return aModuleClass.registerModule(director)
    }
 }

@@ -9,10 +9,16 @@ import {
    EnrollSourceFileCall,
    EnrollSourceFileReply,
 } from "../message/index.js"
+import { PBufRegionMapFactory } from "../components/PBufRegionMapFactory.js"
 
 export const regionMapRepositoryAlias = {
    provide: PlottingModuleTypes.IRegionMapRepository,
    useExisting: PBufRegionMapRepository,
+}
+
+export const regionMapFactoryAlias = {
+   provide: ProtobufPlottingModuleTypes.ProtobufRegionMapFactory,
+   useExisting: PBufRegionMapFactory,
 }
 
 export const unpackConfiguredCallChannel = {

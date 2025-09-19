@@ -14,6 +14,7 @@ const injectModuleTokens = {
    // regionMapRepo: CliMainModuleTypes.RegionMapRepository,
    taskCallChannel: CliMainModuleTypes.RandomArtTaskCallChannel,
    taskReplyChannel: CliMainModuleTypes.RandomArtTaskReplyChannel,
+   queueFlowProducer: CliMainModuleTypes.RandomArtQueueFlowProducer,
 }
 
 interface ModuleDataConfig {

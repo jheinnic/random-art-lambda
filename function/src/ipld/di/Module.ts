@@ -35,7 +35,10 @@ export class IpldModule {
       )
       director(builder)
 
-      return SimpleDynamicModule.registerModule(builder.build())
+      return SimpleDynamicModule.registerModule(
+         "IpldSerdesModule",
+         builder.build(),
+      )
    }
 }
 

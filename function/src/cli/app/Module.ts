@@ -10,7 +10,8 @@ import { PaintingModule } from "../../painting/di/Module.js"
 import { QueueingPaintModule } from "../../painting/queue/di/Module.js"
 import { CliMainModule } from "../main/di/Module.js"
 
-import { plottingModule, paintingModule } from "./Imports.js"
+import { plottingModule, paintingModule, queueModule } from "./Imports.js"
+import { QueuedPaintingTypes } from "../../painting/queue/di/Types.js"
 
 @Module({
    imports: [
@@ -18,48 +19,7 @@ import { plottingModule, paintingModule } from "./Imports.js"
       CliChannelsModule,
       plottingModule,
       paintingModule,
-      QueueingPaintModule.forRoot({
-         redis: {
-            host: "localhost",
-            port: 6379,
-         },
-         logRetention: {
-            keepLogs: 250,
-            removeOnComplete: false,
-            removeOnFail: false,
-         },
-         jobDataSizeLimit: 1024 ^ 3,
-         queueNames: {
-            toFlow: "paintFlows",
-            toPaint: "paintTasks",
-            toStore: "paintStore",
-            toReturn: "paintReturn",
-         },
-         paintEngine: {
-            use: "token",
-            for: "value",
-            module: paintingModule,
-            token: PaintingModuleTypes.IRandomArtTaskEngine,
-         },
-         regionMapRepo: {
-            use: "token",
-            for: "value",
-            module: plottingModule,
-            token: IpldPlottingModuleTypes.IpldRegionMapRepository,
-         },
-         randomArtTaskCallChannel: {
-            use: "token",
-            for: "value",
-            module: CliChannelsModule,
-            token: CliChannelsModuleTypes.RandomArtTaskCallChannel,
-         },
-         randomArtTaskReplyChannel: {
-            use: "token",
-            for: "value",
-            module: CliChannelsModule,
-            token: CliChannelsModuleTypes.RandomArtTaskReplyChannel,
-         },
-      }),
+      queueModule,
       CliMainModule.forRoot({
          _i_can: true,
          paintEngine: {
@@ -67,6 +27,12 @@ import { plottingModule, paintingModule } from "./Imports.js"
             for: "value",
             module: paintingModule,
             token: PaintingModuleTypes.IRandomArtTaskEngine,
+         },
+         queueFlowProducer: {
+            use: "token",
+            for: "value",
+            module: queueModule,
+            token: QueuedPaintingTypes.FlowProducer,
          },
          // regionMapRepo: {
          //    use: "token",
