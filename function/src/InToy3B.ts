@@ -56,14 +56,14 @@ const conduitModule = SimpleDynamicModule.registerModule(
          {
             provide: theBox,
             useFactory: () => {
-               console.log("The 100 box")
+               console.log("Created the 100 box")
                return new Box(100)
             },
          },
          {
             provide: anotherBox,
             useFactory: () => {
-               console.log("The 150 box")
+               console.log("Created the 150 box")
                return new Box(150)
             },
          },

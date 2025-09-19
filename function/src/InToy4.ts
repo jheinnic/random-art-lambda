@@ -28,8 +28,8 @@ const theBoxOne: unique symbol = Symbol("TheOneBox")
 const anotherBoxOne: unique symbol = Symbol("AnotherOneBox")
 const theBoxTwo: unique symbol = Symbol("TheTwoBox")
 const anotherBoxTwo: unique symbol = Symbol("AnotherTwoBox")
-const theBoxThree: unique symbol = Symbol("TheThreeBox")
-const anotherBoxThree: unique symbol = Symbol("AnotherThreeBox")
+// const theBoxThree: unique symbol = Symbol("TheThreeBox")
+// const anotherBoxThree: unique symbol = Symbol("AnotherThreeBox")
 
 const theBox: unique symbol = Symbol("TheBox")
 const anotherBox: unique symbol = Symbol("AnotherBox")
@@ -144,14 +144,14 @@ const innerConduitModule: DynamicModule = SimpleDynamicModule.registerModule(
          {
             provide: theBox,
             useFactory: () => {
-               console.log("The 100 box")
+               console.log("Created the 100 box")
                return new Box(100)
             },
          },
          {
             provide: anotherBox,
             useFactory: () => {
-               console.log("The 150 box")
+               console.log("Created the 150 box")
                return new Box(150)
             },
          },

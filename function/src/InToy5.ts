@@ -153,11 +153,12 @@ class ModuleOne extends hostOne.build() {
 }
 
 const innerConduitModule: DynamicModule = SimpleDynamicModule.registerModule(
+   "InnerConduitModule",
    (builder: IDynamicModuleBuilder): void => {
       builder.exportProviders({
          provide: theBox,
          useFactory: () => {
-            console.log("The 100 box")
+            console.log("Created the 100 box")
             return new Box(100)
          },
       })
@@ -172,7 +173,7 @@ class ModuleZero extends InjectableModuleClassFactory.create(
          builder.exportProviders({
             provide: anotherBox,
             useFactory: () => {
-               console.log("The 150 box")
+               console.log("Created the 150 box")
                return new Box(150)
             },
          })
