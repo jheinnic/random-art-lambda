@@ -42,14 +42,14 @@ export interface IRootModuleClassBlueprint<
    RootMethodName extends string,
    FeatureMethodName extends string,
 > {
-   implementRootMethod: (
-      body?: (...args: RootParams) => DefaultDirector,
-   ) => IRootModuleClassBlueprint<
-      RootParams,
-      FeatureParams,
-      RootMethodName,
-      FeatureMethodName
-   >
+   // implementRootMethod: (
+   //    body?: (...args: RootParams) => DefaultDirector,
+   // ) => IRootModuleClassBlueprint<
+   //    RootParams,
+   //    FeatureParams,
+   //    RootMethodName,
+   //    FeatureMethodName
+   // >
 
    implementFeatureMethod: (
       body?: (...args: FeatureParams) => DefaultDirector,
@@ -110,14 +110,14 @@ export interface IRootFeatureModuleClassBlueprint<
    RootMethodName extends string,
    FeatureMethodName extends string,
 > {
-   implementRootMethod: (
-      body?: (...args: RootParams) => DefaultDirector,
-   ) => IRootFeatureModuleClassBlueprint<
-      RootParams,
-      FeatureParams,
-      RootMethodName,
-      FeatureMethodName
-   >
+   // implementRootMethod: (
+   //    body?: (...args: RootParams) => DefaultDirector,
+   // ) => IRootFeatureModuleClassBlueprint<
+   //    RootParams,
+   //    FeatureParams,
+   //    RootMethodName,
+   //    FeatureMethodName
+   // >
 
    implementFeatureMethod: (
       body?: (...args: FeatureParams) => DefaultDirector,
