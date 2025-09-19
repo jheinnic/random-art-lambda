@@ -13,6 +13,7 @@ import {
 } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
 import { SimpleDynamicModule } from "./modules/di/SimpleDynamicModule.js"
+import { IDynamicModuleBuilder } from "./modules/index.js"
 
 const theBoxApp: unique symbol = Symbol("TheAppBox")
 
@@ -129,6 +130,7 @@ const sharedProvidersOne: [Provider<Box>, Provider] = [
    },
 ]
 const anotherBoxConduit: DynamicModule = SimpleDynamicModule.registerModule(
+   "AnotherBoxConduitModule",
    (x) => x.exportProviders(...sharedProvidersOne),
 )
 
@@ -172,8 +174,9 @@ const sharedProvidersApp: [Provider<Box>, Provider] = [
       useExisting: theBoxApp,
    },
 ]
-const theBoxConduit: DynamicModule = SimpleDynamicModule.registerModule((x) =>
-   x.exportProviders(...sharedProvidersApp),
+const theBoxConduit: DynamicModule = SimpleDynamicModule.registerModule(
+   "TheBoxConduitModule",
+   (x: IDynamicModuleBuilder) => x.exportProviders(...sharedProvidersApp),
 )
 
 @Module({

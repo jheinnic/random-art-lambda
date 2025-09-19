@@ -15,7 +15,7 @@ import {
    DynamicModule,
 } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
-import { LegacyConduitModuleFactory } from "./modules/di/ConduitModuleFactory.js"
+import { LegacyConduitModuleFactory } from "./modules/di/LegacyConduitModuleFactory.js"
 
 const theBoxApp: unique symbol = Symbol("TheAppBox")
 
