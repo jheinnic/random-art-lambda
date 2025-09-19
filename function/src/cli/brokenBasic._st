@@ -1,0 +1,96 @@
+import { NestFactory } from "@nestjs/core"
+// import { sha256 as hash } from "multiformats/hashes/sha2"
+// import { CID } from "multiformats"
+import {
+   CliAppModule,
+   CliChannelsModule,
+   CliChannelsModuleTypes,
+} from "./index.js"
+import * as Modules from "./app/Imports.js"
+import { EnrollSourceFileCall } from "../plotting/protobuf/message/EnrollSourceFileCall.js"
+import { take, put, close, Chan } from "medium"
+import { EnrollSourceFileReply } from "../plotting/protobuf/message/EnrollSourceFileReply.js"
+import { RandomArtTaskCall } from "../painting/message/RandomArtTaskCall.js"
+import { RandomArtTaskEngine } from "../painting/components/RandomArtTaskEngine.js"
+import { RandomArtTaskReply } from "../painting/message/RandomArtTaskReply.js"
+import { IRandomArtTaskEngine, PaintingModuleTypes } from "../painting/index.js"
+
+async function bootstrap(): Promise<void> {
+   const app = await NestFactory.createApplicationContext(CliAppModule)
+
+   const inputFiles: Chan<EnrollSourceFileCall> = app
+      .select(CliChannelsModule)
+      .get(CliChannelsModuleTypes.EnrollSourceFileCallChannel)
+   console.log(inputFiles)
+
+   const returnCids: Chan<EnrollSourceFileReply> = app
+      .select(CliChannelsModule)
+      .get(CliChannelsModuleTypes.EnrollSourceFileReplyChannel)
+   console.log(inputFiles)
+
+   const randomArtEngine: IRandomArtTaskEngine = app
+      .select(CliChannelsModule)
+      .get(PaintingModuleTypes.IRandomArtTaskEngine)
+   console.log(randomArtEngine)
+
+   const paintCalls: Chan<EnrollSourceFileCall> = app
+      .select(CliChannelsModule)
+      .get(CliChannelsModuleTypes.RandomArtTaskCallChannel)
+   console.log(paintCalls)
+
+   const paintReplies: Chan<RandomArtTaskReply> = app
+      .select(CliChannelsModule)
+      .get(CliChannelsModuleTypes.RandomArtTaskReplyChannel)
+   console.log(paintReplies)
+
+   const inputs = [
+      new EnrollSourceFileCall(
+         "/home/ionadmin/Git/lambdas/random-art-lambda/function/rdoc01.proto",
+      ),
+      new EnrollSourceFileCall(
+         "/home/ionadmin/Git/lambdas/random-art-lambda/function/rdoc02.proto",
+      ),
+      new EnrollSourceFileCall(
+         "/home/ionadmin/Git/lambdas/random-art-lambda/function/rdoc03.proto",
+      ),
+      new EnrollSourceFileCall(
+         "/home/ionadmin/Git/lambdas/random-art-lambda/function/tdoc01.proto",
+      ),
+   ]
+   const tracking: Record<
+      string,
+      EnrollSourceFileCall | EnrollSourceFileReply
+   > = {}
+   const sendAll = Promise.all(
+      inputs.map(async (next: EnrollSourceFileCall) => {
+         tracking[next.correlationId] = next
+         await put(inputFiles, next)
+         return next
+      }),
+   )
+   const receiveAll: Promise<Array<EnrollSourceFileReply | boolean>> =
+      Promise.all(
+         inputs.map(async () => {
+            const next: symbol | EnrollSourceFileReply = await take(returnCids)
+            if (typeof next === "symbol") {
+               console.log("Received end of reply stream")
+               return false
+            }
+            tracking[next.correlationId] = next
+            if (next.isError()) {
+               throw new Error(next.error)
+            }
+            return next
+         }),
+      )
+   await sendAll
+   await receiveAll
+   await close(inputFiles)
+
+   console.log(tracking)
+
+   await randomArtEngine.begin()
+   await randomArtEngine.stop()
+   // console.log("Fin", msg)
+   console.log("Fin")
+}
