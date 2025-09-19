@@ -149,7 +149,7 @@ const sharedProvidersOne = [
    {
       provide: anotherBoxOne,
       useFactory: () => {
-         console.log("Creating the 150 box")
+         console.log("Created the 150 box")
          return new Box(150)
       },
    },
@@ -197,7 +197,7 @@ const sharedProvidersApp = [
    {
       provide: theBoxApp,
       useFactory: () => {
-         console.log("Creating the 100 box")
+         console.log("Created the 100 box")
          return new Box(100)
       },
    },

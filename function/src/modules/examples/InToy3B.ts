@@ -1,21 +1,10 @@
 /**
- * First experiment with SimpleDynamicModule for imperative conduit creation
- *
- * This first test uses only one Dynamic Conduit to carry both dependencies.
+ * Raised the bar slightly from InToy3A by splitting the dependencies into
+ * two conduits.
  */
-
-import {
-   Module,
-   Injectable,
-   Inject,
-   Provider,
-   DynamicModule,
-} from "@nestjs/common"
+import { Module, Injectable, Inject, DynamicModule } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
-import { SimpleDynamicModule } from "./modules/di/SimpleDynamicModule.js"
-import { IDynamicModuleBuilder } from "./modules/index.js"
-
-const theBoxApp: unique symbol = Symbol("TheAppBox")
+import { IDynamicModuleBuilder, SimpleDynamicModule } from "../index.js"
 
 const theBoxOne: unique symbol = Symbol("TheOneBox")
 const anotherBoxOne: unique symbol = Symbol("AnotherOneBox")
@@ -51,25 +40,43 @@ export class CrateService {
 }
 
 export interface ConfigOne {
-   theBox: DynamicModule
+   theConduit: DynamicModule
 }
 
 export interface ConfigTwo {
    theBox: DynamicModule
    anotherBox: DynamicModule
+   moduleThree: DynamicModule
 }
 
-export interface ConfigThree {
-   theBox: DynamicModule
-   anotherBox: DynamicModule
-}
+const conduitModule = SimpleDynamicModule.registerModule(
+   "BoxConduitModule",
+   (builder: IDynamicModuleBuilder): void => {
+      builder.exportProviders(
+         {
+            provide: theBox,
+            useFactory: () => {
+               console.log("Created the 100 box")
+               return new Box(100)
+            },
+         },
+         {
+            provide: anotherBox,
+            useFactory: () => {
+               console.log("Created the 150 box")
+               return new Box(150)
+            },
+         },
+      )
+   },
+)
 
 @Module({})
 export class ModuleThree {
-   public static register(config: ConfigThree): DynamicModule {
+   public static register(config: ConfigOne): DynamicModule {
       return {
          module: ModuleThree,
-         imports: [config.theBox, config.anotherBox],
+         imports: [config.theConduit],
          providers: [
             {
                provide: anotherBoxThree,
@@ -89,18 +96,11 @@ export class ModuleThree {
 }
 
 @Module({})
-export class ModuleTwo {
-   public static register(config: ConfigTwo): DynamicModule {
+export class ModuleFour {
+   public static register(config: ConfigOne): DynamicModule {
       return {
-         module: ModuleTwo,
-         imports: [
-            config.theBox,
-            config.anotherBox,
-            ModuleThree.register({
-               theBox: config.theBox,
-               anotherBox: config.anotherBox,
-            }),
-         ],
+         module: ModuleFour,
+         imports: [config.theConduit, ModuleThree.register(config)],
          providers: [
             {
                provide: anotherBoxTwo,
@@ -116,74 +116,59 @@ export class ModuleTwo {
    }
 }
 
-const sharedProvidersOne: [Provider<Box>, Provider] = [
-   {
-      provide: anotherBoxOne,
-      useFactory: () => {
-         console.log("Created the 150 box")
-         return new Box(150)
-      },
-   },
-   {
-      provide: anotherBox,
-      useExisting: anotherBoxOne,
-   },
-]
-const anotherBoxConduit: DynamicModule = SimpleDynamicModule.registerModule(
-   "AnotherBoxConduitModule",
-   (x) => x.exportProviders(...sharedProvidersOne),
-)
+@Module({})
+export class ModuleTwo {
+   public static register(config: ConfigOne): DynamicModule {
+      return {
+         module: ModuleTwo,
+         imports: [config.theConduit, ModuleThree.register(config)],
+         providers: [
+            {
+               provide: anotherBoxTwo,
+               useExisting: anotherBox,
+            },
+            {
+               provide: theBoxTwo,
+               useExisting: theBox,
+            },
+         ],
+         exports: [theBoxTwo, anotherBoxTwo, ModuleThree],
+      }
+   }
+}
 
-@Module({
-   imports: [anotherBoxConduit],
-   providers: [],
-   exports: [],
-})
+@Module({})
 export class ModuleOne {
    public static register(config: ConfigOne): DynamicModule {
       return {
          module: ModuleOne,
-         imports: [
-            config.theBox,
-            ModuleTwo.register({
-               theBox: config.theBox,
-               anotherBox: anotherBoxConduit,
-            }),
-         ],
+         imports: [config.theConduit, ModuleFour.register(config)],
          providers: [
             {
                provide: theBoxOne,
                useExisting: theBox,
             },
+            {
+               provide: anotherBoxOne,
+               useExisting: anotherBox,
+            },
          ],
-         exports: [theBoxOne, ModuleTwo],
+         exports: [theBoxOne, anotherBoxOne, ModuleFour],
       }
    }
 }
 
-const sharedProvidersApp: [Provider<Box>, Provider] = [
-   {
-      provide: theBoxApp,
-      useFactory: () => {
-         console.log("Created the 100 box")
-         return new Box(100)
-      },
-   },
-   {
-      provide: theBox,
-      useExisting: theBoxApp,
-   },
-]
-const theBoxConduit: DynamicModule = SimpleDynamicModule.registerModule(
-   "TheBoxConduitModule",
-   (x: IDynamicModuleBuilder) => x.exportProviders(...sharedProvidersApp),
-)
-
 @Module({
    imports: [
-      theBoxConduit,
+      conduitModule,
       ModuleOne.register({
-         theBox: theBoxConduit,
+         theConduit: conduitModule,
+      }),
+      ModuleTwo.register({
+         theConduit: conduitModule,
+      }),
+      ModuleThree.register({
+         theConduit: conduitModule,
       }),
    ],
    providers: [CrateService],
@@ -193,7 +178,7 @@ export class AppModule {}
 
 async function bootstrap(): Promise<void> {
    const app = await NestFactory.createApplicationContext(AppModule)
-   const theBoxAppA = app.get(theBoxApp)
+   const theBoxInst = app.get(theBox)
    const theBoxOneA = app.get(theBoxOne)
    const anotherBoxOneA = app.get(anotherBoxOne)
    const theBoxTwoA = app.get(theBoxTwo)
@@ -201,7 +186,7 @@ async function bootstrap(): Promise<void> {
    const theBoxThreeA = app.get(theBoxThree)
    const anotherBoxThreeA = app.get(anotherBoxThree)
    console.log([
-      theBoxAppA,
+      theBoxInst,
       theBoxOneA,
       anotherBoxOneA,
       theBoxTwoA,
@@ -216,6 +201,7 @@ async function bootstrap(): Promise<void> {
    console.log(appSvc.crate.boxOne.value)
    console.log(appSvc.crate.boxTwo)
    console.log(appSvc.crate.boxTwo.value)
+   console.log(appSvc.crate.value)
    console.log("Done")
 }
 

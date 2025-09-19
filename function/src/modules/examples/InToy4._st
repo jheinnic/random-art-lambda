@@ -16,13 +16,13 @@ import {
    Logger,
 } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
-import { SimpleDynamicModule } from "./modules/di/SimpleDynamicModule.js"
+import { SimpleDynamicModule } from "../di/SimpleDynamicModule.js"
 
 import {
    DependencySolution,
    DependentModuleFactory,
-} from "../attic/common/di/ExtensibleModuleFactory.js"
-import { IDynamicModuleBuilder } from "./modules/index.js"
+} from "../../../attic/common/di/ExtensibleModuleFactory.js"
+import { IDynamicModuleBuilder } from "../index.js"
 
 const theBoxOne: unique symbol = Symbol("TheOneBox")
 const anotherBoxOne: unique symbol = Symbol("AnotherOneBox")

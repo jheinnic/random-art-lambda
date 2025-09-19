@@ -5,8 +5,8 @@ import {
    IDynamicModuleBuilder,
    DefaultDirector,
    InjectionConfig,
-} from "./modules/index.js"
-import { InjectableModuleClassFactory } from "./modules/di/InjectableModuleClassFactory.js"
+} from "../index.js"
+import { InjectableModuleClassFactory } from "../di/InjectableModuleClassFactory.js"
 
 const theBoxOne: unique symbol = Symbol("TheOneBox")
 const anotherBoxOne: unique symbol = Symbol("AnotherOneBox")
