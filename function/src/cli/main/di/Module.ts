@@ -1,27 +1,39 @@
-import { Module, ConfigurableModuleBuilder } from "@nestjs/common"
+import { DynamicModule, Module } from "@nestjs/common"
 
-import { CliMainModuleConfiguration } from "./Configuration.js"
 import { CliMainModuleTypes } from "./Types.js"
-import { allProviders } from "./Providers.js"
+import {
+   DefaultDirector,
+   IDynamicModuleBuilder,
+   InjectableModuleClassFactory,
+} from "../../../modules/index.js"
 
-// import { PlotCommand } from "../components/PlotCommand.js"
 import { GenericService } from "../components/GenericService.js"
-import { QueueingPaintModule } from "../../../painting/queue/di/Module.js"
 
-const dynamicHost = new ConfigurableModuleBuilder<CliMainModuleConfiguration>({
-   moduleName: "CliMainModule",
-   optionsInjectionToken: CliMainModuleTypes.ModuleConfiguration,
-   alwaysTransient: false,
-}).build()
+const injectModuleTokens = {
+   paintEngine: CliMainModuleTypes.RandomArtTaskEngine,
+   // regionMapRepo: CliMainModuleTypes.RegionMapRepository,
+   taskCallChannel: CliMainModuleTypes.RandomArtTaskCallChannel,
+   taskReplyChannel: CliMainModuleTypes.RandomArtTaskReplyChannel,
+}
 
-export type CliMainModuleAsyncOptions = typeof dynamicHost.ASYNC_OPTIONS_TYPE
-export type CliMainModuleOptions = typeof dynamicHost.OPTIONS_TYPE
+interface ModuleDataConfig {
+   _i_can?: boolean
+}
 
-// console.log(allProviders)
+const moduleHost = InjectableModuleClassFactory.create(
+   injectModuleTokens,
+   (_config: ModuleDataConfig): DefaultDirector => {
+      return (builder: IDynamicModuleBuilder): void => {
+         builder.exportProviders(GenericService)
+      }
+   },
+)
 
-@Module({
-   imports: [QueueingPaintModule],
-   providers: [...allProviders, GenericService],
-   exports: [GenericService],
-})
-export class CliMainModule extends dynamicHost.ConfigurableModuleClass {}
+export type CliMainConfiguration = typeof moduleHost.externalConfig
+
+@Module({})
+export class CliMainModule extends moduleHost.build() {
+   public static forRoot(config: CliMainConfiguration): DynamicModule {
+      return super.forRoot(config)
+   }
+}
