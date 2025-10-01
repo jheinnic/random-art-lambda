@@ -391,13 +391,13 @@ const methodHolder = {
          return hash_accu & 0x3fffffff
       }
       const caml_input_value = function () {
-         throw "caml_input_value"
+         throw new Error("caml_input_value")
       }
       const caml_input_value_from_string = function () {
-         throw "caml_input_value_from_string"
+         throw new Error("caml_input_value_from_string")
       }
       const caml_install_signal_handler = function () {
-         throw "caml_install_signal_handler"
+         throw new Error("caml_install_signal_handler")
       }
       const caml_int_compare = function (i1, i2) {
          return (i1 > i2) - (i1 < i2)
@@ -406,7 +406,7 @@ const methodHolder = {
          return (i1 > i2) - (i1 < i2)
       }
       const caml_int64_compare = function (i1, i2) {
-         throw "caml_int64_compare"
+         throw new Error("caml_int64_compare")
       }
       const caml_int64_float_of_bits = function (s) {
          // see pervasives.ml; int64s are represented by strings
@@ -454,37 +454,37 @@ const methodHolder = {
          return a
       }
       const caml_marshal_data_size = function () {
-         throw "caml_marshal_data_size"
+         throw new Error("caml_marshal_data_size")
       }
       const caml_md5_chan = function () {
-         throw "caml_md5_chan"
+         throw new Error("caml_md5_chan")
       }
       const caml_md5_string = function () {
-         throw "caml_md5_string"
+         throw new Error("caml_md5_string")
       }
       const caml_ml_channel_size = function () {
-         throw "caml_ml_channel_size"
+         throw new Error("caml_ml_channel_size")
       }
       const caml_ml_channel_size_64 = function () {
-         throw "caml_ml_channel_size_64"
+         throw new Error("caml_ml_channel_size_64")
       }
       const caml_ml_close_channel = function () {
-         throw "caml_ml_close_channel"
+         throw new Error("caml_ml_close_channel")
       }
 
       const caml_ml_flush = function (c) {}
 
       const caml_ml_input = function () {
-         throw "caml_ml_input"
+         throw new Error("caml_ml_input")
       }
       const caml_ml_input_char = function () {
-         throw "caml_ml_input_char"
+         throw new Error("caml_ml_input_char")
       }
       const caml_ml_input_int = function () {
-         throw "caml_ml_input_int"
+         throw new Error("caml_ml_input_int")
       }
       const caml_ml_input_scan_line = function () {
-         throw "caml_ml_input_scan_line"
+         throw new Error("caml_ml_input_scan_line")
       }
       const caml_ml_open_descriptor_in = function () {
          return 0
@@ -502,34 +502,34 @@ const methodHolder = {
       const caml_ml_output_char = function (c, ch) {}
 
       const caml_ml_output_int = function () {
-         throw "caml_ml_output_int"
+         throw new Error("caml_ml_output_int")
       }
       const caml_ml_pos_in = function () {
-         throw "caml_ml_pos_in"
+         throw new Error("caml_ml_pos_in")
       }
       const caml_ml_pos_in_64 = function () {
-         throw "caml_ml_pos_in_64"
+         throw new Error("caml_ml_pos_in_64")
       }
       const caml_ml_pos_out = function () {
-         throw "caml_ml_pos_out"
+         throw new Error("caml_ml_pos_out")
       }
       const caml_ml_pos_out_64 = function () {
-         throw "caml_ml_pos_out_64"
+         throw new Error("caml_ml_pos_out_64")
       }
       const caml_ml_seek_in = function () {
-         throw "caml_ml_seek_in"
+         throw new Error("caml_ml_seek_in")
       }
       const caml_ml_seek_in_64 = function () {
-         throw "caml_ml_seek_in_64"
+         throw new Error("caml_ml_seek_in_64")
       }
       const caml_ml_seek_out = function () {
-         throw "caml_ml_seek_out"
+         throw new Error("caml_ml_seek_out")
       }
       const caml_ml_seek_out_64 = function () {
-         throw "caml_ml_seek_out_64"
+         throw new Error("caml_ml_seek_out_64")
       }
       const caml_ml_set_binary_mode = function () {
-         throw "caml_ml_set_binary_mode"
+         throw new Error("caml_ml_set_binary_mode")
       }
       const caml_named_value = function (n) {
          return oc$$nv[n]
@@ -571,22 +571,22 @@ const methodHolder = {
          o.length = s
       }
       const caml_output_value = function () {
-         throw "caml_output_value"
+         throw new Error("caml_output_value")
       }
       const caml_output_value_to_string = function () {
-         throw "caml_output_value_to_string"
+         throw new Error("caml_output_value_to_string")
       }
       const caml_output_value_to_buffer = function () {
-         throw "caml_output_value_to_buffer"
+         throw new Error("caml_output_value_to_buffer")
       }
       const caml_record_backtrace = function () {
-         throw "caml_record_backtrace"
+         throw new Error("caml_record_backtrace")
       }
       const caml_backtrace_status = function () {
-         throw "caml_backtrace_status"
+         throw new Error("caml_backtrace_status")
       }
       const caml_get_exception_backtrace = function () {
-         throw "caml_get_exception_backtrace"
+         throw new Error("caml_get_exception_backtrace")
       }
       const caml_register_named_value = function (n, v) {
          oc$$nv[n] = v
@@ -601,7 +601,7 @@ const methodHolder = {
          }
       }
       const caml_sys_exit = function () {
-         throw "caml_sys_exit"
+         throw new Error("caml_sys_exit")
       }
       const init_time = new Date().getTime() / 1000
       const caml_sys_time = function () {
@@ -614,10 +614,10 @@ const methodHolder = {
          return $("js", 32)
       } // XXX browser name?
       const caml_sys_open = function () {
-         throw "caml_sys_open"
+         throw new Error("caml_sys_open")
       }
       const caml_sys_random_seed = function () {
-         throw "caml_sys_random_seed"
+         throw new Error("caml_sys_random_seed")
       }
 
       // lexing.c
@@ -1145,7 +1145,7 @@ const methodHolder = {
                         return m.apply(t, [...a, z, y, x, w, v, u, s])
                      })
                   default:
-                     throw "unimplemented"
+                     throw new Error("unimplemented")
                }
             } else if (al === ml) {
                return m.apply(t, a)
@@ -3773,27 +3773,23 @@ const methodHolder = {
                const i31$185 = i$184 + i$184 + i$184 + 1
                let x$186 = i31$185
                if (i31$185 + 2 < l$183) {
-                  {
-                     if (
-                        _(cmp$180, [
-                           oc$$arefs(a$181, i31$185),
-                           oc$$arefs(a$181, i31$185 + 1),
-                        ]) < 0
-                     ) {
-                        x$186 = i31$185 + 1
-                     } else {
-                     }
-                     if (
-                        _(cmp$180, [
-                           oc$$arefs(a$181, x$186),
-                           oc$$arefs(a$181, i31$185 + 2),
-                        ]) < 0
-                     ) {
-                        x$186 = i31$185 + 2
-                     } else {
-                     }
-                     return x$186
+                  if (
+                     _(cmp$180, [
+                        oc$$arefs(a$181, i31$185),
+                        oc$$arefs(a$181, i31$185 + 1),
+                     ]) < 0
+                  ) {
+                     x$186 = i31$185 + 1
                   }
+                  if (
+                     _(cmp$180, [
+                        oc$$arefs(a$181, x$186),
+                        oc$$arefs(a$181, i31$185 + 2),
+                     ]) < 0
+                  ) {
+                     x$186 = i31$185 + 2
+                  }
+                  return x$186
                }
                if (
                   i31$185 + 1 < l$183 &&
@@ -3812,10 +3808,8 @@ const methodHolder = {
             const trickledown$187 = _f(function (l$188, i$189, e$190) {
                const j$191 = _(maxson$182, [l$188, i$189])
                if (_(cmp$180, [oc$$arefs(a$181, j$191), e$190]) > 0) {
-                  {
-                     oc$$asets(a$181, i$189, oc$$arefs(a$181, j$191))
-                     return __(trickledown$187, [l$188, j$191, e$190])
-                  }
+                  oc$$asets(a$181, i$189, oc$$arefs(a$181, j$191))
+                  return __(trickledown$187, [l$188, j$191, e$190])
                }
                return oc$$asets(a$181, i$189, e$190)
             })
