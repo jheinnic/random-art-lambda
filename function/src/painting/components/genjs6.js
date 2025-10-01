@@ -9433,7 +9433,7 @@ const fullEval = methodHolder.fullEval
 export { fullEval }
 
 const substringChars = (str, offset, len) => {
-    return methodHolder.substringChars(str, offset, len).a
+   return methodHolder.substringChars(str, offset, len).a
 }
 export { substringChars }
 
