@@ -18,15 +18,22 @@ import { IRegionPlotter } from "../../plotting/interface/IRegionPlotter.js"
 //    }
 // }
 
+const ALPHA_OPAQUE = 255 << 24
+const BLUE_SHIFT: number = 16
+const GREEN_SHIFT: number = 8
+
 export class GenModelArtist implements IRegionPlotter {
    private readonly context: CanvasRenderingContext2D
-   private readonly pixelData: Uint8ClampedArray
+   private readonly imageData: ImageData
+   private readonly pixelData: Uint32Array
+   private plotIndex: number
 
    public constructor(
       private readonly genModel: GenModel,
       private readonly canvas: Canvas,
+      private readonly initialY: number,
+      private readonly finalY: number,
    ) {
-      this.pixelData = new Uint8ClampedArray(canvas.height * canvas.width * 4)
       this.context = canvas.getContext("2d", {
          alpha: false,
          pixelFormat: "RGB24",
@@ -34,35 +41,31 @@ export class GenModelArtist implements IRegionPlotter {
       if (this.context === null) {
          throw new Error("Canvas failed to return a 2D context object?")
       }
+      this.imageData = this.context.createImageData(
+         canvas.width,
+         this.finalY - this.initialY,
+      )
+      this.pixelData = new Uint32Array(this.imageData.data.buffer)
+      this.plotIndex = canvas.width * this.initialY
    }
 
-   public plot(
-      pixelX: number,
-      pixelY: number,
-      regionX: number,
-      regionY: number,
-   ): void {
+   public plot(regionX: number, regionY: number): void {
       // console.log(`${pixelX}, ${pixelY}) => (${regionX}, ${regionY}) => ${rgb} => ${strv}`)
       // this.painter.paint(pixelX, pixelY, `#${BYTES[rgb[0]]}${BYTES[rgb[1]]}${BYTES[rgb[2]]}`)
       // this.painter.paint(pixelX, pixelY, COLORS[(rgb[0] << 16) + (rgb[1] << 8) + rgb[2]]
       const rgb = computePixel(this.genModel, regionX, regionY)
       // this.context.fillStyle = COLORS[(rgb[0] << 16) | (rgb[1] << 8) | rgb[2]]
       // this.context.fillRect(pixelX, pixelY, 1, 1)
-      const index = (pixelY * this.canvas.width + pixelX) * 4
-      this.pixelData[index] = rgb[0]
-      this.pixelData[index + 1] = rgb[1]
-      this.pixelData[index + 2] = rgb[2]
-      this.pixelData[index + 3] = 255
+      // const index = (pixelY * this.canvas.width + pixelX) * 4
+      this.pixelData[this.plotIndex++] =
+         ALPHA_OPAQUE |
+         (rgb[2] << BLUE_SHIFT) |
+         (rgb[1] << GREEN_SHIFT) |
+         rgb[0]
    }
 
    public finish(): void {
-      const imageData = new ImageData(
-         this.pixelData,
-         this.canvas.width,
-         this.canvas.height,
-      )
-
       // Draw the data onto the canvas
-      this.context.putImageData(imageData, 0, 0)
+      this.context.putImageData(this.imageData, 0, this.initialY)
    }
 }
