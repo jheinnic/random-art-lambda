@@ -1,3 +1,6 @@
+/* eslint-disable no-fallthrough */
+/* eslint-disable no-labels */
+/* eslint-disable camelcase */
 /*
  * This file is part of ocamljs, OCaml to Javascript compiler
  * Copyright (C) 2007-9 Skydeck, Inc
@@ -1672,6 +1675,7 @@ const methodHolder = {
          const lnot$92 = _f(function (x$93) {
             return x$93 ^ -1
          })
+         // eslint-disable-next-line no-constant-condition
          const min_int$97 = 1 << (1 << 31 === 0 ? 30 : 62)
          const max_int$98 = min_int$97 - 1
          const infinity$131 = caml_int64_float_of_bits("9218868437227405312")
