@@ -303,7 +303,7 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
          )
       }
       console.log(modelEnvelope)
-      const rootObject: RegionMap = modelEnvelope.RegionMap
+      const rootObject: RegionMap = modelEnvelope["RegionMap"]
       console.log(rootObject)
       const paletteBlocks: readonly DataBlock[] = await Promise.all(
          rootObject.palettes.map(async (cidLink: CID) => {
