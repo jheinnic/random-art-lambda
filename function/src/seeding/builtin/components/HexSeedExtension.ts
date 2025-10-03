@@ -8,17 +8,50 @@ import {
 } from "./../interface/Constants"
 import { IGenModelSeedExtension } from "../../interface/IGenModelSeedExtension.js"
 import { IHexSeed } from "../interface/IHexSeed.js"
-import { ReturnableSeedType, SeedType } from "../../interface/SeedTypes.js"
+import { ReturnableSeedType } from "../../interface/SeedTypes.js"
+import { IGenModelSeedExtensionPoint } from "../../interface/IGenModelSeedExtensionPoint.js"
 
 export class HexSeedExtension
-   implements IGenModelSeedExtension<HEX_SEED_EXTENSION_ID, IHexSeed>
+   implements IGenModelSeedExtension<HEX_SEED_EXTENSION_ID, IHexSeed, IGenModelSeedExtensionPoint
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   >
 {
-   readonly extensionFor: GEN_MODEL_SEED_TYPE_EXTENSION_POINT =
+   static readonly extensionFor: GEN_MODEL_SEED_TYPE_EXTENSION_POINT =
       GEN_MODEL_SEED_TYPE_EXTENSION_POINT_STRING
 
-   readonly extensionId: HEX_SEED_EXTENSION_ID = HEX_SEED_EXTENSION_ID_STR
+   static readonly extensionId: HEX_SEED_EXTENSION_ID =
+      HEX_SEED_EXTENSION_ID_STR
 
-   validate(input: IHexSeed): void {
+
+      
+   val
+   
+   
+   
+   
+   
+   idate(input: IHexSeed): void {
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
       // TODO: Ensure prefix and suffix strings are both in hex
       const prefixBuf: Buffer<ArrayBuffer> = Buffer.from(input.prefix, "hex")
       if (prefixBuf.length !== input.prefix.length / 2) {

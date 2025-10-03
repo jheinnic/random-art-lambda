@@ -1,11 +1,6 @@
+import { Type } from "@nestjs/common"
 import { Observable, of, from, map } from "rxjs"
-import {
-   GenModel,
-   newPicture,
-   oldPicture,
-   substringChars,
-} from "../../painting/components/genjs6.js"
-import { IGenModelSeedExtension } from "../interface/IGenModelSeedExtension.js"
+
 import {
    PhrasePair,
    PrefixSuffix,
@@ -13,8 +8,17 @@ import {
    SinglePhrase,
 } from "../interface/SeedTypes.js"
 import { SeedTypeByExtension } from "../interface/SeedTypeByExtension.js"
-import { Type } from "@nestjs/common"
-// import { ExtensionAdapter } from "../../modules/interface/ExtensionAdapter.js"
+import { IGenModelSeedExtension } from "../interface/IGenModelSeedExtension.js"
+import {
+   GenModel,
+   newPicture,
+   oldPicture,
+   substringChars,
+} from "../../painting/components/genjs6.js"
+import { GEN_MODEL_SEED_TYPE_EXTENSION_POINT } from "../interface/SeedTypeExtensionPoint.js"
+import { IExtensionClass } from "../../extensions/interface/IExtension.js"
+import { string } from "zod"
+import { IHexSeed } from "../builtin/interface/IHexSeed.js"
 
 function isSyncValue(
    seedOut:
@@ -60,17 +64,25 @@ function isPrefixSuffix(
    return false
 }
 
-export class GenModelSeedAdapter<
-   ExtensionId extends string,
-   M extends SeedTypeByExtension<ExtensionId>,
-> {
-   public constructor(
-      private readonly extensionFor: ExtensionId,
-      private readonly txFnClass: Type<IGenModelSeedExtension<ExtensionId, M>>,
-      private readonly txFn: InstanceType<typeof txFnClass>,
-   ) {}
+export class GenModelSeedAdapter {
+   private readonly txFn: InstanceType<typeof this.TClass> // This still correctly resolves to IGenModelSeedExtension<ExtensionId>
 
-   public toModel(seed: M): Observable<GenModel> {
+   public constructor(
+      private readonly extensionId: string,
+      private readonly TClass: IExtensionClass<
+         GEN_MODEL_SEED_TYPE_EXTENSION_POINT,
+         typeof extensionId,
+         IGenModelSeedExtension<typeof extensionId>,
+         []
+      >, // Cleanly typed as TClass
+      txFnInstance: InstanceType<typeof TClass>,
+   ) {
+      this.txFn = txFnInstance
+   }
+
+   public toModel(
+      seed: SeedTypeByExtension<typeof this.extensionId>,
+   ): Observable<GenModel> {
       this.txFn.validate(seed)
       const seedOut:
          | SeedType

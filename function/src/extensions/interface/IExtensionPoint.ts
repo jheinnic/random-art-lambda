@@ -1,30 +1,14 @@
-import { IAdapterFactory } from "./IAdapterFactory.js"
-import { IExtensionAdapterClass } from "./IExtensionAdapterClass.js"
 import { IExtensionCollection } from "./IExtensionCollection.js"
+import { IExtension } from "./IExtension.js"
+import { IAdapterCollection } from "./IAdapterCollection.js"
 
 export interface IExtensionPoint<
    ExtensionPoint extends string,
-   ExtensionApi extends {} = {},
+   PayloadType extends IExtension,
+   TArgs extends any[] = [],
 > {
-   extensionPoint: ExtensionPoint
-
-   receiveExtensions: <ExtensionIds extends string>(
-      extensions: IExtensionCollection<
-         ExtensionPoint,
-         ExtensionApi,
-         ExtensionIds
-      >,
-      idsPresent: ExtensionIds[],
-   ) => void
-
-   receiveAdapters: <
-      AdapterClass extends IExtensionAdapterClass<ExtensionPoint, ExtensionApi>,
-   >(
-      adapterFactory: IAdapterFactory<
-         ExtensionPoint,
-         ExtensionApi,
-         AdapterClass
-      >,
-      adapters: Array<InstanceType<AdapterClass>>,
+   receiveExtensions: (
+      extensions: IExtensionCollection<ExtensionPoint, PayloadType, TArgs>,
+      adapters: IAdapterCollection<ExtensionPoint, PayloadType, TArgs>,
    ) => void
 }

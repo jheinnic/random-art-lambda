@@ -1,8 +1,11 @@
+import { Type } from "@nestjs/common"
 import { IExtensionMatchmaker } from "./IExtensionMatchmaker.js"
 import { IExtensionRegistrar } from "./IExtensionRegistrar.js"
+import { IExtension } from "./IExtension.js"
 
 export interface IExtensionWrangler<
    ExtensionPoint extends string,
-   ExtensionApi extends {},
-> extends IExtensionRegistrar<ExtensionPoint, ExtensionApi>,
-      IExtensionMatchmaker<ExtensionPoint, ExtensionApi> {}
+   PayloadType extends IExtension,
+   TArgs extends any[],
+> extends IExtensionRegistrar<ExtensionPoint, PayloadType, TArgs>,
+      IExtensionMatchmaker<ExtensionPoint, PayloadType, TArgs> {}
