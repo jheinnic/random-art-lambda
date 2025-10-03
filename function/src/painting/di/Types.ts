@@ -10,6 +10,8 @@
 
 export const PaintingModuleTypes = {
    IRandomArtTaskEngine: Symbol("Painting::IRandomArtTaskEngine"),
+   IGenModelFactory: Symbol("Painting::IGenModelFactory"),
+   IGenModelSeedRegistry: Symbol("Painting::IGenModelSeedRegistry"),
    RandomArtTaskCallChannel: Symbol("Painting::Chan<RandomArtTaskCall>"),
    RandomArtTaskReplyChannel: Symbol("Painting::Chan<RandomArtTaskReply>"),
    InjectedRegionMapRepository: Symbol("Painting::IRegionMapRepository"),
