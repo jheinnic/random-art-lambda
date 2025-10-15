@@ -1,90 +1,112 @@
-import { IExtension, IExtensionClass } from "../interface/IExtension.js"
+import {
+   ExtensionPayloadTypeURIFromParts,
+   ExtensionTArgsURIFromParts,
+   IExtensionClass,
+   PayloadTypeKind,
+   TArgsKind,
+} from "../interface/IExtension.js"
 import { IExtensionCollection } from "../interface/IExtensionCollection.js"
 
-export class ExtensionCollection<
-   ExtensionPoint extends string,
-   PayloadType extends IExtension,
-   TArgs extends any[],
-> implements IExtensionCollection<ExtensionPoint, PayloadType, TArgs>
+export class ExtensionCollection<ExtensionPoint extends string>
+   implements IExtensionCollection<ExtensionPoint>
 {
-   private readonly extensionMap: Map<string, IExtension>
+   private readonly classMap: {
+      [ExtensionId in string]: IExtensionClass<ExtensionPoint, ExtensionId>
+   }
 
-   private readonly classMap: Map<
-      string,
-      IExtensionClass<ExtensionPoint, string, PayloadType, TArgs>
-   >
+   private readonly argsMap: {
+      [ExtensionId in string]: TArgsKind<
+         ExtensionTArgsURIFromParts<ExtensionPoint, ExtensionId>
+      >
+   }
+
+   private readonly extensionMap: {
+      [ExtensionId in string]: PayloadTypeKind<
+         ExtensionPayloadTypeURIFromParts<ExtensionPoint, ExtensionId>
+      >
+   }
 
    constructor() {
-      this.extensionMap = new Map()
-      this.classMap = new Map()
+      this.extensionMap = {}
+      this.classMap = {}
+      this.argsMap = {}
    }
 
    setClass<
-      ExtensionId extends string,
-      ExtensionClass extends IExtensionClass<
-         ExtensionPoint,
-         ExtensionId,
-         PayloadType,
-         TArgs
-      >,
-   >(key: ExtensionId, clazz: ExtensionClass): void {
-      this.classMap.set(key, clazz)
-   }
-
-   set<
-      ExtensionId extends string,
-      ExtensionClass extends IExtensionClass<
-         ExtensionPoint,
-         ExtensionId,
-         PayloadType,
-         TArgs
-      >,
+      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
+      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
    >(
       key: ExtensionId,
-      _clazz: ExtensionClass,
-      value: InstanceType<ExtensionClass>,
+      clazz: ExtensionClass,
+      ...args: TArgsKind<
+         ExtensionTArgsURIFromParts<ExtensionPoint, ExtensionId>
+      >
    ): void {
-      this.extensionMap.set(key, value)
+      this.classMap[key] = clazz as unknown as IExtensionClass<
+         ExtensionPoint,
+         string
+      >
+      this.argsMap[key] = args
    }
 
-   getClass<
-      ExtensionId extends string,
-      ExtensionClass extends IExtensionClass<
-         ExtensionPoint,
-         ExtensionId,
-         PayloadType,
-         TArgs
-      >,
-   >(key: ExtensionId): ExtensionClass | undefined {
-      const retVal = this.classMap.get(key)
+   // set<
+   //    ExtensionId extends KnownPayloadIds<ExtensionPoint> & KnownTArgsIds<ExtensionPoint>,
+   //    ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
+   // >(
+   //    key: ExtensionId,
+   //    clazz: ExtensionClass,
+   //    value: InstanceType<ExtensionClass>,
+   // ): void {
+   //    if (!clazz[Symbol.hasInstance](value)) {
+   //       throw new Error(`Value is not of type ${clazz.name}`)
+   //    }
+   //    this.extensionMap[key] = value
+   // }
 
-      return retVal === undefined ? retVal : (retVal as ExtensionClass)
+   getClass<
+      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
+      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
+   >(key: ExtensionId): ExtensionClass | undefined {
+      let retVal: ExtensionClass | undefined
+      if (key in this.classMap) {
+         retVal = this.classMap[key] as unknown as ExtensionClass
+      }
+
+      return retVal
    }
 
    get<
-      ExtensionId extends string,
-      ExtensionClass extends IExtensionClass<
-         ExtensionPoint,
-         ExtensionId,
-         PayloadType,
-         TArgs
-      >,
+      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
+      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
    >(
       key: ExtensionId,
-      _clazz: ExtensionClass,
+      Clazz: ExtensionClass,
    ): InstanceType<ExtensionClass> | undefined {
-      const retVal = this.extensionMap.get(key)
+      let retVal: InstanceType<ExtensionClass> | undefined
+      if (key in this.extensionMap) {
+         retVal = this.extensionMap[
+            key
+         ] as unknown as InstanceType<ExtensionClass>
+      } else if (key in this.argsMap) {
+         const tArgs = this.argsMap[key] as unknown as TArgsKind<
+            ExtensionTArgsURIFromParts<ExtensionPoint, ExtensionId>
+         >
+         retVal = new Clazz(...tArgs) as InstanceType<ExtensionClass>
+         this.extensionMap[key] = retVal as unknown as PayloadTypeKind<
+            ExtensionPayloadTypeURIFromParts<ExtensionPoint, ExtensionId>
+         >
+      } else {
+         throw new Error(`No extension registered for <${key}>`)
+      }
 
-      return retVal === undefined
-         ? retVal
-         : (retVal as InstanceType<ExtensionClass>)
+      return retVal
    }
 
    classKeys(): string[] {
-      return [...this.classMap.keys()]
+      return Object.keys(this.classMap)
    }
 
    keys(): string[] {
-      return [...this.extensionMap.keys()]
+      return Object.keys(this.extensionMap)
    }
 }

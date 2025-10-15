@@ -1,70 +1,44 @@
 import { Type } from "@nestjs/common"
 import { IExtension, IExtensionClass } from "./IExtension.js"
 import { IAdapterFactory } from "./IAdapterFactory.js"
+import {
+   ExtensionAdapterKind,
+   ExtensionAdapterURIFromParts,
+   ExtensionAdapterURItoKind,
+} from "./IExtensionAdapter.js"
 
 // export type IExtensionCollection<
 //    ExtensionPoint extends string,
 //    ExtensionApi extends {} = {},
-//    ExtensionId extends string = string,
+//    ExtensionId extends KnownPayloadIds<ExtensionPoint> & KnownTArgsIds<ExtensionPoint> = string,
 // > = {
 //    [K in ExtensionId]: [K, IExtension<ExtensionPoint, K> & ExtensionApi]
 // }
 
 export interface IAdapterCollection<
    ExtensionPoint extends string,
-   PayloadType extends IExtension,
-   TArgs extends any[],
+   AdapterId extends string,
 > {
-   addFactory: <Adapter extends object>(
-      factory: IAdapterFactory<ExtensionPoint, PayloadType, TArgs, Adapter>,
-   ) => void
+   fromFactory: () => IAdapterFactory<ExtensionPoint, AdapterId>
 
-   adaptWith: <
-      ExtensionId extends string,
-      ExtensionClass extends IExtensionClass<
-         ExtensionPoint,
-         ExtensionId,
-         PayloadType,
-         TArgs
-      >,
-      Adapter extends object,
-      AdapterFactory extends IAdapterFactory<
-         ExtensionPoint,
-         PayloadType,
-         TArgs,
-         Adapter
-      >,
+   adapt: <
+      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
+      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
    >(
       key: ExtensionId,
-      _clazz: ExtensionClass,
+      clazz: ExtensionClass,
       extension: InstanceType<ExtensionClass>,
-      factory: AdapterFactory,
-   ) => Adapter | undefined
+   ) => ExtensionAdapterKind<
+      ExtensionAdapterURIFromParts<ExtensionPoint, AdapterId>,
+      ExtensionId
+   >
 
    unadapt: <
-      ExtensionId extends string,
-      ExtensionClass extends IExtensionClass<
-         ExtensionPoint,
-         ExtensionId,
-         PayloadType,
-         TArgs
-      >,
-      Adapter extends object,
-      AdapterFactory extends IAdapterFactory<
-         ExtensionPoint,
-         PayloadType,
-         TArgs,
-         Adapter
-      >,
+      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
+      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
    >(
       key: ExtensionId,
-      _clazz: ExtensionClass,
+      clazz: ExtensionClass,
       extension: InstanceType<ExtensionClass>,
-      factory: AdapterFactory,
-      adapter: Adapter,
    ) => void
-
-   adapterFactories: () => Array<
-      [IAdapterFactory<ExtensionPoint, PayloadType, TArgs, object>, object]
-   >
 }

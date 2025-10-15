@@ -1,6 +1,6 @@
-import { Type } from "@nestjs/common"
 import { Observable, of, from, map } from "rxjs"
 
+import "../di/Module.js"
 import {
    PhrasePair,
    PrefixSuffix,
@@ -16,9 +16,10 @@ import {
    substringChars,
 } from "../../painting/components/genjs6.js"
 import { GEN_MODEL_SEED_TYPE_EXTENSION_POINT } from "../interface/SeedTypeExtensionPoint.js"
-import { IExtensionClass } from "../../extensions/interface/IExtension.js"
-import { string } from "zod"
-import { IHexSeed } from "../builtin/interface/IHexSeed.js"
+import {
+   IExtensionClass,
+   KnownExtensionIds,
+} from "../../extensions/interface/IExtension.js"
 
 function isSyncValue(
    seedOut:
@@ -64,25 +65,29 @@ function isPrefixSuffix(
    return false
 }
 
-export class GenModelSeedAdapter {
-   private readonly txFn: InstanceType<typeof this.TClass> // This still correctly resolves to IGenModelSeedExtension<ExtensionId>
-
+export class GenModelSeedAdapter<
+   ExtensionId extends KnownExtensionIds<GEN_MODEL_SEED_TYPE_EXTENSION_POINT>,
+> {
    public constructor(
-      private readonly extensionId: string,
       private readonly TClass: IExtensionClass<
          GEN_MODEL_SEED_TYPE_EXTENSION_POINT,
-         typeof extensionId,
-         IGenModelSeedExtension<typeof extensionId>,
-         []
-      >, // Cleanly typed as TClass
-      txFnInstance: InstanceType<typeof TClass>,
+         ExtensionId
+      >,
+      private readonly txFn: IGenModelSeedExtension<ExtensionId>,
    ) {
-      this.txFn = txFnInstance
+      if (!TClass[Symbol.hasInstance](txFn)) {
+         throw new Error(`txFn is not of type ${TClass.name}`)
+      }
    }
 
    public toModel(
-      seed: SeedTypeByExtension<typeof this.extensionId>,
+      seed: SeedTypeByExtension<ExtensionId>,
    ): Observable<GenModel> {
+      if (seed.seedKey !== this.TClass.extensionId) {
+         throw new Error(
+            `Given seed object is for extension ${seed.seedKey}, not ${this.TClass.extensionId}`,
+         )
+      }
       this.txFn.validate(seed)
       const seedOut:
          | SeedType

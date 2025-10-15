@@ -12,17 +12,12 @@ import { ReturnableSeedType } from "../../interface/SeedTypes.js"
 import { IGenModelSeedExtensionPoint } from "../../interface/IGenModelSeedExtensionPoint.js"
 
 export class HexSeedExtension
-   implements IGenModelSeedExtension<HEX_SEED_EXTENSION_ID, IHexSeed, IGenModelSeedExtensionPoint
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   >
+   implements
+      IGenModelSeedExtension<
+         HEX_SEED_EXTENSION_ID,
+         IHexSeed,
+         IGenModelSeedExtensionPoint
+      >
 {
    static readonly extensionFor: GEN_MODEL_SEED_TYPE_EXTENSION_POINT =
       GEN_MODEL_SEED_TYPE_EXTENSION_POINT_STRING
@@ -30,28 +25,7 @@ export class HexSeedExtension
    static readonly extensionId: HEX_SEED_EXTENSION_ID =
       HEX_SEED_EXTENSION_ID_STR
 
-
-      
-   val
-   
-   
-   
-   
-   
-   idate(input: IHexSeed): void {
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
+   validate(input: IHexSeed): void {
       // TODO: Ensure prefix and suffix strings are both in hex
       const prefixBuf: Buffer<ArrayBuffer> = Buffer.from(input.prefix, "hex")
       if (prefixBuf.length !== input.prefix.length / 2) {

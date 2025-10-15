@@ -1,98 +1,15 @@
-// export type IExtension<
-//    ExtensionPoint extends string,
-//    ExtensionId extends string,
-// > = Type<{
-//    extensionFor: ExtensionPoint
-//    extensionId: ExtensionId
-// }>
-
-// export type AltIExtension<
-//    T extends Type<any>,
-//    ExtensionPoint extends string,
-//    ExtensionId extends string,
-// > = T extends Type<infer R> & {
-//    extensionFor: ExtensionPoint
-//    extensionId: ExtensionId
-// }
-//    ? R
-//    : never
-
-// export type AltIExtension2<T extends Type<any>> = T extends Type<infer R> & {
-//    extensionFor: string
-//    extensionId: string
-// }
-//    ? R
-//    : never
-
-// export type AltExtensionPoint<T extends Type<any>> = T extends {
-//    extensionFor: infer EP
-//    extensionId: string
-// }
-//    ? EP
-//    : never
-
-// export interface IAnyExtension<ExtensionPoint extends string> {
-//    extensionFor: ExtensionPoint
-//    extensionId: string
-// }
-
-// export interface IExtension<
-//    ExtensionPoint extends string,
-//    ExtensionId extends string,
-// > {
-//    extensionFor: ExtensionPoint
-//    extensionId: ExtensionId
-// }
-//
-// export interface IAnyExtension<ExtensionPoint extends string> {
-//    extensionFor: ExtensionPoint
-//    extensionId: string
-// }
-
-// export interface IExtensionClass<
-//    in out ExtensionPoint extends string,
-//    out ExtensionId extends string,
-// > extends Function {
-//    new (...args: any[]): any
-//    extensionFor: ExtensionPoint
-//    extensionId: ExtensionId
-// }
-
-// type CompatibleWith<C extends Type, Api extends {}> =
-//    InstanceType<C> extends Api ? C : never
-
-// export type CompatibleIExtensionClass<
-//    ExtensionPoint extends string,
-//    ExtensionApi extends {},
-//    ExtensionClass extends IExtensionClass<ExtensionPoint>,
-//    ExtensionId extends string = string,
-// > = CompatibleWith<ExtensionClass, ExtensionApi> & { extensionId: ExtensionId }
-
-// export type IExtension<
-//    ExtensionPoint extends string,
-//    ExtensionId extends string = string,
-//    Constructor extends IExtensionClass<
-//       ExtensionPoint,
-//       ExtensionId
-//    > = IExtensionClass<ExtensionPoint, ExtensionId>,
-// > = InstanceType<Constructor>
-
-// export type IsIExtension<
-//    I extends object,
-//    ExtensionPoint extends string,
-//    ExtensionApi extends {} = {},
-//    ExtensionId extends string = string,
-// > = I extends IExtension<ExtensionPoint, ExtensionId> & ExtensionApi ? I : never
-// Assuming this is the type of object the class creates
+import { NamespaceURI } from "./IExtensionPoint.js"
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface IExtension {
+export interface IExtension<
+   in ExtensionId extends KnownExtensionIds<ExtensionPoint>,
+> {
    /* common instance methods/properties */
 }
 
 export interface IExtensionKey<
    in out ExtensionPoint extends string,
-   out ExtensionId extends string,
+   out ExtensionId extends KnownExtensionIds<ExtensionPoint>,
 > {
    extensionFor: ExtensionPoint
    extensionId: ExtensionId
@@ -101,13 +18,71 @@ export interface IExtensionKey<
 // IExtensionClass models the constructor and static fields of any extension class
 export interface IExtensionClass<
    in out ExtensionPoint extends string,
-   out ExtensionId extends string,
-   Instance extends IExtension, // The instance type created by the constructor
-   Params extends any[],
+   in out ExtensionId extends KnownExtensionIds<ExtensionPoint>,
 > extends Function {
    // Constructor signature
-   new (...args: Params): Instance
+   new (
+      ...args: TArgsKind<ExtensionPoint, ExtensionId>
+   ): PayloadTypeKind<ExtensionPoint, ExtensionId>
    // Static properties required for registration
    extensionFor: ExtensionPoint
    extensionId: ExtensionId
 }
+
+// 1. Base interface that plugins will augment
+export interface ExtensionPayloadTypeURItoKind<ExtensionId extends string> {
+   // Empty by default - plugins fill this in
+   "FauxExtensionPoint/GenericExtension": ExtensionPayloadTypeURItoKind<ExtensionId>
+   "FauxExtensionPoint/BasicExtension": object
+}
+
+export interface ExtensionTArgsURItoKind {
+   // Empty by default - plugins fill this in
+   "FauxExtensionPoint/PlaceholderExtension": [string, number]
+}
+
+// 2. Extract valid URIs from whatever gets registered
+type ExtensionPayloadTypeURIs = keyof ExtensionPayloadTypeURItoKind<any> // & NamespaceURI<string, string>
+
+type ExtensionTArgsURIs = keyof ExtensionTArgsURItoKind
+
+export type KnownPayloadIds<ExtensionPoint extends string> =
+   keyof ExtensionPayloadTypeURIs extends NamespaceURI<ExtensionPoint, infer Id>
+      ? Id
+      : never
+
+export type KnownTArgsIds<ExtensionPoint extends string> =
+   keyof ExtensionTArgsURIs extends NamespaceURI<ExtensionPoint, infer Id>
+      ? Id
+      : never
+
+export type KnownExtensionIds<ExtensionPoint extends string> =
+   KnownPayloadIds<ExtensionPoint> & KnownTArgsIds<ExtensionPoint>
+
+type ExtensionPayloadTypeURIFromParts<
+   ExtensionPoint extends string,
+   ExtensionId extends KnownPayloadIds<ExtensionPoint>,
+> = NamespaceURI<ExtensionPoint, ExtensionId> & ExtensionPayloadTypeURIs
+
+type ExtensionTArgsURIFromParts<
+   ExtensionPoint extends string,
+   ExtensionId extends KnownTArgsIds<ExtensionPoint>,
+> = NamespaceURI<ExtensionPoint, ExtensionId> & ExtensionTArgsURIs
+
+// 3. Lookup helpers
+export type PayloadTypeKind<
+   ExtensionPoint extends string,
+   ExtensionId extends KnownPayloadIds<ExtensionPoint>,
+> = ExtensionPayloadTypeURItoKind<ExtensionId>[ExtensionPayloadTypeURIFromParts<
+   ExtensionPoint,
+   ExtensionId
+>]
+
+export type TArgsKind<
+   ExtensionPoint extends string,
+   ExtensionId extends KnownPayloadIds<ExtensionPoint>,
+> = ExtensionTArgsURItoKind[ExtensionTArgsURIFromParts<
+   ExtensionPoint,
+   ExtensionId
+>] &
+   any[]

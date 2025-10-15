@@ -1,110 +1,107 @@
-import { Type } from "@nestjs/common"
-import { IExtension, IExtensionClass } from "../interface/IExtension.js"
-import { IExtensionCollection } from "../interface/IExtensionCollection.js"
+import { IExtensionClass } from "../interface/IExtension.js"
 import { IAdapterFactory } from "../interface/IAdapterFactory.js"
 import { IAdapterCollection } from "../interface/IAdapterCollection.js"
+import {
+   ExtensionAdapterKind,
+   ExtensionAdapterURIFromParts,
+} from "../interface/IExtensionAdapter.js"
+import { NamespaceURI } from "../interface/IExtensionPoint.js"
 
 export class AdapterCollection<
    ExtensionPoint extends string,
-   PayloadType extends IExtension,
-   TArgs extends any[],
-> implements IAdapterCollection<ExtensionPoint, PayloadType, TArgs>
+   AdapterId extends string,
+> implements IAdapterCollection<ExtensionPoint, AdapterId>
 {
-   private readonly adapterMap: Map<
-      IAdapterFactory<ExtensionPoint, PayloadType, TArgs, object>,
-      Map<string, any>
-   >
-
-   constructor() {
-      this.adapterMap = new Map()
+   private readonly adapterMap: {
+      [ExtensionId in string]: ExtensionAdapterKind<
+         ExtensionAdapterURIFromParts<ExtensionPoint, AdapterId>,
+         ExtensionId
+      >
    }
 
-   addFactory<Adapter extends object>(
-      factory: IAdapterFactory<ExtensionPoint, PayloadType, TArgs, Adapter>,
-   ): void {
-      if (this.adapterMap.has(factory)) {
-         return
-      }
-      this.adapterMap.set(factory, new Map())
+   constructor(
+      private readonly adapterFactory: IAdapterFactory<
+         ExtensionPoint,
+         AdapterId
+      >,
+   ) {
+      this.adapterMap = {}
    }
 
-   adaptWith<
-      ExtensionId extends string,
-      ExtensionClass extends IExtensionClass<
-         ExtensionPoint,
-         ExtensionId,
-         PayloadType,
-         TArgs
-      >,
-      Adapter extends object,
-      AdapterFactory extends IAdapterFactory<
-         ExtensionPoint,
-         PayloadType,
-         TArgs,
-         Adapter
-      >,
+   get adapterId(): NamespaceURI<ExtensionPoint, AdapterId> {
+      return this.adapterFactory.URI
+   }
+
+   fromFactory(): IAdapterFactory<ExtensionPoint, AdapterId> {
+      return this.adapterFactory
+   }
+
+   adapt<
+      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
+      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
    >(
       key: ExtensionId,
-      _clazz: ExtensionClass,
+      clazz: ExtensionClass,
       extension: InstanceType<ExtensionClass>,
-      factory: AdapterFactory,
-   ): Adapter | undefined {
-      const adapterState = this.adapterMap.get(factory)
-      if (adapterState === undefined) {
-         return undefined
+   ): ExtensionAdapterKind<
+      ExtensionAdapterURIFromParts<ExtensionPoint, AdapterId>,
+      ExtensionId
+   > {
+      if (
+         extension === undefined ||
+         clazz === undefined ||
+         extension === null ||
+         clazz === null
+      ) {
+         throw new Error(`Class or extension is undefined or null`)
       }
-      let retVal = adapterState.get(key)
-      if (retVal === undefined) {
-         if (extension === undefined) {
-            return undefined
-         }
-         retVal = factory.adapt(key, _clazz, extension)
+      if (!clazz[Symbol.hasInstance](extension)) {
+         throw new Error(
+            `Extension object for extension ${key} is not an object of type ${clazz.name}, but rather ${extension.constructor.name}`,
+         )
+      }
+      let retVal: ExtensionAdapterKind<
+         ExtensionAdapterURIFromParts<ExtensionPoint, AdapterId>,
+         ExtensionId
+      >
+      if (key in this.adapterMap) {
+         retVal = this.adapterMap[key]
+      } else {
+         retVal = this.adapterFactory.adapt(key, clazz, extension)
          if (retVal === undefined) {
-            return undefined
+            throw new Error(
+               `Adapter factory failed to adapt extension for ${key} of type ${clazz.name}`,
+            )
          }
-         adapterState.set(key, retVal)
+         this.adapterMap[key] = retVal
       }
-      return retVal as Adapter
+
+      return retVal
    }
 
    unadapt<
-      ExtensionId extends string,
-      ExtensionClass extends IExtensionClass<
-         ExtensionPoint,
-         ExtensionId,
-         PayloadType,
-         TArgs
-      >,
-      Adapter extends object,
-      AdapterFactory extends IAdapterFactory<
-         ExtensionPoint,
-         PayloadType,
-         TArgs,
-         Adapter
-      >,
+      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
+      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
    >(
       key: ExtensionId,
-      _clazz: ExtensionClass,
+      clazz: ExtensionClass,
       extension: InstanceType<ExtensionClass>,
-      factory: AdapterFactory,
-      adapter: Adapter,
    ): void {
-      const adapterState = this.adapterMap.get(factory)
-      if (adapterState === undefined) {
-         return
+      if (
+         extension === undefined ||
+         clazz === undefined ||
+         extension === null ||
+         clazz === null
+      ) {
+         throw new Error(`Class or extension is undefined or null`)
       }
-      if (!adapterState.has(key)) {
-         return
+      if (!clazz[Symbol.hasInstance](extension)) {
+         throw new Error(
+            `Extension object for extension ${key} is not an object of type ${clazz.name}, but rather ${extension.constructor.name}`,
+         )
       }
-      adapterState.delete(key)
-   }
-
-   // adapters(): AdapterClasses {
-   //    return [...this.adapterMap.keys()] as AdapterClasses
-   // }
-   adapterFactories(): Array<
-      [IAdapterFactory<ExtensionPoint, PayloadType, TArgs, object>, object]
-   > {
-      return []
+      if (key in this.adapterMap) {
+         delete this.adapterMap[key]
+      }
    }
 }

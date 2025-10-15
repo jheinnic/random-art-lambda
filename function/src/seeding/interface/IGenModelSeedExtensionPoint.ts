@@ -2,10 +2,13 @@ import { SeedTypeByExtension } from "./SeedTypeByExtension.js"
 import { ReturnableSeedType } from "./SeedTypes.js"
 
 export interface IGenModelSeedExtensionPoint {
-   toSeedModel: <
-      ExtensionId extends string,
-      M extends SeedTypeByExtension<ExtensionId>,
-   >(
-      input: M,
+   validate: <ExtensionId extends KnownExtensionIds<ExtensionPoint>>(
+      extensionId: ExtensionId,
+      input: SeedTypeByExtension<ExtensionId>,
+   ) => void
+
+   toSeedModel: <ExtensionId extends KnownExtensionIds<ExtensionPoint>>(
+      extensionId: ExtensionId,
+      input: SeedTypeByExtension<ExtensionId>,
    ) => ReturnableSeedType
 }

@@ -1,14 +1,19 @@
 import { IExtensionCollection } from "./IExtensionCollection.js"
-import { IExtension } from "./IExtension.js"
 import { IAdapterCollection } from "./IAdapterCollection.js"
 
-export interface IExtensionPoint<
-   ExtensionPoint extends string,
-   PayloadType extends IExtension,
-   TArgs extends any[] = [],
-> {
+export interface IExtensionPoint<ExtensionPoint extends string> {
    receiveExtensions: (
-      extensions: IExtensionCollection<ExtensionPoint, PayloadType, TArgs>,
-      adapters: IAdapterCollection<ExtensionPoint, PayloadType, TArgs>,
+      extensions: IExtensionCollection<ExtensionPoint>,
+      adapters: {
+         [AdapterId in string]: IAdapterCollection<ExtensionPoint, AdapterId>
+      },
    ) => void
 }
+
+export type NamespaceURI<
+   ExtensionPoint extends string,
+   Name extends string,
+> = `${ExtensionPoint}/${Name}`
+
+// In your registry
+export type PluginNamespace = string & { __brand: "PluginNamespace" }

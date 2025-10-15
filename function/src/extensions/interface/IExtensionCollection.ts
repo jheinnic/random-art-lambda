@@ -1,68 +1,51 @@
-import { IExtension, IExtensionClass } from "./IExtension.js"
+import {
+   ExtensionTArgsURIFromParts,
+   IExtensionClass,
+   TArgsKind,
+} from "./IExtension.js"
 
 // export type IExtensionCollection<
 //    ExtensionPoint extends string,
 //    ExtensionApi extends {} = {},
-//    ExtensionId extends string = string,
+//    ExtensionId extends KnownPayloadIds<ExtensionPoint> & KnownTArgsIds<ExtensionPoint> = string,
 // > = {
 //    [K in ExtensionId]: [K, IExtension<ExtensionPoint, K> & ExtensionApi]
 // }
 
-export interface IExtensionCollection<
-   ExtensionPoint extends string,
-   PayloadType extends IExtension,
-   TArgs extends any[],
-> {
+export interface IExtensionCollection<ExtensionPoint extends string> {
    setClass: <
-      ExtensionId extends string,
-      ExtensionClass extends IExtensionClass<
-         ExtensionPoint,
-         ExtensionId,
-         PayloadType,
-         TArgs
-      >,
+      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
+      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
    >(
       key: ExtensionId,
       clazz: ExtensionClass,
+      ...args: TArgsKind<
+         ExtensionTArgsURIFromParts<ExtensionPoint, ExtensionId>
+      >
    ) => void
 
-   set: <
-      ExtensionId extends string,
-      ExtensionClass extends IExtensionClass<
-         ExtensionPoint,
-         ExtensionId,
-         PayloadType,
-         TArgs
-      >,
-   >(
-      key: ExtensionId,
-      _clazz: ExtensionClass,
-      value: InstanceType<ExtensionClass>,
-   ) => void
+   // set: <
+   //    ExtensionId extends KnownPayloadIds<ExtensionPoint> & KnownTArgsIds<ExtensionPoint>,
+   //    ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
+   // >(
+   //    key: ExtensionId,
+   //    clazz: ExtensionClass,
+   //    value: InstanceType<ExtensionClass>,
+   // ) => void
 
    getClass: <
-      ExtensionId extends string,
-      ExtensionClass extends IExtensionClass<
-         ExtensionPoint,
-         ExtensionId,
-         PayloadType,
-         TArgs
-      >,
+      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
+      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
    >(
       key: ExtensionId,
    ) => ExtensionClass | undefined
 
    get: <
-      ExtensionId extends string,
-      ExtensionClass extends IExtensionClass<
-         ExtensionPoint,
-         ExtensionId,
-         PayloadType,
-         TArgs
-      >,
+      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
+      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
    >(
       key: ExtensionId,
-      _clazz: ExtensionClass,
+      clazz: ExtensionClass,
    ) => InstanceType<ExtensionClass> | undefined
 
    classKeys: () => string[]

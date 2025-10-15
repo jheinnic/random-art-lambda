@@ -1,50 +1,57 @@
-import { Type } from "@nestjs/common"
-
-import {
-   GEN_MODEL_SEED_TYPE_EXTENSION_POINT,
-   GenModelSeedClass,
-} from "../interface/SeedTypeExtensionPoint.js"
+// import {
+//    GEN_MODEL_SEED_ADAPTER_ID,
+//    GEN_MODEL_SEED_TYPE_EXTENSION_POINT,
+// } from "../interface/SeedTypeExtensionPoint.js"
 import { IGenModelSeedExtension } from "../interface/IGenModelSeedExtension.js"
-import { IExtensionClass } from "../../extensions/interface/IExtension.js"
+import {
+   IExtensionClass,
+   KnownExtensionIds,
+} from "../../extensions/interface/IExtension.js"
 import { IAdapterFactory } from "../../extensions/interface/IAdapterFactory.js"
 import { GenModelSeedAdapter } from "./GenModelSeedAdapter.js"
-import { SeedTypeByExtension } from "../interface/SeedTypeByExtension.js"
+import { GEN_MODEL_SEED_TYPE_EXTENSION_POINT } from "../interface/SeedTypeExtensionPoint.js"
+import {
+   ExtensionAdapterURIFromParts,
+   ExtensionAdapterURItoKind,
+} from "../../extensions/interface/IExtensionAdapter.js"
 
 // type ModelFor<
-//    ExtensionId extends string,
+//    ExtensionId extends KnownPayloadIds<ExtensionPoint> & KnownTArgsIds<ExtensionPoint>,
 //    T extends ExtensionBase<ExtensionId>,
 // > = T extends IGenModelSeedExtension<ExtensionId, infer M> ? M : never
 
-type ExtensionBase<ExtensionId extends string> = IExtensionClass<
-   GEN_MODEL_SEED_TYPE_EXTENSION_POINT,
-   ExtensionId,
-   IGenModelSeedExtension<ExtensionId>,
-   []
->
+type ExtensionBase<ExtensionId extends KnownExtensionIds<ExtensionPoint>> =
+   IExtensionClass<GEN_MODEL_SEED_TYPE_EXTENSION_POINT, ExtensionId>
 
-// type IRT<
-//    X,
-//    T extends abstract new <X>(...args: any) => any,
-// > = T extends abstract new <X>(...args: any) => infer R ? R : any
+
+
+export const f: ExtensionAdapterURItoKind<
+   ExtensionAdapterURIFromParts<
+      GEN_MODEL_SEED_TYPE_EXTENSION_POINT,
+      GEN_MODEL_SEED_ADAPTER_ID
+   >
+> = {
+   validate(seed: object): void {},
+}
 
 export class GenModelSeedAdapterFactory
    implements
       IAdapterFactory<
          GEN_MODEL_SEED_TYPE_EXTENSION_POINT,
-         IGenModelSeedExtension<ExtensionId>,
-         [],
-         GenModelSeedAdapter
+         GEN_MODEL_SEED_ADAPTER_ID
       >
 {
    adapt<
-      ExtensionId extends string,
+      ExtensionId extends
+         KnownExtensionIds<GEN_MODEL_SEED_TYPE_EXTENSION_POINT>,
       ExtensionClass extends ExtensionBase<ExtensionId>,
    >(
-      extensionId: ExtensionId,
+      _key: ExtensionId,
       extensionClass: ExtensionClass,
-      extension: InstanceType<ExtensionClass>,
-   ): GenModelSeedAdapter {
-      return new GenModelSeedAdapter(extensionId, extensionClass, extension)
+      extension: InstanceType<ExtensionClass> &
+         IGenModelSeedExtension<ExtensionId>,
+   ): GenModelSeedAdapter<ExtensionId> {
+      return new GenModelSeedAdapter(extensionClass, extension)
    }
 }
 

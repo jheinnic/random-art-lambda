@@ -1,24 +1,16 @@
-import { IExtension } from "./IExtension.js"
 import { IExtensionPoint } from "./IExtensionPoint.js"
 import { IAdapterFactory } from "./IAdapterFactory.js"
+import { KnownAdapterIds } from "./IExtensionAdapter.js"
 
 /**
  */
-export interface IExtensionMatchmaker<
-   ExtensionPoint extends string,
-   PayloadType extends IExtension,
-   TArgs extends any[],
-> {
+export interface IExtensionMatchmaker<ExtensionPoint extends string> {
    registerExtensionPoint: (
-      extensionPoint: IExtensionPoint<ExtensionPoint, PayloadType, TArgs>,
+      extensionPoint: IExtensionPoint<ExtensionPoint>,
    ) => void
 
-   registerAdapterFactory: <Adapter extends object>(
-      adapterFactory: IAdapterFactory<
-         ExtensionPoint,
-         PayloadType,
-         TArgs,
-         Adapter
-      >,
+   registerAdapterFactory: <AdapterId extends KnownAdapterIds<ExtensionPoint>>(
+      adapterId: AdapterId,
+      adapterFactory: IAdapterFactory<ExtensionPoint, AdapterId>,
    ) => void
 }
