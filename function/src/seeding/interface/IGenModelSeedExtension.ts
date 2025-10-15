@@ -1,16 +1,16 @@
+import { GEN_MODEL_SEED_TYPE_EXTENSION_POINT } from "./SeedTypeExtensionPoint"
+import { KnownExtensionIds } from "../../extensions/interface/IExtension.js"
 import { SeedTypeByExtension } from "./SeedTypeByExtension.js"
 import { ReturnableSeedType } from "./SeedTypes.js"
 
 export interface IGenModelSeedExtension<
-   ExtensionId extends KnownExtensionIds<ExtensionPoint>,
+   ExtensionId extends KnownExtensionIds<GEN_MODEL_SEED_TYPE_EXTENSION_POINT>,
 > {
-   validate: (
-      // input: Model,
-      input: SeedTypeByExtension<ExtensionId>,
+   validate: <Model extends SeedTypeByExtension<ExtensionId>>(
+      input: Model,
    ) => void
 
-   toSeedModel: (
-      // input: Model,
-      input: SeedTypeByExtension<ExtensionId>,
+   toSeedModel: <Model extends SeedTypeByExtension<ExtensionId>>(
+      input: Model,
    ) => ReturnableSeedType
 }

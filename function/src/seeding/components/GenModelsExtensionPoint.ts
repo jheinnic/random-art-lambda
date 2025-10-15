@@ -1,13 +1,8 @@
-import { GEN_MODEL_SEED_ADAPTER_ID } from "./../builtin/interface/Constants"
 import { IAdapterCollection } from "../../extensions/interface/IAdapterCollection.js"
-import {
-   IExtension,
-   KnownExtensionIds,
-} from "../../extensions/interface/IExtension.js"
+import { KnownExtensionIds } from "../../extensions/interface/IExtension.js"
 import { IExtensionCollection } from "../../extensions/interface/IExtensionCollection.js"
 import { IExtensionMatchmaker } from "../../extensions/interface/IExtensionMatchmaker.js"
 import { IExtensionPoint } from "../../extensions/interface/IExtensionPoint.js"
-import { IGenModelSeedExtension } from "../interface/IGenModelSeedExtension.js"
 import { IGenModelSeedExtensionPoint } from "../interface/IGenModelSeedExtensionPoint.js"
 import { SeedTypeByExtension } from "../interface/SeedTypeByExtension.js"
 import { ReturnableSeedType } from "../interface/SeedTypes.js"
@@ -15,7 +10,6 @@ import {
    GEN_MODEL_SEED_ADAPTER_ID_STR,
    GEN_MODEL_SEED_TYPE_EXTENSION_POINT,
 } from "./../interface/SeedTypeExtensionPoint"
-import { GenModelSeedAdapter } from "./GenModelSeedAdapter.js"
 import { GenModelSeedAdapterFactory } from "./GenModelSeedAdapterFactory.js"
 
 // type InstantiableAdapterCtor<

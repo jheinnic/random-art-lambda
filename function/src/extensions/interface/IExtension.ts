@@ -32,7 +32,7 @@ export interface IExtensionClass<
 // 1. Base interface that plugins will augment
 export interface ExtensionPayloadTypeURItoKind<ExtensionId extends string> {
    // Empty by default - plugins fill this in
-   "FauxExtensionPoint/GenericExtension": ExtensionPayloadTypeURItoKind<ExtensionId>
+   "ZauxExtensionPoint/GenericExtension": ExtensionPayloadTypeURItoKind<ExtensionId>
    "FauxExtensionPoint/BasicExtension": object
 }
 
@@ -42,18 +42,24 @@ export interface ExtensionTArgsURItoKind {
 }
 
 // 2. Extract valid URIs from whatever gets registered
-type ExtensionPayloadTypeURIs = keyof ExtensionPayloadTypeURItoKind<any> // & NamespaceURI<string, string>
+export type ExtensionPayloadTypeURIs =
+   keyof ExtensionPayloadTypeURItoKind<any> & NamespaceURI<string, string>
 
-type ExtensionTArgsURIs = keyof ExtensionTArgsURItoKind
+export type ExtensionTArgsURIs = keyof ExtensionTArgsURItoKind &
+   NamespaceURI<string, string>
 
 export type KnownPayloadIds<ExtensionPoint extends string> =
-   keyof ExtensionPayloadTypeURIs extends NamespaceURI<ExtensionPoint, infer Id>
-      ? Id
+   ExtensionPayloadTypeURIs extends NamespaceURI<infer Ep, infer Id>
+      ? Ep extends ExtensionPoint
+         ? Id
+         : never
       : never
 
 export type KnownTArgsIds<ExtensionPoint extends string> =
-   keyof ExtensionTArgsURIs extends NamespaceURI<ExtensionPoint, infer Id>
-      ? Id
+   ExtensionTArgsURIs extends NamespaceURI<infer Ep, infer Id>
+      ? Ep extends ExtensionPoint
+         ? Id
+         : never
       : never
 
 export type KnownExtensionIds<ExtensionPoint extends string> =
@@ -80,9 +86,8 @@ export type PayloadTypeKind<
 
 export type TArgsKind<
    ExtensionPoint extends string,
-   ExtensionId extends KnownPayloadIds<ExtensionPoint>,
+   ExtensionId extends KnownTArgsIds<ExtensionPoint>,
 > = ExtensionTArgsURItoKind[ExtensionTArgsURIFromParts<
    ExtensionPoint,
    ExtensionId
->] &
-   any[]
+>]
