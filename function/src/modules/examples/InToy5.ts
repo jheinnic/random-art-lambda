@@ -5,8 +5,8 @@ import {
    IDynamicModuleBuilder,
    DefaultDirector,
    InjectionConfig,
-} from "./modules/index.js"
-import { InjectableModuleClassFactory } from "./modules/di/InjectableModuleClassFactory.js"
+} from "../index.js"
+import { InjectableModuleClassFactory } from "../di/InjectableModuleClassFactory.js"
 
 const theBoxOne: unique symbol = Symbol("TheOneBox")
 const anotherBoxOne: unique symbol = Symbol("AnotherOneBox")
@@ -51,25 +51,9 @@ const importTokens = {
    theBox,
    anotherBox,
 } as const
-const moduleThreeHost = new InjectableModuleClassFactory<
-   ConfigOne,
-   typeof importTokens,
-   "forRootImpl"
->(importTokens, "forRootImpl")
-
-// type foo = typeof moduleZeroHost.externalConfigType
-// const af: foo = {
-//    value: "false",
-// theBox: { use: "value", a: 8, value: theBoxTwo },
-// anotherBox: { use: "token", token: anotherBoxThree },
-// }
-// type ConfigOneExternal = typeof moduleThreeHost.externalConfigType
-// type ConfigOne = typeof moduleThreeHost.internalConfigType
-const ModuleThreeBase = moduleThreeHost.build()
-
-@Module({})
-export class ModuleThree extends ModuleThreeBase {
-   public static forRootImpl(_config: ConfigOne): DefaultDirector {
+const moduleThreeHost = InjectableModuleClassFactory.create(
+   importTokens,
+   (_config: ConfigOne): DefaultDirector => {
       return (builder: IDynamicModuleBuilder) => {
          builder
             .exportProviders(Crate)
@@ -82,19 +66,24 @@ export class ModuleThree extends ModuleThreeBase {
                useExisting: anotherBox,
             })
       }
+   },
+)
+
+type PublicConfigThree = typeof moduleThreeHost.externalConfig
+
+@Module({})
+export class ModuleThree extends moduleThreeHost.build() {
+   public static forRoot(config: PublicConfigThree): DynamicModule {
+      return super.forRoot(config)
    }
 }
 
-@Module({})
-export class ModuleFour extends new InjectableModuleClassFactory<
-   ConfigOne,
-   typeof importTokens,
-   "forRootImpl"
->(importTokens, "forRootImpl").build() {
-   public static forRootImpl(
+const hostFour = InjectableModuleClassFactory.create(
+   importTokens,
+   (
       _config: ConfigOne,
       injectConfig: InjectionConfig<typeof importTokens>,
-   ): DefaultDirector {
+   ): DefaultDirector => {
       return (builder: IDynamicModuleBuilder) => {
          builder.exportModules(
             ModuleThree.forRoot({
@@ -104,76 +93,93 @@ export class ModuleFour extends new InjectableModuleClassFactory<
             }),
          )
       }
+   },
+)
+
+export type PublicConfigFour = typeof hostFour.externalConfig
+
+@Module({})
+export class ModuleFour extends hostFour.build() {
+   public static forRoot(config: PublicConfigFour): DynamicModule {
+      return super.forRoot(config)
    }
 }
 
 const injectionTwo = {
    anotherBox: anotherBoxTwo,
 }
-@Module({})
-class ModuleTwo extends new InjectableModuleClassFactory<
-   ConfigOne,
-   typeof injectionTwo,
-   "forRootImpl"
->(injectionTwo, "forRootImpl", false).build() {
-   public static forRootImpl(_config: ConfigOne): DefaultDirector {
+const hostTwo = InjectableModuleClassFactory.create(
+   injectionTwo,
+   (_config: ConfigOne): DefaultDirector => {
       return (builder: IDynamicModuleBuilder) => {
          builder.exportProviders({
             provide: anotherBoxOne,
             useExisting: anotherBoxTwo,
          })
       }
+   },
+)
+
+export type PublicConfigTwo = typeof hostTwo.externalConfig
+
+@Module({})
+class ModuleTwo extends hostTwo.build() {
+   static forRoot(config: PublicConfigTwo): DynamicModule {
+      return super.forRoot(config)
    }
 }
 
 const injectionOne = {
    theBox: theBoxOne,
 }
-@Module({})
-class ModuleOne extends new InjectableModuleClassFactory<
-   ConfigOne,
-   typeof injectionOne,
-   "forRootImpl"
->(injectionOne, "forRootImpl", false).build() {
-   public static forRootImpl(_config: ConfigOne): DefaultDirector {
+const hostOne = InjectableModuleClassFactory.create(
+   injectionOne,
+   (_config: ConfigOne): DefaultDirector => {
       return (builder: IDynamicModuleBuilder) => {
          builder.exportProviders({
             provide: theBoxTwo,
             useExisting: theBoxOne,
          })
       }
+   },
+)
+export type PublicConfigOne = typeof hostOne.externalConfig
+
+@Module({})
+class ModuleOne extends hostOne.build() {
+   static forRoot(config: PublicConfigOne): DynamicModule {
+      return super.forRoot(config)
    }
 }
 
 const innerConduitModule: DynamicModule = SimpleDynamicModule.registerModule(
+   "InnerConduitModule",
    (builder: IDynamicModuleBuilder): void => {
       builder.exportProviders({
          provide: theBox,
          useFactory: () => {
-            console.log("The 100 box")
+            console.log("Created the 100 box")
             return new Box(100)
          },
       })
    },
 )
 
-class ModuleZero extends new InjectableModuleClassFactory<
-   ConfigOne,
+@Module({})
+class ModuleZero extends InjectableModuleClassFactory.create(
    {},
-   "forRootImpl"
->({}, "forRootImpl", false).build() {
-   static forRootImpl(_config: ConfigOne): DefaultDirector {
+   (_config: ConfigOne): DefaultDirector => {
       return (builder: IDynamicModuleBuilder): void => {
          builder.exportProviders({
             provide: anotherBox,
             useFactory: () => {
-               console.log("The 150 box")
+               console.log("Created the 150 box")
                return new Box(150)
             },
          })
       }
-   }
-}
+   },
+).build() {}
 
 const appImports = [
    innerConduitModule,

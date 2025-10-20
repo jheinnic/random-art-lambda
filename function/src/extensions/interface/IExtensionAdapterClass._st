@@ -1,0 +1,6 @@
+import { IExtension } from "./IExtension.js"
+export type IExtensionAdapterClass<in out ExtensionPoint extends string> = new (
+   extensionId: string,
+   extensionClass: 
+   ext: IExtension<ExtensionPoint> & ExtensionApi,
+) => any

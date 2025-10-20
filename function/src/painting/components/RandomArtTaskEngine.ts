@@ -1,4 +1,9 @@
-import { Inject, Injectable, Logger } from "@nestjs/common"
+import {
+   Inject,
+   Injectable,
+   Logger,
+   OnApplicationBootstrap,
+} from "@nestjs/common"
 import { close, put, repeatTake, Chan } from "medium"
 import { Canvas } from "canvas"
 
