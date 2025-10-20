@@ -1,7 +1,6 @@
-import { OnModuleInit, Type } from "@nestjs/common"
+import { OnModuleInit } from "@nestjs/common"
 import { IAdapterFactory } from "../interface/IAdapterFactory.js"
 import {
-   IExtension,
    IExtensionClass,
    KnownTArgsIds,
    TArgsKind,
