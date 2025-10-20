@@ -1,9 +1,9 @@
 import { NamespaceURI } from "./IExtensionPoint.js"
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface IExtension<in ExtensionId extends string> {
-   /* common instance methods/properties */
-}
+// export interface IExtension<in ExtensionId extends string> {
+/* common instance methods/properties */
+// }
 
 export interface IExtensionKey<
    in out ExtensionPoint extends string,
@@ -29,7 +29,7 @@ export interface IExtensionClass<
 
 // 1. Base interface that plugins will augment
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface ExtensionPayloadTypeURItoKind<ExtensionId extends string> {
+export interface ExtensionPayloadTypeURItoKind {
    // Empty by default - plugins fill this in
 }
 
@@ -39,24 +39,30 @@ export interface ExtensionTArgsURItoKind {
 }
 
 // 2. Extract valid URIs from whatever gets registered
-export type ExtensionPayloadTypeURIs =
-   keyof ExtensionPayloadTypeURItoKind<any> & NamespaceURI<string, string>
+export type ExtensionPayloadTypeURIs<ExtensionPoint extends string> =
+   keyof ExtensionPayloadTypeURItoKind & NamespaceURI<ExtensionPoint, string>
 
-export type ExtensionTArgsURIs = keyof ExtensionTArgsURItoKind &
-   NamespaceURI<string, string>
+export type ExtensionTArgsURIs<ExtensionPoint extends string> =
+   keyof ExtensionTArgsURItoKind & NamespaceURI<ExtensionPoint, string>
 
 export type KnownPayloadIds<ExtensionPoint extends string> =
-   ExtensionPayloadTypeURIs extends NamespaceURI<infer Ep, infer Id>
-      ? Ep extends ExtensionPoint
-         ? Id
-         : never
+   ExtensionPayloadTypeURIs<ExtensionPoint> extends NamespaceURI<
+      ExtensionPoint,
+      infer Id
+   >
+      ? string extends Id
+         ? never
+         : Id
       : never
 
 export type KnownTArgsIds<ExtensionPoint extends string> =
-   ExtensionTArgsURIs extends NamespaceURI<infer Ep, infer Id>
-      ? Ep extends ExtensionPoint
-         ? Id
-         : never
+   ExtensionTArgsURIs<ExtensionPoint> extends NamespaceURI<
+      ExtensionPoint,
+      infer Id
+   >
+      ? string extends Id
+         ? never
+         : Id
       : never
 
 export type KnownExtensionIds<ExtensionPoint extends string> =
@@ -65,18 +71,20 @@ export type KnownExtensionIds<ExtensionPoint extends string> =
 type ExtensionPayloadTypeURIFromParts<
    ExtensionPoint extends string,
    ExtensionId extends KnownPayloadIds<ExtensionPoint>,
-> = NamespaceURI<ExtensionPoint, ExtensionId> & ExtensionPayloadTypeURIs
+> = NamespaceURI<ExtensionPoint, ExtensionId> &
+   ExtensionPayloadTypeURIs<ExtensionPoint>
 
 type ExtensionTArgsURIFromParts<
    ExtensionPoint extends string,
    ExtensionId extends KnownTArgsIds<ExtensionPoint>,
-> = NamespaceURI<ExtensionPoint, ExtensionId> & ExtensionTArgsURIs
+> = NamespaceURI<ExtensionPoint, ExtensionId> &
+   ExtensionTArgsURIs<ExtensionPoint>
 
 // 3. Lookup helpers
 export type PayloadTypeKind<
    ExtensionPoint extends string,
    ExtensionId extends KnownPayloadIds<ExtensionPoint>,
-> = ExtensionPayloadTypeURItoKind<ExtensionId>[ExtensionPayloadTypeURIFromParts<
+> = ExtensionPayloadTypeURItoKind[ExtensionPayloadTypeURIFromParts<
    ExtensionPoint,
    ExtensionId
 >]

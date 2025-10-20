@@ -1,27 +1,27 @@
 import { Logger } from "@nestjs/common"
-import { IExtension, IExtensionClass } from "./IExtension.js"
+import "./IExtension.js"
 
-interface IUIComponentExtension extends IExtension {
+interface IUIComponentExtension {
    render: () => void
 }
-interface IDataSourceExtension extends IExtension {
+interface IDataSourceExtension {
    fetch: () => void
 }
 
-// 🎯 FIX: UI components must always take a Logger and a Config object.
-type UIComponentClass<EID extends string> = IExtensionClass<
-   "ui-component",
-   EID,
-   IUIComponentExtension,
-   // TArgs is FIXED here as [Logger, UIConfig]
-   [Logger, UIConfig]
->
+export {}
 
-// 🎯 FIX: Data Sources must always take a ConnectionString.
-type DataSourceClass<EID extends string> = IExtensionClass<
-   "data-source",
-   EID,
-   IDataSourceExtension,
-   // TArgs is FIXED here as [string]
-   [string]
->
+declare module "./IExtension.js" {
+   interface ExtensionPayloadTypeURItoKind {
+      readonly "Examples/ui-component": IUIComponentExtension
+      readonly "Examples/data-source": IDataSourceExtension
+   }
+   interface ExtensionTArgsURItoKind {
+      readonly "Examples/ui-component": [Logger]
+      readonly "Examples/data-source": [string]
+   }
+   // 🎯 FIX: UI components must always take a Logger and a Config object.
+   type UIComponentClass = IExtensionClass<"Examples", "ui-component">
+
+   // 🎯 FIX: Data Sources must always take a ConnectionString.
+   type DataSourceClass = IExtensionClass<"Examples", "data-source">
+}
