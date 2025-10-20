@@ -1,16 +1,19 @@
+import { Observable } from "rxjs"
 import { IAdapterCollection } from "../../extensions/interface/IAdapterCollection.js"
 import { KnownExtensionIds } from "../../extensions/interface/IExtension.js"
+import { KnownAdapterIds } from "../../extensions/interface/IExtensionAdapter.js"
 import { IExtensionCollection } from "../../extensions/interface/IExtensionCollection.js"
 import { IExtensionMatchmaker } from "../../extensions/interface/IExtensionMatchmaker.js"
 import { IExtensionPoint } from "../../extensions/interface/IExtensionPoint.js"
 import { IGenModelSeedExtensionPoint } from "../interface/IGenModelSeedExtensionPoint.js"
-import { SeedTypeByExtension } from "../interface/SeedTypeByExtension.js"
-import { ReturnableSeedType } from "../interface/SeedTypes.js"
+import { SeedModelKind } from "../interface/SeedModelKind.js"
 import {
+   GEN_MODEL_SEED_ADAPTER_ID,
    GEN_MODEL_SEED_ADAPTER_ID_STR,
    GEN_MODEL_SEED_TYPE_EXTENSION_POINT,
 } from "./../interface/SeedTypeExtensionPoint"
 import { GenModelSeedAdapterFactory } from "./GenModelSeedAdapterFactory.js"
+import { SeedType } from "../interface/SeedTypes.js"
 
 // type InstantiableAdapterCtor<
 //    ExtensionPoint extends string,
@@ -48,7 +51,7 @@ export class GenModelSeedExtensionPoint
    receiveExtensions(
       extensions: IExtensionCollection<GEN_MODEL_SEED_TYPE_EXTENSION_POINT>,
       adapters: {
-         [x in string]: IAdapterCollection<
+         [x in KnownAdapterIds<GEN_MODEL_SEED_TYPE_EXTENSION_POINT>]: IAdapterCollection<
             GEN_MODEL_SEED_TYPE_EXTENSION_POINT,
             x
          >
@@ -61,15 +64,15 @@ export class GenModelSeedExtensionPoint
    validate<
       ExtensionId extends
          KnownExtensionIds<GEN_MODEL_SEED_TYPE_EXTENSION_POINT>,
-   >(extensionId: ExtensionId, input: SeedTypeByExtension<ExtensionId>): void {}
+   >(_extensionId: ExtensionId, _input: SeedModelKind<ExtensionId>): void {}
 
    toSeedModel<
       ExtensionId extends
          KnownExtensionIds<GEN_MODEL_SEED_TYPE_EXTENSION_POINT>,
    >(
       extensionId: ExtensionId,
-      input: SeedTypeByExtension<ExtensionId>,
-   ): ReturnableSeedType {
+      input: SeedModelKind<ExtensionId>,
+   ): Observable<SeedType> {
       if (this.extensions === undefined || this.adapters === undefined) {
          throw new Error(
             "Only call toSeedModel() after the ApplicationInitialization lifecycle event!",
@@ -90,6 +93,6 @@ export class GenModelSeedExtensionPoint
       }
       const adapter = this.adapters.adapt(extensionId, clazz, extension)
 
-      return undefined
+      return adapter.toModel(input)
    }
 }
