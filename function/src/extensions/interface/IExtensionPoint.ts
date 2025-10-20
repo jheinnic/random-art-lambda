@@ -1,11 +1,15 @@
 import { IExtensionCollection } from "./IExtensionCollection.js"
 import { IAdapterCollection } from "./IAdapterCollection.js"
+import { KnownAdapterIds } from "./IExtensionAdapter.js"
 
 export interface IExtensionPoint<ExtensionPoint extends string> {
    receiveExtensions: (
       extensions: IExtensionCollection<ExtensionPoint>,
       adapters: {
-         [AdapterId in string]: IAdapterCollection<ExtensionPoint, AdapterId>
+         [AdapterId in KnownAdapterIds<ExtensionPoint>]: IAdapterCollection<
+            ExtensionPoint,
+            AdapterId
+         >
       },
    ) => void
 }
