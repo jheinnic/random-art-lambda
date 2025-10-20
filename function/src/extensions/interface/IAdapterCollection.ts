@@ -1,23 +1,10 @@
-import { Type } from "@nestjs/common"
-import { IExtension, IExtensionClass } from "./IExtension.js"
+import { IExtensionClass, KnownExtensionIds } from "./IExtension.js"
 import { IAdapterFactory } from "./IAdapterFactory.js"
-import {
-   ExtensionAdapterKind,
-   ExtensionAdapterURIFromParts,
-   ExtensionAdapterURItoKind,
-} from "./IExtensionAdapter.js"
-
-// export type IExtensionCollection<
-//    ExtensionPoint extends string,
-//    ExtensionApi extends {} = {},
-//    ExtensionId extends KnownPayloadIds<ExtensionPoint> & KnownTArgsIds<ExtensionPoint> = string,
-// > = {
-//    [K in ExtensionId]: [K, IExtension<ExtensionPoint, K> & ExtensionApi]
-// }
+import { ExtensionAdapterKind, KnownAdapterIds } from "./IExtensionAdapter.js"
 
 export interface IAdapterCollection<
    ExtensionPoint extends string,
-   AdapterId extends string,
+   AdapterId extends KnownAdapterIds<ExtensionPoint>,
 > {
    fromFactory: () => IAdapterFactory<ExtensionPoint, AdapterId>
 
@@ -28,10 +15,7 @@ export interface IAdapterCollection<
       key: ExtensionId,
       clazz: ExtensionClass,
       extension: InstanceType<ExtensionClass>,
-   ) => ExtensionAdapterKind<
-      ExtensionAdapterURIFromParts<ExtensionPoint, AdapterId>,
-      ExtensionId
-   >
+   ) => ExtensionAdapterKind<ExtensionPoint, AdapterId, ExtensionId>
 
    unadapt: <
       ExtensionId extends KnownExtensionIds<ExtensionPoint>,

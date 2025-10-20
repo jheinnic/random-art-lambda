@@ -1,6 +1,5 @@
 import { Type, DynamicModule, ForwardReference } from "@nestjs/common"
 
-import { IDynamicModuleBlueprint } from "../interface/IDynamicModuleBuilder.js"
 import {
    ExternalConfig,
    InjectionConfig,
@@ -10,7 +9,10 @@ import {
    ModuleDependenciesOption,
    ModuleDirectorFactory,
 } from "../interface/IInjectableModuleClassFactory.js"
-import { DefaultDirector } from "../interface/IDynamicModuleBuilder.js"
+import {
+   DefaultDirector,
+   IDynamicModuleBlueprint,
+} from "../interface/IDynamicModuleBuilder.js"
 import { DynamicModuleBlueprint } from "./DynamicModuleBlueprint.js"
 
 // const validPropertyNames: z.ZodString = z.string().regex(/^[a-z][a-zA-Z0-9]+$/)

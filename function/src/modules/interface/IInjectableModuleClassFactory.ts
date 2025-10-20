@@ -77,10 +77,18 @@ export type ModuleDependenciesOption =
    | UseFunctionInjection
    | UseValueInjection
 
-export type ModuleDependencies<Config extends object, T extends object> =
-   keyof T extends Exclude<keyof T, keyof Config>
+/**
+ * Conditional type that compares a proposed module dependencies type to the Config object it
+ * needs to be combined with to create a public interface.   If it has no conflicting keys,
+ * then all is well and the candidate is returned as-is, otherwise it is replaced by never.
+ */
+export type ModuleDependencies<
+   InternalConfig extends object,
+   T extends Record<string, string | symbol | Type>,
+> =
+   keyof T extends Exclude<keyof T, keyof InternalConfig>
       ? {
-           [K in keyof T]: string | symbol | Type
+           [K in keyof T]: T[K]
         }
       : never
 
@@ -182,12 +190,6 @@ export interface InjectableModuleClass<
       args: ExternalConfig<InternalConfig, NoInfer<ImportTokens>>,
    ) => DynamicModule
 }
-
-// > = (new (
-//    importTokens: ImportTokens,
-//    directorFactory: ModuleDirectorFactory<InternalConfig, ImportTokens>,
-//    global?: boolean,
-// ) => IInjectableModuleClassFactory<InternalConfig, ImportTokens>) & {
 
 export interface IInjectableModuleClassFactory<
    InternalConfig extends object,
