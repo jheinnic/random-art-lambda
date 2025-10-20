@@ -23,12 +23,17 @@ export type ProtobufPlottingModuleOptions = typeof dynamicHost.OPTIONS_TYPE
    imports: [],
    providers: [
       PBufRegionMapFactory,
-      PBufSourceConfiguration,
-      PBufRegionMapRepository,
-      Providers.regionMapRepositoryAlias,
-      Providers.unpackConfiguredCallChannel,
-      Providers.unpackConfiguredReplyChannel,
+      Providers.regionMapFactoryAlias,
+      // PBufSourceConfiguration,
+      // PBufRegionMapRepository,
+      // Providers.regionMapRepositoryAlias,
+      // Providers.unpackConfiguredCallChannel,
+      // Providers.unpackConfiguredReplyChannel,
    ],
-   exports: [PBufRegionMapRepository, Providers.regionMapRepositoryAlias],
+   exports: [
+      PBufRegionMapFactory,
+      ProtobufPlottingModuleTypes.ProtobufRegionMapFactory,
+   ],
+   // exports: [PBufRegionMapRepository, Providers.regionMapRepositoryAlias],
 })
 export class ProtobufPlottingModule extends dynamicHost.ConfigurableModuleClass {}

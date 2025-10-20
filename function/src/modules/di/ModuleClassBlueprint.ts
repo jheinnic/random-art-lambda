@@ -2,11 +2,9 @@
 import { DynamicModule } from "@nestjs/common"
 import { DynamicModuleBlueprint } from "./DynamicModuleBlueprint.js"
 import type {
+   Context,
    IModuleBaseClassBlueprint,
-   IFeatureModuleClassBlueprint,
-   IRootModuleClassBlueprint,
-   IRootFeatureModuleClassBlueprint,
-} from "../interface/IModuleBaseClassBlueprint.js"
+} from "../interface/IModuleClassBlueprint.js"
 import {
    DefaultDirector,
    DefaultIdentity,
@@ -16,36 +14,22 @@ import {
    RootConduitModule,
 } from "../index.js"
 
+/**
+ * This obsolete Class creational pattern has a very different style to creating Module classes than
+ * its successor, the InjectableModuleClassFactory.  Both use the DynamicModuleBlueprint for the DynamicModule
+ * metadata work, but have different ideas about how to create reusable Classes.
+ *
+ * The Root to Feature sharing concept attempted here does not seem to work, beware.  This will be removed when its
+ * last consumer has been migrated away!
+ */
 export class ModuleClassBlueprint<
-      RootParams extends unknown[] = DefaultParams,
-      FeatureParams extends unknown[] = DefaultParams,
-      RootMethodName extends string = "forRoot",
-      FeatureMethodName extends string = "forFeature",
-   >
-   implements
+   RootParams extends unknown[] = DefaultParams,
+   FeatureParams extends unknown[] = DefaultParams,
+   RootMethodName extends string = "forRoot",
+   FeatureMethodName extends string = "forFeature",
+> implements
       IModuleBaseClassBlueprint<
-         RootParams,
-         FeatureParams,
-         RootMethodName,
-         FeatureMethodName
-      >,
-      IRootModuleClassBlueprint<
-         RootParams,
-         FeatureParams,
-         RootMethodName,
-         FeatureMethodName
-      >,
-      IFeatureModuleClassBlueprint<
-         RootParams,
-         FeatureParams,
-         RootMethodName,
-         FeatureMethodName
-      >,
-      IRootFeatureModuleClassBlueprint<
-         RootParams,
-         FeatureParams,
-         RootMethodName,
-         FeatureMethodName
+         Context<RootParams, FeatureParams, RootMethodName, FeatureMethodName>
       >
 {
    private built: boolean = false

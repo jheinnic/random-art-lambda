@@ -30,18 +30,17 @@ export abstract class AbstractRegionMap implements IRegionMap {
          while (++nextY < yMax) {
             let nextX: number = -1
             while (++nextX < xMax) {
-               plotter.plot(nextX, nextY, xCols[nextX], yCols[nextY])
+               plotter.plot(xCols[nextX], yCols[nextY])
             }
          }
       } else {
-         let ii: number = 0
-         let nextY: number = -1
-         while (++nextY < yMax) {
-            let nextX = -1
-            while (++nextX < xMax) {
-               plotter.plot(nextX, nextY, xCols[ii], yCols[ii])
-               ii = ii + 1
-            }
+         let ii: number = -1
+         // let nextY: number = -1
+         const iMax = xMax * yMax
+         while (++ii < iMax) {
+            // let nextX = -1
+            // while (++nextX < xMax) {
+            plotter.plot(xCols[ii], yCols[ii])
          }
       }
       plotter.finish()
@@ -64,17 +63,15 @@ export abstract class AbstractRegionMap implements IRegionMap {
       async function loopFoxY(nextY: number): Promise<void> {
          let nextX: number = -1
          while (++nextX < xMax) {
-            plotter.plot(nextX, nextY, xCols[nextX], yCols[nextY])
-         }
-         if (++nextY < yMax) {
-            // setTimeout(loopFoxY, 0, nextY)
-            await loopFoxY(nextY)
-         } else {
-            console.log("Done looping")
-            // plotter.finish()
+            plotter.plot(xCols[nextX], yCols[nextY])
          }
       }
-      await loopFoxY(0)
+
+      let nextY = -1
+      while (++nextY < yMax) {
+         await loopFoxY(nextY)
+      }
+      plotter.finish()
    }
 
    private async directVariable(plotter: IRegionPlotter): Promise<void> {
@@ -83,20 +80,18 @@ export abstract class AbstractRegionMap implements IRegionMap {
       const xCols: readonly number[] = this.columnOrderedXCoordinates
       const yCols: readonly number[] = this.columnOrderedYCoordinates
 
-      async function loopFoxYI(nextY: number, ii: number): Promise<void> {
-         let nextX = -1
-         while (++nextX < xMax) {
-            plotter.plot(nextX, nextY, xCols[ii], yCols[ii])
-            ii = ii + 1
-         }
-         if (++nextY < yMax) {
-            // setTimeout(loopFoxYI, 0, nextY, ii)
-            await loopFoxYI(nextY, ii)
-         } else {
-            console.log("Done looping")
-            plotter.finish()
+      async function loopFoxYI(ii: number, iMax: number): Promise<void> {
+         while (++ii < iMax) {
+            plotter.plot(xCols[ii], yCols[ii])
          }
       }
       await loopFoxYI(0, 0)
+
+      let nextY = -1
+      let ii: number = -1
+      while (++nextY < yMax) {
+         await loopFoxYI(ii, (ii = ii + xMax))
+      }
+      plotter.finish()
    }
 }

@@ -1,58 +1,66 @@
-import { InjectionToken, Type, DynamicModule, Provider } from "@nestjs/common"
+import {
+   InjectionToken,
+   Type,
+   DynamicModule,
+   Provider,
+   ForwardReference,
+} from "@nestjs/common"
 import { DefaultDirector } from "./IDynamicModuleBuilder.js"
-import { CombineObjects } from "simplytyped"
 
 export interface FunctionInjectTokenArgument {
-   token: InjectionToken
-   module?: Type | DynamicModule
+   token: string | symbol | Type
    optional?: boolean
 }
 
 export interface FunctionInjectProviderArgument {
-   provider: Type | Provider
-   module?: Type | DynamicModule
+   provider: Provider
    optional?: boolean
 }
 
 export type FunctionInjectArgumentItem =
    | FunctionInjectTokenArgument
    | FunctionInjectProviderArgument
-   | InjectionToken
+   | string
+   | symbol
+   | Type
 export type FunctionInjectArgument = FunctionInjectArgumentItem[]
 
 export interface UseTokenForValueInjection {
    use: "token"
    for: "value"
-   token: InjectionToken
-   module?: Type | DynamicModule
+   token: string | symbol | Type
+   module?: Type | DynamicModule | Promise<DynamicModule> | ForwardReference
 }
 
 export interface UseTokenForFactoryInjection {
    use: "token"
    for: "factory"
-   token: InjectionToken
-   module?: Type | DynamicModule
+   token: string | symbol | Type
+   module?: Type | DynamicModule | Promise<DynamicModule> | ForwardReference
    method: string
 }
 
 export interface UseProviderForValueInjection {
    use: "provider"
    for: "value"
-   provider: Type | Provider
-   module?: Type | DynamicModule
+   provider: Provider
+   module?: Type | DynamicModule | Promise<DynamicModule> | ForwardReference
 }
 
 export interface UseProviderForFactoryInjection {
    use: "provider"
    for: "factory"
-   provider: Type | Provider
-   module?: Type | DynamicModule
+   provider: Provider
+   module?: Type | DynamicModule | Promise<DynamicModule> | ForwardReference
    method: string
 }
 
 export interface UseFunctionInjection {
    use: "function"
    value: (arg: any[]) => {}
+   modules?: Array<
+      Type | DynamicModule | Promise<DynamicModule> | ForwardReference
+   >
    inject?: FunctionInjectArgument
 }
 
@@ -69,35 +77,44 @@ export type ModuleDependenciesOption =
    | UseFunctionInjection
    | UseValueInjection
 
-export type ModuleDependencies = Record<string, string | symbol | Type>
+export type ModuleDependencies<Config extends object, T extends object> =
+   keyof T extends Exclude<keyof T, keyof Config>
+      ? {
+           [K in keyof T]: string | symbol | Type
+        }
+      : never
 
-export type InjectionConfig<ImportTokens extends ModuleDependencies> = Record<
+export type InjectionConfig<ImportTokens extends object> = Record<
    keyof ImportTokens,
    ModuleDependenciesOption
 >
 export type ExternalConfig<
-   InternalConfig extends {},
-   ImportTokens extends ModuleDependencies,
-> = CombineObjects<InternalConfig, InjectionConfig<ImportTokens>>
-
-interface DynamicModulePart<
-   in InternalConfig extends {},
-   in ImportTokens extends ModuleDependencies,
-> {
-   forRoot: (
-      ...args: [ExternalConfig<InternalConfig, ImportTokens>]
-   ) => DynamicModule
-}
-
-type ExtensionPart<
-   in Params extends {},
-   in MethodName extends string,
-   in InjectConfig extends Record<string, ModuleDependenciesOption>,
+   InternalConfig extends object,
+   ImportTokens extends ModuleDependencies<InternalConfig, ImportTokens>,
 > = {
-   [K in MethodName]:
-      | ((...args: [Params, InjectConfig]) => DefaultDirector)
-      | ((...args: [Params]) => DefaultDirector)
+   [K in keyof InternalConfig | keyof ImportTokens]: (InternalConfig &
+      InjectionConfig<ImportTokens>)[K]
 }
+
+export type FullModuleDirectorFactory<
+   in InternalConfig extends object,
+   in ImportTokens extends ModuleDependencies<InternalConfig, ImportTokens>,
+> = (
+   config: InternalConfig,
+   injection: InjectionConfig<NoInfer<ImportTokens>>,
+) => DefaultDirector
+
+export type BasicModuleDirectorFactory<
+   in InternalConfig extends object,
+   in ImportTokens extends ModuleDependencies<InternalConfig, ImportTokens>,
+> = (config: InternalConfig) => DefaultDirector
+
+export type ModuleDirectorFactory<
+   InternalConfig extends object,
+   ImportTokens extends ModuleDependencies<InternalConfig, ImportTokens>,
+> =
+   | BasicModuleDirectorFactory<InternalConfig, ImportTokens>
+   | FullModuleDirectorFactory<InternalConfig, ImportTokens>
 
 /**
  * The InjectableModuleClassFactory's build() method supplies the template types
@@ -156,26 +173,25 @@ type ExtensionPart<
  * through documentation found in those concrete subtypes, not this SDK-like
  * implementation detail.
  */
-export type AbstractInjectableModule<
-   InternalConfig extends {},
-   ImportTokens extends {},
-   ExtensionMethodName extends string,
-> = (new () => any) &
-   DynamicModulePart<InternalConfig, ImportTokens> &
-   ExtensionPart<
-      InternalConfig,
-      ExtensionMethodName,
-      InjectionConfig<ImportTokens>
-   >
+export interface InjectableModuleClass<
+   in out InternalConfig extends object,
+   in out ImportTokens extends ModuleDependencies<InternalConfig, ImportTokens>,
+> extends Type {
+   // > extends Type<AbstractInjectableModule<InternalConfig, ImportTokens>> {
+   forRoot: (
+      args: ExternalConfig<InternalConfig, NoInfer<ImportTokens>>,
+   ) => DynamicModule
+}
+
+// > = (new (
+//    importTokens: ImportTokens,
+//    directorFactory: ModuleDirectorFactory<InternalConfig, ImportTokens>,
+//    global?: boolean,
+// ) => IInjectableModuleClassFactory<InternalConfig, ImportTokens>) & {
 
 export interface IInjectableModuleClassFactory<
-   InternalConfig extends {},
-   ImportTokens extends Record<string, string | symbol | Type>,
-   ExtensionMethodName extends string,
+   InternalConfig extends object,
+   ImportTokens extends ModuleDependencies<InternalConfig, ImportTokens>,
 > {
-   build: () => AbstractInjectableModule<
-      InternalConfig,
-      ImportTokens,
-      ExtensionMethodName
-   >
+   build: () => InjectableModuleClass<InternalConfig, ImportTokens>
 }

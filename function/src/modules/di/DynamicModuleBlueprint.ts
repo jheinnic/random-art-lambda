@@ -5,7 +5,7 @@ import {
    Provider,
    Abstract,
 } from "@nestjs/common"
-import { IDynamicModuleBlueprint } from "../interface/IDynamicModuleBlueprint.js"
+import { IDynamicModuleBlueprint } from "../interface/IDynamicModuleBuilder.js"
 
 export class DynamicModuleBlueprint implements IDynamicModuleBlueprint {
    private global: boolean = false

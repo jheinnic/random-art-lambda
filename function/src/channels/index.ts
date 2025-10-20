@@ -1,2 +1,2 @@
-export * from "./Module.js"
-export * from "./Types.js"
+export * from "./di/Module.js"
+export * from "./di/Types.js"

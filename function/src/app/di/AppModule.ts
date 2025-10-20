@@ -8,6 +8,7 @@ import { AppService } from "../components/AppService.js"
 import { AppServiceTwo } from "../components/AppServiceTwo.js"
 import { SharedBlockstoresModule } from "./SharedBlockstoresModule.js"
 import { SharedBlockstoresModuleTypes } from "./SharedBlockstoresModuleTypes.js"
+import { ProtobufPlottingModule } from "../../plotting/protobuf/di/Module.js"
 
 @Module({
    imports: [
@@ -20,6 +21,7 @@ import { SharedBlockstoresModuleTypes } from "./SharedBlockstoresModuleTypes.js"
             new IpldPlottingModuleConfiguration(blockstore),
          inject: [SharedBlockstoresModuleTypes.RegionMapBlockstore],
       }),
+      ProtobufPlottingModule,
       // PaintingModule,
    ],
    providers: [AppService, AppServiceTwo],

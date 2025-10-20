@@ -36,7 +36,7 @@ export class GenericService {
       // private readonly regionMapRepository: IRegionMapRepository,
       @Inject(CliMainModuleTypes.RandomArtTaskEngine)
       private readonly randomArtEngine: IRandomArtTaskEngine,
-      @Inject(QueuedPaintingTypes.FlowProducer)
+      @Inject(CliMainModuleTypes.RandomArtQueueFlowProducer)
       private readonly flowProducer: RandomArtFlowProducer,
    ) {
       this.artworkRequests = artworkRequestsWrapper.unwrap()
