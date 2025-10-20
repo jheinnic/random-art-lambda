@@ -1,7 +1,9 @@
-import { GEN_MODEL_SEED_TYPE_EXTENSION_POINT } from "./SeedTypeExtensionPoint"
+import { Observable } from "rxjs"
+
 import { KnownExtensionIds } from "../../extensions/interface/IExtension.js"
-import { SeedTypeByExtension } from "./SeedTypeByExtension.js"
-import { ReturnableSeedType } from "./SeedTypes.js"
+import { GEN_MODEL_SEED_TYPE_EXTENSION_POINT } from "./SeedTypeExtensionPoint"
+import { SeedModelKind } from "./SeedModelKind.js"
+import { SeedType } from "./SeedTypes.js"
 
 export interface IGenModelSeedExtensionPoint {
    validate: <
@@ -9,7 +11,7 @@ export interface IGenModelSeedExtensionPoint {
          KnownExtensionIds<GEN_MODEL_SEED_TYPE_EXTENSION_POINT>,
    >(
       extensionId: ExtensionId,
-      input: SeedTypeByExtension<ExtensionId>,
+      input: SeedModelKind<ExtensionId>,
    ) => void
 
    toSeedModel: <
@@ -17,6 +19,6 @@ export interface IGenModelSeedExtensionPoint {
          KnownExtensionIds<GEN_MODEL_SEED_TYPE_EXTENSION_POINT>,
    >(
       extensionId: ExtensionId,
-      input: SeedTypeByExtension<ExtensionId>,
-   ) => ReturnableSeedType
+      input: SeedModelKind<ExtensionId>,
+   ) => Observable<SeedType>
 }

@@ -12,7 +12,7 @@ import { ReturnableSeedType } from "../../interface/SeedTypes.js"
 import { IHexSeed } from "../interface/IHexSeed.js"
 
 export class HexSeedExtension
-   implements IGenModelSeedExtension<HEX_SEED_EXTENSION_ID, IHexSeed>
+   implements IGenModelSeedExtension<HEX_SEED_EXTENSION_ID>
 {
    static readonly extensionFor: GEN_MODEL_SEED_TYPE_EXTENSION_POINT =
       GEN_MODEL_SEED_TYPE_EXTENSION_POINT_STRING
