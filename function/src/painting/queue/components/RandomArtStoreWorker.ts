@@ -19,14 +19,29 @@ export class RandomArtStoreWorker extends WorkerHost {
          await this.doSomething(job.data)
          progress += 1
          await job.updateProgress(progress)
+         if (progress % 20 === 0) {
+            this.logger.log(
+               "Progress on " +
+                  JSON.stringify(job.data) +
+                  " is at " +
+                  progress.toString(10) +
+                  "%",
+            )
+         }
       }
-      return {}
+      this.logger.log("Finishing: " + JSON.stringify(job.data))
+      return {
+         filePath: job.data.filePath,
+         id: job.id,
+         from: job.queueQualifiedName,
+         token: job.token,
+         name: job.name,
+      }
    }
 
    async doSomething(data: object): Promise<void> {
       await new Promise((resolve, _reject) => {
          resolve(42)
       })
-      console.log("Finishing: " + JSON.stringify(data))
    }
 }

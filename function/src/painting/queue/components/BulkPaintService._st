@@ -1,0 +1,66 @@
+import { Injectable, OnModuleInit } from "@nestjs/common"
+import { Queue } from "bullmq"
+import { Subject, bufferCount, mergeMap, from, tap } from "rxjs"
+
+@Injectable()
+export class BulkPaintServiceRx implements OnModuleInit {
+   private readonly taskStream$ = new Subject<SimpleTaskInput>()
+   private readonly queue: Queue
+   processPaintTask: any
+
+   async onModuleInit() {
+      this.queue = new Queue("paint-jobs")
+
+      // Setup RxJS pipeline to BullMQ
+      this.taskStream$
+         .pipe(
+            // Batch tasks for efficient queuing
+            bufferCount(10),
+            mergeMap(
+               (batch) => from(this.queueBatch(batch)),
+               2, // 2 concurrent batch submissions
+            ),
+         )
+         .subscribe({
+            next: (count) => console.log(`Queued ${count} tasks`),
+            error: (err) => console.error("Queue error:", err),
+         })
+
+      // Setup workers
+      this.setupWorkers()
+   }
+
+   // async submitBulkTasks(inputFile: string): Promise<void> {
+   //    const tasks = await this.loadTasksFromFile(inputFile)
+
+   //    // Use RxJS to stream tasks
+   //    from(tasks)
+   //       .pipe(tap((task) => console.log(`Submitting ${task.id}`)))
+   //       .subscribe((task) => this.taskStream$.next(task))
+   // }
+
+   private async queueBatch(tasks: SimpleTaskInput[]): Promise<number> {
+      const jobs = await this.queue.addBulk(
+         tasks.map((task) => ({
+            name: "paint",
+            data: task,
+         })),
+      )
+      return jobs.length
+   }
+
+   private setupWorkers(): void {
+      const workerCount = 8
+
+      for (let i = 0; i < workerCount; i++) {
+         new Worker(
+            "paint-jobs",
+            async (job: { data: { id: any } }) => {
+               console.log(`Worker ${i}: Processing ${job.data.id}`)
+               return this.processPaintTask(job.data)
+            },
+            { connection: { host: "localhost", port: 6379 } },
+         )
+      }
+   }
+}

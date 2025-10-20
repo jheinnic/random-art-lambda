@@ -1,3 +1,6 @@
+/* eslint-disable no-fallthrough */
+/* eslint-disable no-labels */
+/* eslint-disable camelcase */
 /*
  * This file is part of ocamljs, OCaml to Javascript compiler
  * Copyright (C) 2007-9 Skydeck, Inc
@@ -391,13 +394,13 @@ const methodHolder = {
          return hash_accu & 0x3fffffff
       }
       const caml_input_value = function () {
-         throw "caml_input_value"
+         throw new Error("caml_input_value")
       }
       const caml_input_value_from_string = function () {
-         throw "caml_input_value_from_string"
+         throw new Error("caml_input_value_from_string")
       }
       const caml_install_signal_handler = function () {
-         throw "caml_install_signal_handler"
+         throw new Error("caml_install_signal_handler")
       }
       const caml_int_compare = function (i1, i2) {
          return (i1 > i2) - (i1 < i2)
@@ -406,7 +409,7 @@ const methodHolder = {
          return (i1 > i2) - (i1 < i2)
       }
       const caml_int64_compare = function (i1, i2) {
-         throw "caml_int64_compare"
+         throw new Error("caml_int64_compare")
       }
       const caml_int64_float_of_bits = function (s) {
          // see pervasives.ml; int64s are represented by strings
@@ -454,37 +457,37 @@ const methodHolder = {
          return a
       }
       const caml_marshal_data_size = function () {
-         throw "caml_marshal_data_size"
+         throw new Error("caml_marshal_data_size")
       }
       const caml_md5_chan = function () {
-         throw "caml_md5_chan"
+         throw new Error("caml_md5_chan")
       }
       const caml_md5_string = function () {
-         throw "caml_md5_string"
+         throw new Error("caml_md5_string")
       }
       const caml_ml_channel_size = function () {
-         throw "caml_ml_channel_size"
+         throw new Error("caml_ml_channel_size")
       }
       const caml_ml_channel_size_64 = function () {
-         throw "caml_ml_channel_size_64"
+         throw new Error("caml_ml_channel_size_64")
       }
       const caml_ml_close_channel = function () {
-         throw "caml_ml_close_channel"
+         throw new Error("caml_ml_close_channel")
       }
 
       const caml_ml_flush = function (c) {}
 
       const caml_ml_input = function () {
-         throw "caml_ml_input"
+         throw new Error("caml_ml_input")
       }
       const caml_ml_input_char = function () {
-         throw "caml_ml_input_char"
+         throw new Error("caml_ml_input_char")
       }
       const caml_ml_input_int = function () {
-         throw "caml_ml_input_int"
+         throw new Error("caml_ml_input_int")
       }
       const caml_ml_input_scan_line = function () {
-         throw "caml_ml_input_scan_line"
+         throw new Error("caml_ml_input_scan_line")
       }
       const caml_ml_open_descriptor_in = function () {
          return 0
@@ -502,34 +505,34 @@ const methodHolder = {
       const caml_ml_output_char = function (c, ch) {}
 
       const caml_ml_output_int = function () {
-         throw "caml_ml_output_int"
+         throw new Error("caml_ml_output_int")
       }
       const caml_ml_pos_in = function () {
-         throw "caml_ml_pos_in"
+         throw new Error("caml_ml_pos_in")
       }
       const caml_ml_pos_in_64 = function () {
-         throw "caml_ml_pos_in_64"
+         throw new Error("caml_ml_pos_in_64")
       }
       const caml_ml_pos_out = function () {
-         throw "caml_ml_pos_out"
+         throw new Error("caml_ml_pos_out")
       }
       const caml_ml_pos_out_64 = function () {
-         throw "caml_ml_pos_out_64"
+         throw new Error("caml_ml_pos_out_64")
       }
       const caml_ml_seek_in = function () {
-         throw "caml_ml_seek_in"
+         throw new Error("caml_ml_seek_in")
       }
       const caml_ml_seek_in_64 = function () {
-         throw "caml_ml_seek_in_64"
+         throw new Error("caml_ml_seek_in_64")
       }
       const caml_ml_seek_out = function () {
-         throw "caml_ml_seek_out"
+         throw new Error("caml_ml_seek_out")
       }
       const caml_ml_seek_out_64 = function () {
-         throw "caml_ml_seek_out_64"
+         throw new Error("caml_ml_seek_out_64")
       }
       const caml_ml_set_binary_mode = function () {
-         throw "caml_ml_set_binary_mode"
+         throw new Error("caml_ml_set_binary_mode")
       }
       const caml_named_value = function (n) {
          return oc$$nv[n]
@@ -571,22 +574,22 @@ const methodHolder = {
          o.length = s
       }
       const caml_output_value = function () {
-         throw "caml_output_value"
+         throw new Error("caml_output_value")
       }
       const caml_output_value_to_string = function () {
-         throw "caml_output_value_to_string"
+         throw new Error("caml_output_value_to_string")
       }
       const caml_output_value_to_buffer = function () {
-         throw "caml_output_value_to_buffer"
+         throw new Error("caml_output_value_to_buffer")
       }
       const caml_record_backtrace = function () {
-         throw "caml_record_backtrace"
+         throw new Error("caml_record_backtrace")
       }
       const caml_backtrace_status = function () {
-         throw "caml_backtrace_status"
+         throw new Error("caml_backtrace_status")
       }
       const caml_get_exception_backtrace = function () {
-         throw "caml_get_exception_backtrace"
+         throw new Error("caml_get_exception_backtrace")
       }
       const caml_register_named_value = function (n, v) {
          oc$$nv[n] = v
@@ -601,7 +604,7 @@ const methodHolder = {
          }
       }
       const caml_sys_exit = function () {
-         throw "caml_sys_exit"
+         throw new Error("caml_sys_exit")
       }
       const init_time = new Date().getTime() / 1000
       const caml_sys_time = function () {
@@ -614,10 +617,10 @@ const methodHolder = {
          return $("js", 32)
       } // XXX browser name?
       const caml_sys_open = function () {
-         throw "caml_sys_open"
+         throw new Error("caml_sys_open")
       }
       const caml_sys_random_seed = function () {
-         throw "caml_sys_random_seed"
+         throw new Error("caml_sys_random_seed")
       }
 
       // lexing.c
@@ -692,384 +695,382 @@ const methodHolder = {
 
       /***********************************************/
 
-      function run_mem(p, pc, mem, curr_pos) {
-         for (;;) {
-            let dst, src
+      // function run_mem(p, pc, mem, curr_pos) {
+      //    for (;;) {
+      //       const dst = p.charCodeAt(pc++)
+      //       if (dst === 0xff) {
+      //          return
+      //       }
+      //       const src = p.charCodeAt(pc++)
+      //       if (src === 0xff) {
+      //          /*      fprintf(stderr,'[%hhu] <- %d\n',dst,Int_val(curr_pos)) ; */
+      //          mem[dst] = curr_pos
+      //       } else {
+      //          /*      fprintf(stderr,'[%hhu] <- [%hhu]\n',dst,src) ; */
+      //          mem[dst] = mem[src]
+      //       }
+      //    }
+      // }
 
-            dst = p.charCodeAt(pc++)
-            if (dst == 0xff) {
-               return
-            }
-            src = p.charCodeAt(pc++)
-            if (src == 0xff) {
-               /*      fprintf(stderr,'[%hhu] <- %d\n',dst,Int_val(curr_pos)) ; */
-               mem[dst] = curr_pos
-            } else {
-               /*      fprintf(stderr,'[%hhu] <- [%hhu]\n',dst,src) ; */
-               mem[dst] = mem[src]
-            }
-         }
-      }
+      // function run_tag(p, pc, mem) {
+      //    for (;;) {
+      //       const dst = p.charCodeAt(pc++)
+      //       if (dst == 0xff) {
+      //          return
+      //       }
+      //       const src = p.charCodeAt(pc++)
+      //       if (src == 0xff) {
+      //          /*      fprintf(stderr,'[%hhu] <- -1\n',dst) ; */
+      //          mem[dst] = -1
+      //       } else {
+      //          /*      fprintf(stderr,'[%hhu] <- [%hhu]\n',dst,src) ; */
+      //          mem[dst] = mem[src]
+      //       }
+      //    }
+      // }
 
-      function run_tag(p, pc, mem) {
-         for (;;) {
-            const dst = p.charCodeAt(pc++)
-            if (dst == 0xff) {
-               return
-            }
-            const src = p.charCodeAt(pc++)
-            if (src == 0xff) {
-               /*      fprintf(stderr,'[%hhu] <- -1\n',dst) ; */
-               mem[dst] = -1
-            } else {
-               /*      fprintf(stderr,'[%hhu] <- [%hhu]\n',dst,src) ; */
-               mem[dst] = mem[src]
-            }
-         }
-      }
-
-      const caml_new_lex_engine = function (tbl, start_state, lexbuf) {
-         let state, base, backtrk, c, pstate
-         state = start_state
-         if (state >= 0) {
-            /* First entry */
-            lexbuf[6] = lexbuf[4] = lexbuf[5]
-            lexbuf[7] = -1
-         } else {
-            /* Reentry after refill */
-            state = -state - 1
-         }
-         while (1) {
-            /* Lookup base address or action number for current state */
-            base = Short(tbl[0], state)
-            if (base < 0) {
-               const pc_off = Short(tbl[5], state)
-               run_tag(tbl[10], pc_off, lexbuf[9])
-               /*      fprintf(stderr,'Perform: %d\n',-base-1) ; */
-               return -base - 1
-            }
-            /* See if it's a backtrack point */
-            backtrk = Short(tbl[1], state)
-            if (backtrk >= 0) {
-               const pc_off = Short(tbl[6], state)
-               run_tag(tbl[10], pc_off, lexbuf[9])
-               lexbuf[6] = lexbuf[5]
-               lexbuf[7] = backtrk
-            }
-            /* See if we need a refill */
-            if (lexbuf[5] >= lexbuf[2]) {
-               if (lexbuf[8] === false) {
-                  return -state - 1
-               } else {
-                  c = 256
-               }
-            } else {
-               /* Read next input char */
-               c = lexbuf[1].charCodeAt(lexbuf[5])
-               lexbuf[5] += 1
-            }
-            /* Determine next state */
-            pstate = state
-            if (Short(tbl[4], base + c) == state) {
-               state = Short(tbl[3], base + c)
-            } else {
-               state = Short(tbl[2], state)
-            }
-            /* If no transition on this char, return to last backtrack point */
-            if (state < 0) {
-               lexbuf[5] = lexbuf[6]
-               if (lexbuf[7] == -1) {
-                  caml_failwith("lexing: empty token")
-               } else {
-                  return lexbuf[7]
-               }
-            } else {
-               /* If some transition, get and perform memory moves */
-               const base_code = Short(tbl[5], pstate)
-               let pc_off
-               if (Short(tbl[9], base_code + c) == pstate) {
-                  pc_off = Short(tbl[8], base_code + c)
-               } else {
-                  pc_off = Short(tbl[7], pstate)
-               }
-               if (pc_off > 0) {
-                  run_mem(tbl[10], pc_off, lexbuf[9], lexbuf[5])
-               }
-               /* Erase the EOF condition only if the EOF pseudo-character was
-           consumed by the automaton (i.e. there was no backtrack above)
-         */
-               if (c == 256) {
-                  lexbuf[8] = false
-               }
-            }
-         }
-      }
+      // const caml_new_lex_engine = function (tbl, start_state, lexbuf) {
+      //    let state, base, backtrk, c, pstate
+      //    state = start_state
+      //    if (state >= 0) {
+      //       /* First entry */
+      //       lexbuf[6] = lexbuf[4] = lexbuf[5]
+      //       lexbuf[7] = -1
+      //    } else {
+      //       /* Reentry after refill */
+      //       state = -state - 1
+      //    }
+      //    while (1) {
+      //       /* Lookup base address or action number for current state */
+      //       base = Short(tbl[0], state)
+      //       if (base < 0) {
+      //          const pc_off = Short(tbl[5], state)
+      //          run_tag(tbl[10], pc_off, lexbuf[9])
+      //          /*      fprintf(stderr,'Perform: %d\n',-base-1) ; */
+      //          return -base - 1
+      //       }
+      //       /* See if it's a backtrack point */
+      //       backtrk = Short(tbl[1], state)
+      //       if (backtrk >= 0) {
+      //          const pc_off = Short(tbl[6], state)
+      //          run_tag(tbl[10], pc_off, lexbuf[9])
+      //          lexbuf[6] = lexbuf[5]
+      //          lexbuf[7] = backtrk
+      //       }
+      //       /* See if we need a refill */
+      //       if (lexbuf[5] >= lexbuf[2]) {
+      //          if (lexbuf[8] === false) {
+      //             return -state - 1
+      //          } else {
+      //             c = 256
+      //          }
+      //       } else {
+      //          /* Read next input char */
+      //          c = lexbuf[1].charCodeAt(lexbuf[5])
+      //          lexbuf[5] += 1
+      //       }
+      //       /* Determine next state */
+      //       pstate = state
+      //       if (Short(tbl[4], base + c) == state) {
+      //          state = Short(tbl[3], base + c)
+      //       } else {
+      //          state = Short(tbl[2], state)
+      //       }
+      //       /* If no transition on this char, return to last backtrack point */
+      //       if (state < 0) {
+      //          lexbuf[5] = lexbuf[6]
+      //          if (lexbuf[7] == -1) {
+      //             caml_failwith("lexing: empty token")
+      //          } else {
+      //             return lexbuf[7]
+      //          }
+      //       } else {
+      //          /* If some transition, get and perform memory moves */
+      //          const base_code = Short(tbl[5], pstate)
+      //          let pc_off
+      //          if (Short(tbl[9], base_code + c) == pstate) {
+      //             pc_off = Short(tbl[8], base_code + c)
+      //          } else {
+      //             pc_off = Short(tbl[7], pstate)
+      //          }
+      //          if (pc_off > 0) {
+      //             run_mem(tbl[10], pc_off, lexbuf[9], lexbuf[5])
+      //          }
+      //          /* Erase the EOF condition only if the EOF pseudo-character was
+      //      consumed by the automaton (i.e. there was no backtrack above)
+      //    */
+      //          if (c == 256) {
+      //             lexbuf[8] = false
+      //          }
+      //       }
+      //    }
+      // }
 
       // parsing.c
 
-      let caml_parser_trace = false
+      // let caml_parser_trace = false
 
       /* Auxiliary for printing token just read */
 
-      function token_name(names, number) {
-         let n = 0
-         for (; /* nothing */ number > 0; number--) {
-            const i = names.indexOf("\x00", n)
-            if (i == -1) {
-               return "<unknown token>"
-            }
-            n = i + 1
-         }
-         return names.substr(n, names.indexOf("\x00", n) - n)
-      }
+      // function token_name(names, number) {
+      //    let n = 0
+      //    for (; /* nothing */ number > 0; number--) {
+      //       const i = names.indexOf("\x00", n)
+      //       if (i == -1) {
+      //          return "<unknown token>"
+      //       }
+      //       n = i + 1
+      //    }
+      //    return names.substr(n, names.indexOf("\x00", n) - n)
+      // }
 
-      function print_token(tables, state, tok) {
-         if (typeof tok === "number") {
-            print(
-               "State " + state + ": read token " + token_name(tables[14], tok),
-            )
-         } else {
-            print(
-               "State " +
-                  state +
-                  ": read token " +
-                  token_name(tables[15], tok.t) +
-                  "(" +
-                  tok[0] +
-                  ")",
-            )
-         }
-      }
+      // function print_token(tables, state, tok) {
+      //    if (typeof tok === "number") {
+      //       print(
+      //          "State " + state + ": read token " + token_name(tables[14], tok),
+      //       )
+      //    } else {
+      //       print(
+      //          "State " +
+      //             state +
+      //             ": read token " +
+      //             token_name(tables[15], tok.t) +
+      //             "(" +
+      //             tok[0] +
+      //             ")",
+      //       )
+      //    }
+      // }
 
       /* The pushdown automata */
 
-      const caml_parse_engine = function (tables, env, cmd, arg) {
-         let sp, asp
-         let state, state1
-         let n, n1, n2, m, errflag
+      // const caml_parse_engine = function (tables, env, cmd, arg) {
+      //    let sp, asp
+      //    let state, state1
+      //    let n, n1, n2, m, errflag
 
-         loop: while (true) {
-            // noinspection FallThroughInSwitchStatementJS
-            switch (cmd) {
-               case 0:
-                  state = 0
-                  sp = env[13]
-                  errflag = 0
+      //    loop: while (true) {
+      //       // noinspection FallThroughInSwitchStatementJS
+      //       switch (cmd) {
+      //          case 0:
+      //             state = 0
+      //             sp = env[13]
+      //             errflag = 0
 
-               case -1:
-                  n = Short(tables[5], state)
-                  if (n != 0) {
-                     cmd = -7
-                     continue
-                  }
-                  if (env[6] >= 0) {
-                     cmd = -2
-                     continue
-                  }
-                  env[13] = sp
-                  env[14] = state
-                  env[15] = errflag
-                  return 0
-               /* The ML code calls the lexer and updates */
-               /* symb_start and symb_end */
-               case 1:
-                  sp = env[13]
-                  state = env[14]
-                  errflag = env[15]
-                  if (!(typeof arg === "number")) {
-                     env[6] = tables[2][arg.t]
-                     env[7] = arg[0]
-                  } else {
-                     env[6] = tables[1][arg]
-                     env[7] = 0
-                  }
-                  if (caml_parser_trace) {
-                     print_token(tables, state, arg)
-                  }
+      //          case -1:
+      //             n = Short(tables[5], state)
+      //             if (n != 0) {
+      //                cmd = -7
+      //                continue
+      //             }
+      //             if (env[6] >= 0) {
+      //                cmd = -2
+      //                continue
+      //             }
+      //             env[13] = sp
+      //             env[14] = state
+      //             env[15] = errflag
+      //             return 0
+      //          /* The ML code calls the lexer and updates */
+      //          /* symb_start and symb_end */
+      //          case 1:
+      //             sp = env[13]
+      //             state = env[14]
+      //             errflag = env[15]
+      //             if (!(typeof arg === "number")) {
+      //                env[6] = tables[2][arg.t]
+      //                env[7] = arg[0]
+      //             } else {
+      //                env[6] = tables[1][arg]
+      //                env[7] = 0
+      //             }
+      //             if (caml_parser_trace) {
+      //                print_token(tables, state, arg)
+      //             }
 
-               case -2:
-                  n1 = Short(tables[7], state)
-                  n2 = n1 + env[6]
-                  if (
-                     n1 !== 0 &&
-                     n2 >= 0 &&
-                     n2 <= tables[10] &&
-                     Short(tables[12], n2) === env[6]
-                  ) {
-                     cmd = -4
-                     continue
-                  }
-                  n1 = Short(tables[8], state)
-                  n2 = n1 + env[6]
-                  if (
-                     n1 !== 0 &&
-                     n2 >= 0 &&
-                     n2 <= tables[10] &&
-                     Short(tables[12], n2) === env[6]
-                  ) {
-                     n = Short(tables[11], n2)
-                     cmd = -7
-                     continue
-                  }
-                  if (errflag > 0) {
-                     cmd = -3
-                     continue
-                  }
-                  env[13] = sp
-                  env[14] = state
-                  env[15] = errflag
-                  return 5
-               /* The ML code calls the error function */
-               case 5:
-                  sp = env[13]
-                  state = env[14]
-                  errflag = env[15]
-               case -3:
-                  if (errflag < 3) {
-                     errflag = 3
-                     while (1) {
-                        state1 = env[0][sp]
-                        n1 = Short(tables[7], state1)
-                        n2 = n1 + 256
-                        if (
-                           n1 != 0 &&
-                           n2 >= 0 &&
-                           n2 <= tables[10] &&
-                           Short(tables[12], n2) == 256
-                        ) {
-                           if (caml_parser_trace) {
-                              print("Recovering in state " + state1)
-                           }
-                           cmd = -5
-                           continue loop
-                        } else {
-                           if (caml_parser_trace) {
-                              print("Discarding state " + state1)
-                           }
-                           if (sp <= env[5]) {
-                              if (caml_parser_trace) {
-                                 print("No more states to discard")
-                              }
-                              return 1
-                              /* The ML code raises Parse_error */
-                           }
-                           sp--
-                        }
-                     }
-                  } else {
-                     if (env[6] == 0) {
-                        return 1
-                     }
-                     /* The ML code raises Parse_error */
-                     if (caml_parser_trace) {
-                        print("Discarding last token read")
-                     }
-                     env[6] = -1
-                     cmd = -1
-                     continue
-                  }
+      //          case -2:
+      //             n1 = Short(tables[7], state)
+      //             n2 = n1 + env[6]
+      //             if (
+      //                n1 !== 0 &&
+      //                n2 >= 0 &&
+      //                n2 <= tables[10] &&
+      //                Short(tables[12], n2) === env[6]
+      //             ) {
+      //                cmd = -4
+      //                continue
+      //             }
+      //             n1 = Short(tables[8], state)
+      //             n2 = n1 + env[6]
+      //             if (
+      //                n1 !== 0 &&
+      //                n2 >= 0 &&
+      //                n2 <= tables[10] &&
+      //                Short(tables[12], n2) === env[6]
+      //             ) {
+      //                n = Short(tables[11], n2)
+      //                cmd = -7
+      //                continue
+      //             }
+      //             if (errflag > 0) {
+      //                cmd = -3
+      //                continue
+      //             }
+      //             env[13] = sp
+      //             env[14] = state
+      //             env[15] = errflag
+      //             return 5
+      //          /* The ML code calls the error function */
+      //          case 5:
+      //             sp = env[13]
+      //             state = env[14]
+      //             errflag = env[15]
+      //          case -3:
+      //             if (errflag < 3) {
+      //                errflag = 3
+      //                while (1) {
+      //                   state1 = env[0][sp]
+      //                   n1 = Short(tables[7], state1)
+      //                   n2 = n1 + 256
+      //                   if (
+      //                      n1 != 0 &&
+      //                      n2 >= 0 &&
+      //                      n2 <= tables[10] &&
+      //                      Short(tables[12], n2) == 256
+      //                   ) {
+      //                      if (caml_parser_trace) {
+      //                         print("Recovering in state " + state1)
+      //                      }
+      //                      cmd = -5
+      //                      continue loop
+      //                   } else {
+      //                      if (caml_parser_trace) {
+      //                         print("Discarding state " + state1)
+      //                      }
+      //                      if (sp <= env[5]) {
+      //                         if (caml_parser_trace) {
+      //                            print("No more states to discard")
+      //                         }
+      //                         return 1
+      //                         /* The ML code raises Parse_error */
+      //                      }
+      //                      sp--
+      //                   }
+      //                }
+      //             } else {
+      //                if (env[6] == 0) {
+      //                   return 1
+      //                }
+      //                /* The ML code raises Parse_error */
+      //                if (caml_parser_trace) {
+      //                   print("Discarding last token read")
+      //                }
+      //                env[6] = -1
+      //                cmd = -1
+      //                continue
+      //             }
 
-               case -4:
-                  env[6] = -1
-                  if (errflag > 0) {
-                     errflag--
-                  }
-               case -5:
-                  if (caml_parser_trace) {
-                     print(
-                        "State " +
-                           state +
-                           ": shift to state " +
-                           Short(tables[11], n2),
-                     )
-                  }
-                  state = Short(tables[11], n2)
-                  sp++
-                  if (sp < env[4]) {
-                     cmd = -6
-                     continue
-                  }
-                  env[13] = sp
-                  env[14] = state
-                  env[15] = errflag
-                  return 2
-               /* The ML code resizes the stacks */
-               case 2:
-                  sp = env[13]
-                  state = env[14]
-                  errflag = env[15]
-               case -6:
-                  env[0][sp] = state
-                  env[1][sp] = env[7]
-                  env[2][sp] = env[8]
-                  env[3][sp] = env[9]
-                  cmd = -1
-                  continue
+      //          case -4:
+      //             env[6] = -1
+      //             if (errflag > 0) {
+      //                errflag--
+      //             }
+      //          case -5:
+      //             if (caml_parser_trace) {
+      //                print(
+      //                   "State " +
+      //                      state +
+      //                      ": shift to state " +
+      //                      Short(tables[11], n2),
+      //                )
+      //             }
+      //             state = Short(tables[11], n2)
+      //             sp++
+      //             if (sp < env[4]) {
+      //                cmd = -6
+      //                continue
+      //             }
+      //             env[13] = sp
+      //             env[14] = state
+      //             env[15] = errflag
+      //             return 2
+      //          /* The ML code resizes the stacks */
+      //          case 2:
+      //             sp = env[13]
+      //             state = env[14]
+      //             errflag = env[15]
+      //          case -6:
+      //             env[0][sp] = state
+      //             env[1][sp] = env[7]
+      //             env[2][sp] = env[8]
+      //             env[3][sp] = env[9]
+      //             cmd = -1
+      //             continue
 
-               case -7:
-                  if (caml_parser_trace) {
-                     print("State " + state + ": reduce by rule " + n)
-                  }
-                  m = Short(tables[4], n)
-                  env[10] = sp
-                  env[12] = n
-                  env[11] = m
-                  sp = sp - m + 1
-                  m = Short(tables[3], n)
-                  state1 = env[0][sp - 1]
-                  n1 = Short(tables[9], m)
-                  n2 = n1 + state1
-                  if (
-                     n1 != 0 &&
-                     n2 >= 0 &&
-                     n2 <= tables[10] &&
-                     Short(tables[12], n2) == state1
-                  ) {
-                     state = Short(tables[11], n2)
-                  } else {
-                     state = Short(tables[6], m)
-                  }
-                  if (sp < env[4]) {
-                     cmd = -8
-                     continue
-                  }
-                  env[13] = sp
-                  env[14] = state
-                  env[15] = errflag
-                  return 3
-               /* The ML code resizes the stacks */
-               case 3:
-                  sp = env[13]
-                  state = env[14]
-                  errflag = env[15]
-               case -8:
-                  env[13] = sp
-                  env[14] = state
-                  env[15] = errflag
-                  return 4
-               /* The ML code calls the semantic action */
-               case 4:
-                  sp = env[13]
-                  state = env[14]
-                  errflag = env[15]
-                  env[0][sp] = state
-                  env[1][sp] = arg
-                  asp = env[10]
-                  env[3][sp] = env[3][asp]
-                  if (sp > asp) {
-                     /* This is an epsilon production. Take symb_start equal to symb_end. */
-                     env[2][sp] = env[3][asp]
-                  }
-                  cmd = -1
-            }
-         }
-      }
+      //          case -7:
+      //             if (caml_parser_trace) {
+      //                print("State " + state + ": reduce by rule " + n)
+      //             }
+      //             m = Short(tables[4], n)
+      //             env[10] = sp
+      //             env[12] = n
+      //             env[11] = m
+      //             sp = sp - m + 1
+      //             m = Short(tables[3], n)
+      //             state1 = env[0][sp - 1]
+      //             n1 = Short(tables[9], m)
+      //             n2 = n1 + state1
+      //             if (
+      //                n1 != 0 &&
+      //                n2 >= 0 &&
+      //                n2 <= tables[10] &&
+      //                Short(tables[12], n2) == state1
+      //             ) {
+      //                state = Short(tables[11], n2)
+      //             } else {
+      //                state = Short(tables[6], m)
+      //             }
+      //             if (sp < env[4]) {
+      //                cmd = -8
+      //                continue
+      //             }
+      //             env[13] = sp
+      //             env[14] = state
+      //             env[15] = errflag
+      //             return 3
+      //          /* The ML code resizes the stacks */
+      //          case 3:
+      //             sp = env[13]
+      //             state = env[14]
+      //             errflag = env[15]
+      //          case -8:
+      //             env[13] = sp
+      //             env[14] = state
+      //             env[15] = errflag
+      //             return 4
+      //          /* The ML code calls the semantic action */
+      //          case 4:
+      //             sp = env[13]
+      //             state = env[14]
+      //             errflag = env[15]
+      //             env[0][sp] = state
+      //             env[1][sp] = arg
+      //             asp = env[10]
+      //             env[3][sp] = env[3][asp]
+      //             if (sp > asp) {
+      //                /* This is an epsilon production. Take symb_start equal to symb_end. */
+      //                env[2][sp] = env[3][asp]
+      //             }
+      //             cmd = -1
+      //       }
+      //    }
+      // }
 
-      const caml_set_parser_trace = function (flag) {
-         const oldflag = caml_parser_trace
-         caml_parser_trace = flag
-         return oldflag
-      }
+      // const caml_set_parser_trace = function (flag) {
+      //    const oldflag = caml_parser_trace
+      //    caml_parser_trace = flag
+      //    return oldflag
+      // }
 
       const oc$$nv = {}
 
@@ -1147,7 +1148,7 @@ const methodHolder = {
                         return m.apply(t, [...a, z, y, x, w, v, u, s])
                      })
                   default:
-                     throw "unimplemented"
+                     throw new Error("unimplemented")
                }
             } else if (al === ml) {
                return m.apply(t, a)
@@ -1674,6 +1675,7 @@ const methodHolder = {
          const lnot$92 = _f(function (x$93) {
             return x$93 ^ -1
          })
+         // eslint-disable-next-line no-constant-condition
          const min_int$97 = 1 << (1 << 31 === 0 ? 30 : 62)
          const max_int$98 = min_int$97 - 1
          const infinity$131 = caml_int64_float_of_bits("9218868437227405312")
@@ -3775,27 +3777,23 @@ const methodHolder = {
                const i31$185 = i$184 + i$184 + i$184 + 1
                let x$186 = i31$185
                if (i31$185 + 2 < l$183) {
-                  {
-                     if (
-                        _(cmp$180, [
-                           oc$$arefs(a$181, i31$185),
-                           oc$$arefs(a$181, i31$185 + 1),
-                        ]) < 0
-                     ) {
-                        x$186 = i31$185 + 1
-                     } else {
-                     }
-                     if (
-                        _(cmp$180, [
-                           oc$$arefs(a$181, x$186),
-                           oc$$arefs(a$181, i31$185 + 2),
-                        ]) < 0
-                     ) {
-                        x$186 = i31$185 + 2
-                     } else {
-                     }
-                     return x$186
+                  if (
+                     _(cmp$180, [
+                        oc$$arefs(a$181, i31$185),
+                        oc$$arefs(a$181, i31$185 + 1),
+                     ]) < 0
+                  ) {
+                     x$186 = i31$185 + 1
                   }
+                  if (
+                     _(cmp$180, [
+                        oc$$arefs(a$181, x$186),
+                        oc$$arefs(a$181, i31$185 + 2),
+                     ]) < 0
+                  ) {
+                     x$186 = i31$185 + 2
+                  }
+                  return x$186
                }
                if (
                   i31$185 + 1 < l$183 &&
@@ -3814,10 +3812,8 @@ const methodHolder = {
             const trickledown$187 = _f(function (l$188, i$189, e$190) {
                const j$191 = _(maxson$182, [l$188, i$189])
                if (_(cmp$180, [oc$$arefs(a$181, j$191), e$190]) > 0) {
-                  {
-                     oc$$asets(a$181, i$189, oc$$arefs(a$181, j$191))
-                     return __(trickledown$187, [l$188, j$191, e$190])
-                  }
+                  oc$$asets(a$181, i$189, oc$$arefs(a$181, j$191))
+                  return __(trickledown$187, [l$188, j$191, e$190])
                }
                return oc$$asets(a$181, i$189, e$190)
             })
@@ -9437,7 +9433,7 @@ const fullEval = methodHolder.fullEval
 export { fullEval }
 
 const substringChars = (str, offset, len) => {
-    return methodHolder.substringChars(str, offset, len).a
+   return methodHolder.substringChars(str, offset, len).a
 }
 export { substringChars }
 

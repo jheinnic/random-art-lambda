@@ -267,7 +267,7 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
       // validate and transform
       const value: BlockView<ModelEnvelopeRepresentation> =
          await this.modelEnvelopeSerdes.encodeModel({
-            "RegionMap_1.0.0": source,
+            RegionMap: source,
          })
 
       // const rootBlock = await encode( { codec, hasher, value } )
@@ -303,7 +303,7 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
          )
       }
       console.log(modelEnvelope)
-      const rootObject: RegionMap = modelEnvelope["RegionMap_1.0.0"]
+      const rootObject: RegionMap = modelEnvelope["RegionMap"]
       console.log(rootObject)
       const paletteBlocks: readonly DataBlock[] = await Promise.all(
          rootObject.palettes.map(async (cidLink: CID) => {

@@ -1,6 +1,11 @@
+/**
+ * Raised the bar just a little higher by creating multiple paths to the
+ * consuming DI
+ */
+
 import { Module, Injectable, Inject, DynamicModule } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
-import { SimpleDynamicModule, IDynamicModuleBuilder } from "./modules/index.js"
+import { SimpleDynamicModule, IDynamicModuleBuilder } from "../index.js"
 
 const theBoxOne: unique symbol = Symbol("TheOneBox")
 const anotherBoxOne: unique symbol = Symbol("AnotherOneBox")
@@ -127,19 +132,20 @@ export class ModuleOne {
 }
 
 const innerConduitModule: DynamicModule = SimpleDynamicModule.registerModule(
+   "InnerConduitModule",
    (builder: IDynamicModuleBuilder): void => {
       builder.exportProviders(
          {
             provide: theBox,
             useFactory: () => {
-               console.log("The 100 box")
+               console.log("Created the 100 box")
                return new Box(100)
             },
          },
          {
             provide: anotherBox,
             useFactory: () => {
-               console.log("The 150 box")
+               console.log("Created the 150 box")
                return new Box(150)
             },
          },
@@ -147,6 +153,7 @@ const innerConduitModule: DynamicModule = SimpleDynamicModule.registerModule(
    },
 )
 const conduitModule = SimpleDynamicModule.registerModule(
+   "OuterConduitModule",
    (builder: IDynamicModuleBuilder): void => {
       builder
          .exportModules(

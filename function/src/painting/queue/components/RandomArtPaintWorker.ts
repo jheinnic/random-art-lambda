@@ -31,9 +31,23 @@ export class RandomArtPaintWorker extends WorkerHost {
          await this.doSomething(job.data)
          progress += 1
          await job.updateProgress(progress)
+         if (progress % 20 === 0) {
+            this.logger.log(
+               "Progress on " +
+                  JSON.stringify(job.data) +
+                  " is at " +
+                  progress.toString(10) +
+                  "%",
+            )
+         }
       }
-      console.log("Finishing: " + JSON.stringify(job.data))
-      return {}
+      return {
+         inputData: JSON.stringify(job.data),
+         id: job.id,
+         from: job.queueQualifiedName,
+         token: job.token,
+         name: job.name,
+      }
    }
 
    async doSomething(data: object): Promise<void> {

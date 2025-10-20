@@ -1,0 +1,30 @@
+// The central contract for any class that can be a container.
+
+import { IExtensionWranglerFactory } from "../interface/IExtensionWranglerFactory.js"
+
+// The interface for the object returned by the factory.
+class ExtensionWranglerFactory implements IExtensionWranglerFactory {
+   createWrangler<ExtensionPoint extends string>(extensionPoint: string) {
+      throw new Error("Method not implemented.")
+   }
+   /**
+    * Creates a new, type-safe registry for Extensions of a specific Adapter class and a specific
+    * ExtensionPoint's Extensions as the adapted artifact.
+    * The factory now correctly takes the concrete class constructor as an argument.
+    */
+   // createExtensionWrangler<T extends ExtensionContainer<any>>(
+   //    // Pass the constructor itself. This is the crucial change.
+   //    ContainerClass: T,
+   // ): IExtensionRegistry<T> {
+   //    const containerInstances = new Map<string, InstanceType<T>>()
+
+   //    return {
+   //       register(...args: ConstructorParameters<T>): void {
+   //          const key = args[0] as string
+   //          // Now we can correctly instantiate the class because we have the constructor.
+   //          const instance = new ContainerClass(...args) as InstanceType<T>
+   //          containerInstances.set(key, instance)
+   //       },
+   //    }
+   // }
+}

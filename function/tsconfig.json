@@ -28,6 +28,7 @@
       "esModuleInterop": true
    },
    "include": ["./src/**/*.ts", "./typings/medium.d.ts"],
+   "references": [],
    "exclude": [
       "./node_modules/**/*",
       "./attic/**/*",
