@@ -4,7 +4,7 @@ import { IExtension, IExtensionClass } from "../interface/IExtension.js"
 
 export class AdapterFactory<
    ExtensionPoint extends string,
-   PayloadType extends IExtension,
+   PayloadType extends object,
    TArgs extends any[],
    AdapterType extends object,
 > implements IAdapterFactory<ExtensionPoint, PayloadType, TArgs, AdapterType>
