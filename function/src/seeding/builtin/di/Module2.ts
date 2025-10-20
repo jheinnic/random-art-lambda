@@ -1,4 +1,4 @@
-import * as aa from "./Module.js"
+import "./Module.js"
 import { NamespaceURI } from "../../../extensions/interface/IExtensionPoint.js"
 
 import {
@@ -9,12 +9,12 @@ import {
 
 export const foo: KnownPayloadIds<"GenModelSeedType"> = "HexSeed"
 export const bar: KnownPayloadIds<"GenModelSeedType"> = "NOlkko"
-export const baz: KnownPayloadIds<"FauxExtensionPoint"> = "NOlkko"
+export const baz: KnownPayloadIds<"FauxExtensionPoint"> = "GenericExtension"
 
 export type k = ExtensionPayloadTypeURIs
 export const qw: k = "giraffe"
 export const qaw: k = "GenModelSeedType/HexSeed"
-export const qrw: k = "FauxExtensionPoint/BasicExtension"
+export const qrw: k = "FauxExtensionPoint/GenericExtension"
 
 export type Repeated = keyof ExtensionPayloadTypeURItoKind<any> &
    NamespaceURI<string, string>

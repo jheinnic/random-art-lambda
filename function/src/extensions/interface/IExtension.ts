@@ -1,9 +1,7 @@
 import { NamespaceURI } from "./IExtensionPoint.js"
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface IExtension<
-   in ExtensionId extends KnownExtensionIds<ExtensionPoint>,
-> {
+export interface IExtension<in ExtensionId extends string> {
    /* common instance methods/properties */
 }
 
@@ -30,15 +28,14 @@ export interface IExtensionClass<
 }
 
 // 1. Base interface that plugins will augment
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface ExtensionPayloadTypeURItoKind<ExtensionId extends string> {
    // Empty by default - plugins fill this in
-   "ZauxExtensionPoint/GenericExtension": ExtensionPayloadTypeURItoKind<ExtensionId>
-   "FauxExtensionPoint/BasicExtension": object
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface ExtensionTArgsURItoKind {
    // Empty by default - plugins fill this in
-   "FauxExtensionPoint/PlaceholderExtension": [string, number]
 }
 
 // 2. Extract valid URIs from whatever gets registered

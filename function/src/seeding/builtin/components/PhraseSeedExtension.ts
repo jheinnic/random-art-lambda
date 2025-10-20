@@ -11,7 +11,7 @@ import { IPhraseSeed } from "../interface/IPhraseSeed.js"
 import { ReturnableSeedType } from "../../interface/SeedTypes.js"
 
 export class PhraseSeedExtension
-   implements IGenModelSeedExtension<PHRASE_SEED_EXTENSION_ID>
+   implements IGenModelSeedExtension<PHRASE_SEED_EXTENSION_ID, IPhraseSeed>
 {
    static readonly extensionFor: GEN_MODEL_SEED_TYPE_EXTENSION_POINT =
       GEN_MODEL_SEED_TYPE_EXTENSION_POINT_STRING

@@ -1,18 +1,18 @@
-import "../di/Module.js"
+// import "../di/Module.js"
 import {
    GEN_MODEL_SEED_TYPE_EXTENSION_POINT,
    GEN_MODEL_SEED_TYPE_EXTENSION_POINT_STRING,
-} from "./../../interface/SeedTypeExtensionPoint"
+} from "./../../interface/SeedTypeExtensionPoint.js"
 import {
    HEX_SEED_EXTENSION_ID,
    HEX_SEED_EXTENSION_ID_STR,
-} from "./../interface/Constants"
+} from "./../interface/Constants.js"
 import { IGenModelSeedExtension } from "../../interface/IGenModelSeedExtension.js"
-import { IHexSeed } from "../interface/IHexSeed.js"
 import { ReturnableSeedType } from "../../interface/SeedTypes.js"
+import { IHexSeed } from "../interface/IHexSeed.js"
 
 export class HexSeedExtension
-   implements IGenModelSeedExtension<HEX_SEED_EXTENSION_ID>
+   implements IGenModelSeedExtension<HEX_SEED_EXTENSION_ID, IHexSeed>
 {
    static readonly extensionFor: GEN_MODEL_SEED_TYPE_EXTENSION_POINT =
       GEN_MODEL_SEED_TYPE_EXTENSION_POINT_STRING
