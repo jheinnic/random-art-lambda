@@ -27,12 +27,15 @@ export class Box {
 
 @Injectable()
 export class Crate {
+   public readonly value: number = Math.random()
    constructor(
       @Inject(theBoxThree)
       public readonly boxOne: Box,
       @Inject(anotherBoxThree)
       public readonly boxTwo: Box,
-   ) {}
+   ) {
+      console.log("This crate is: " + this.value.toString())
+   }
 }
 
 @Injectable()
@@ -146,6 +149,7 @@ const sharedProvidersOne = [
    {
       provide: anotherBoxOne,
       useFactory: () => {
+         console.log("Created the 150 box")
          return new Box(150)
       },
    },
@@ -193,6 +197,7 @@ const sharedProvidersApp = [
    {
       provide: theBoxApp,
       useFactory: () => {
+         console.log("Created the 100 box")
          return new Box(100)
       },
    },

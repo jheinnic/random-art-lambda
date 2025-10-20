@@ -1,3 +1,9 @@
+/**
+ * First experiment with SimpleDynamicModule for imperative conduit creation
+ *
+ * This first test uses only one Dynamic Conduit to carry both dependencies.
+ */
+
 import {
    Module,
    Injectable,
@@ -6,7 +12,8 @@ import {
    DynamicModule,
 } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
-import { DynamicConduitModule } from "./modules/di/DynamicConduitModule.js"
+import { SimpleDynamicModule } from "../di/SimpleDynamicModule.js"
+import { IDynamicModuleBuilder } from "../index.js"
 
 const theBoxApp: unique symbol = Symbol("TheAppBox")
 
@@ -27,12 +34,15 @@ export class Box {
 
 @Injectable()
 export class Crate {
+   public readonly value: number = Math.random()
    constructor(
       @Inject(theBoxThree)
       public readonly boxOne: Box,
       @Inject(anotherBoxThree)
       public readonly boxTwo: Box,
-   ) {}
+   ) {
+      console.log("This crate is: " + this.value.toString())
+   }
 }
 
 @Injectable()
@@ -53,18 +63,6 @@ export interface ConfigThree {
    theBox: DynamicModule
    anotherBox: DynamicModule
 }
-
-@Module({})
-class TheBoxConduitModule extends new ConduitModuleFactory<[Box]>(
-   "TheBoxConduitModule",
-   [theBox],
-).build() {}
-
-@Module({})
-class AnotherBoxConduitModule extends new ConduitModuleFactory<[Box]>(
-   "AnotherBoxConduitModule",
-   [anotherBox],
-).build() {}
 
 @Module({})
 export class ModuleThree {
@@ -118,16 +116,21 @@ export class ModuleTwo {
    }
 }
 
-const sharedProvidersOne: [Provider<Box>] = [
+const sharedProvidersOne: [Provider<Box>, Provider] = [
    {
       provide: anotherBoxOne,
       useFactory: () => {
-         console.log("The 150 box")
+         console.log("Created the 150 box")
          return new Box(150)
       },
    },
+   {
+      provide: anotherBox,
+      useExisting: anotherBoxOne,
+   },
 ]
-const anotherBoxConduit: DynamicModule = DynamicConduitModule.registerModule(
+const anotherBoxConduit: DynamicModule = SimpleDynamicModule.registerModule(
+   "AnotherBoxConduitModule",
    (x) => x.exportProviders(...sharedProvidersOne),
 )
 
@@ -158,17 +161,22 @@ export class ModuleOne {
    }
 }
 
-const sharedProvidersApp: [Provider<Box>] = [
+const sharedProvidersApp: [Provider<Box>, Provider] = [
    {
       provide: theBoxApp,
       useFactory: () => {
-         console.log("The 100 box")
+         console.log("Created the 100 box")
          return new Box(100)
       },
    },
+   {
+      provide: theBox,
+      useExisting: theBoxApp,
+   },
 ]
-const theBoxConduit: DynamicModule = DynamicConduitModule.registerModule((x) =>
-   x.exportProviders(...sharedProvidersApp),
+const theBoxConduit: DynamicModule = SimpleDynamicModule.registerModule(
+   "TheBoxConduitModule",
+   (x: IDynamicModuleBuilder) => x.exportProviders(...sharedProvidersApp),
 )
 
 @Module({

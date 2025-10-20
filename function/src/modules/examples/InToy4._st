@@ -1,3 +1,13 @@
+/**
+ * The ExtensibleModuleFactory was a precursor to the Zod refactoring attempt and was an
+ * attempt to inject dependency token handlers by adding them to the forRoot() registration
+ * function Tuple.  This was complicated, and did not have a solution for accepting data
+ * configuration or for combining that with dependency injection.   It was abandoned to
+ * attempt to use zod to manipulate a single schema object.   Focusing on a single object
+ * interface would prove to be a better, but zod was unnecessary and problematic, so
+ * the InjectableModuleClassFactory that follows dropped the use of a Fluent API for
+ * contract definition and is found in InToy5.ts
+ */
 import {
    Module,
    Injectable,
@@ -6,18 +16,20 @@ import {
    Logger,
 } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
-import { DynamicConduitModule } from "../../../src/modules/di/DynamicConduitModule.js"
+import { SimpleDynamicModule } from "../di/SimpleDynamicModule.js"
+
 import {
    DependencySolution,
    DependentModuleFactory,
-} from "./ExtensibleModuleFactory.js"
+} from "../../../attic/common/di/ExtensibleModuleFactory.js"
+import { IDynamicModuleBuilder } from "../index.js"
 
 const theBoxOne: unique symbol = Symbol("TheOneBox")
 const anotherBoxOne: unique symbol = Symbol("AnotherOneBox")
 const theBoxTwo: unique symbol = Symbol("TheTwoBox")
 const anotherBoxTwo: unique symbol = Symbol("AnotherTwoBox")
-const theBoxThree: unique symbol = Symbol("TheThreeBox")
-const anotherBoxThree: unique symbol = Symbol("AnotherThreeBox")
+// const theBoxThree: unique symbol = Symbol("TheThreeBox")
+// const anotherBoxThree: unique symbol = Symbol("AnotherThreeBox")
 
 const theBox: unique symbol = Symbol("TheBox")
 const anotherBox: unique symbol = Symbol("AnotherBox")
@@ -125,20 +137,21 @@ export class ModuleOne {
    }
 }
 
-const innerConduitModule: DynamicModule = DynamicConduitModule.registerModule(
-   (builder: IConduitModuleBuilder): void => {
+const innerConduitModule: DynamicModule = SimpleDynamicModule.registerModule(
+   "InnerConduitModule",
+   (builder: IDynamicModuleBuilder): void => {
       builder.exportProviders(
          {
             provide: theBox,
             useFactory: () => {
-               console.log("The 100 box")
+               console.log("Created the 100 box")
                return new Box(100)
             },
          },
          {
             provide: anotherBox,
             useFactory: () => {
-               console.log("The 150 box")
+               console.log("Created the 150 box")
                return new Box(150)
             },
          },

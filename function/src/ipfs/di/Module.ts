@@ -18,6 +18,7 @@ import {
 export class IpfsModule extends SimpleDynamicModule {
    public static register(moduleConfig: ModuleConfiguration): DynamicModule {
       return SimpleDynamicModule.registerModule(
+         "IpldBlockstoreModule",
          (builder: IDynamicModuleBuilder) => {
             builder
                .identifyAs(this)

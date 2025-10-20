@@ -1,0 +1,5 @@
+export const HEX_SEED_EXTENSION_ID_STR = "HexSeed"
+export type HEX_SEED_EXTENSION_ID = typeof HEX_SEED_EXTENSION_ID_STR
+
+export const PHRASE_SEED_EXTENSION_ID_STR = "PhraseSeed"
+export type PHRASE_SEED_EXTENSION_ID = typeof PHRASE_SEED_EXTENSION_ID_STR

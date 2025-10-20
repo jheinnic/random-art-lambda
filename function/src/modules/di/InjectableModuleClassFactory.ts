@@ -1,203 +1,222 @@
-import { Type, DynamicModule, InjectionToken } from "@nestjs/common"
-import { objectKeys } from "simplytyped"
+import { Type, DynamicModule, ForwardReference } from "@nestjs/common"
 
-import { IDynamicModuleBlueprint } from "../interface/IDynamicModuleBlueprint.js"
-import { DynamicModuleBlueprint } from "./DynamicModuleBlueprint.js"
+import { IDynamicModuleBlueprint } from "../interface/IDynamicModuleBuilder.js"
 import {
-   AbstractInjectableModule,
    ExternalConfig,
-   IInjectableModuleClassFactory,
    InjectionConfig,
+   InjectableModuleClass,
+   IInjectableModuleClassFactory,
+   ModuleDependencies,
    ModuleDependenciesOption,
+   ModuleDirectorFactory,
 } from "../interface/IInjectableModuleClassFactory.js"
 import { DefaultDirector } from "../interface/IDynamicModuleBuilder.js"
+import { DynamicModuleBlueprint } from "./DynamicModuleBlueprint.js"
 
 // const validPropertyNames: z.ZodString = z.string().regex(/^[a-z][a-zA-Z0-9]+$/)
+type AsEntries<
+   InternalConfig extends object,
+   ImportTokens extends ModuleDependencies<InternalConfig, ImportTokens>,
+> = [InternalConfig, InjectionConfig<ImportTokens>]
+
+type SomeValues<
+   InternalConfig extends object,
+   ImportTokens extends ModuleDependencies<InternalConfig, ImportTokens>,
+> = InternalConfig[keyof InternalConfig] | ModuleDependenciesOption
 
 export class InjectableModuleClassFactory<
-   in out InternalConfig extends {},
-   in out ImportTokens extends Record<string, string | symbol | Type>,
-   in out MethodName extends string = "forRootImpl",
-> implements
-      IInjectableModuleClassFactory<InternalConfig, ImportTokens, MethodName>
+   InternalConfig extends object,
+   ImportTokens extends ModuleDependencies<InternalConfig, ImportTokens>,
+> implements IInjectableModuleClassFactory<InternalConfig, ImportTokens>
 {
    private built: boolean = false
 
-   readonly injectConfigShape: InjectionConfig<ImportTokens>
-   readonly externalConfigShape: ExternalConfig<InternalConfig, ImportTokens>
-
-   constructor(
+   private constructor(
       private readonly importTokens: ImportTokens,
-      private readonly forRootImplName: MethodName,
-      private readonly global: boolean = false,
-   ) {
-      this.injectConfigShape = Object.fromEntries(
-         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-         objectKeys(importTokens).map((key) => [
-            key,
-            {} as unknown as ModuleDependenciesOption,
-         ]),
-      ) as InjectionConfig<ImportTokens>
-
-      // this.importsObject = z.object(importApiShape)
-      this.externalConfigShape = {} as unknown as ExternalConfig<
+      private readonly moduleDefinition: ModuleDirectorFactory<
          InternalConfig,
          ImportTokens
-      >
-   }
+      >,
+      private readonly global: boolean,
+   ) {}
 
-   get externalConfigType(): typeof this.externalConfigShape {
-      throw new Error("Inspect this for typeof information only")
-   }
-
-   get injectConfigType(): typeof this.injectConfigShape {
-      throw new Error("Inspect this for typeof information only")
-   }
-
-   get internalConfigType(): InternalConfig {
-      throw new Error("Inspect this for typeof information only")
-   }
-
-   build(): AbstractInjectableModule<InternalConfig, ImportTokens, MethodName> {
-      type ExternalConfig = typeof this.externalConfigType
-      // type InternalConfig = InternalConfig
-      type InjectConfig = typeof this.injectConfigType
-
-      const importKeys: Set<keyof ImportTokens> = new Set(
-         objectKeys(this.importTokens),
+   public static create<
+      InternalConfig extends object,
+      ImportTokens extends ModuleDependencies<InternalConfig, ImportTokens>,
+   >(
+      importTokens: ImportTokens,
+      moduleDefinition: ModuleDirectorFactory<InternalConfig, ImportTokens>,
+      global: boolean = false,
+   ): InjectableModuleClassFactory<InternalConfig, ImportTokens> {
+      return new InjectableModuleClassFactory(
+         importTokens,
+         moduleDefinition,
+         global,
       )
+   }
 
-      const importTokens = this.importTokens
-      const methodName = this.forRootImplName
+   get externalConfig(): ExternalConfig<InternalConfig, ImportTokens> {
+      throw new Error("Inspect this for typeof information only")
+   }
+
+   get injectionConfig(): InjectionConfig<ImportTokens> {
+      throw new Error("Inspect this for typeof information only")
+   }
+
+   get internalConfig(): InternalConfig {
+      throw new Error("Inspect this for typeof information only")
+   }
+
+   build(): InjectableModuleClass<InternalConfig, ImportTokens> {
+      const moduleDefinition = this.moduleDefinition
+      const importTokens: ImportTokens = this.importTokens
       const global = this.global
 
-      const AbstractInjectableModule = class AbstractInjectableModule {
+      const InjectableModule = class AbstractInjectableModule {
          private readonly __I_LIKE_TO_COMPILE: unknown
 
-         static forRoot(arg: ExternalConfig): DynamicModule {
+         static forRoot(
+            arg: ExternalConfig<InternalConfig, ImportTokens>,
+         ): DynamicModule {
             const builder: IDynamicModuleBlueprint = new DynamicModuleBlueprint(
                this,
             )
-            const sourceEntries = Object.entries(arg)
-            const injectConfig: InjectConfig = Object.fromEntries(
-               sourceEntries.filter((entry) => {
-                  if (importKeys.has(entry[0])) {
-                     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-                     delete arg[entry[0]]
-                     return true
+            const sourceEntries =
+               Object.entries<SomeValues<InternalConfig, ImportTokens>>(arg)
+            const [internalConfig, injectConfig] = sourceEntries.reduce<
+               AsEntries<InternalConfig, ImportTokens>
+            >(
+               (
+                  acc: AsEntries<InternalConfig, ImportTokens>,
+                  nextEntry: [string, SomeValues<InternalConfig, ImportTokens>],
+               ): AsEntries<InternalConfig, ImportTokens> => {
+                  if (nextEntry[0] in importTokens) {
+                     const importObject = acc[1]
+                     importObject[nextEntry[0] as keyof ImportTokens] =
+                        nextEntry[1] as ModuleDependenciesOption
+                  } else {
+                     const internalObject = acc[0]
+                     internalObject[nextEntry[0] as keyof InternalConfig] =
+                        nextEntry[1] as InternalConfig[keyof InternalConfig]
                   }
-                  return false
-               }),
-            ) as InjectionConfig<ImportTokens>
-            const internalCfg: InternalConfig = arg as InternalConfig
+                  return acc
+               },
+               [
+                  {} as unknown as InternalConfig,
+                  {} as unknown as InjectionConfig<ImportTokens>,
+               ],
+            )
 
-            Object.keys(injectConfig).forEach((tokenConfigKey): void => {
-               const provideToToken: InjectionToken =
-                  importTokens[tokenConfigKey]
-               const diConfig = injectConfig[tokenConfigKey] as any
-               switch (diConfig.use) {
-                  case "token": {
-                     if (diConfig.module !== undefined) {
-                        builder.importModules(diConfig.module)
-                     }
-                     const consumeFromToken = diConfig.token
-                     switch (diConfig.for) {
-                        case "factory": {
-                           builder.exportProviders({
-                              provide: provideToToken,
-                              useFactory: (x) => {
-                                 return x[diConfig.method]()
-                              },
-                              inject: [consumeFromToken],
-                           })
-                           break
+            Object.entries<ModuleDependenciesOption>(injectConfig).forEach(
+               ([tokenConfigKey, diConfig]): void => {
+                  const provideToToken: string | symbol | Type =
+                     importTokens[tokenConfigKey as keyof ImportTokens]
+                  switch (diConfig.use) {
+                     case "token": {
+                        if (diConfig.module !== undefined) {
+                           builder.importModules(diConfig.module)
                         }
-                        case "value": {
-                           builder.exportProviders({
-                              provide: provideToToken,
-                              useExisting: consumeFromToken,
-                           })
-                           break
-                        }
-                     }
-                     break
-                  }
-                  case "provider": {
-                     if (diConfig.module !== undefined) {
-                        builder.importModules(diConfig.module)
-                     }
-                     builder.exportProviders(diConfig.provider)
-                     switch (diConfig.for) {
-                        case "factory": {
-                           builder.exportProviders({
-                              provide: provideToToken,
-                              useFactory: (x) => x[diConfig.method](),
-                              inject: [
-                                 typeof diConfig.provider === "function"
-                                    ? diConfig.provider
-                                    : diConfig.provider.provide,
-                              ],
-                           })
-                           break
-                        }
-                        case "value": {
-                           builder.exportProviders({
-                              provide: provideToToken,
-                              useExisting:
-                                 typeof diConfig.provider === "function"
-                                    ? diConfig.provider
-                                    : diConfig.provider.provide,
-                           })
-                           break
-                        }
-                     }
-                     break
-                  }
-                  case "function": {
-                     // TODO: inject looks sus here...
-                     builder.exportProviders({
-                        provide: provideToToken,
-                        useFactory: diConfig.value,
-                        inject: diConfig.inject.map((x: any): any => {
-                           if (x.provider !== undefined) {
-                              builder.exportProviders(x)
-                              if (x.module !== undefined) {
-                                 builder.importModules(x.module)
-                              }
-                              return {
-                                 token:
-                                    typeof x.provider === "function"
-                                       ? x.provider
-                                       : x.provider.provide,
-                                 optional:
-                                    x.optional !== undefined
-                                       ? x.optional
-                                       : false,
-                              }
-                           } else if (x.token !== null) {
-                              if (x.module !== undefined) {
-                                 builder.importModules(x.module)
-                              }
-                              return x
-                           } else {
-                              return x
+                        const consumeFromToken = diConfig.token
+                        switch (diConfig.for) {
+                           case "factory": {
+                              builder.exportProviders({
+                                 provide: provideToToken,
+                                 useFactory: (x) => {
+                                    return x[diConfig.method]()
+                                 },
+                                 inject: [consumeFromToken],
+                              })
+                              break
                            }
-                        }),
-                     })
-                     break
+                           case "value": {
+                              builder.exportProviders({
+                                 provide: provideToToken,
+                                 useExisting: consumeFromToken,
+                              })
+                              break
+                           }
+                        }
+                        break
+                     }
+                     case "provider": {
+                        if (diConfig.module !== undefined) {
+                           builder.importModules(diConfig.module)
+                        }
+                        builder.exportProviders(diConfig.provider)
+                        switch (diConfig.for) {
+                           case "factory": {
+                              builder.exportProviders({
+                                 provide: provideToToken,
+                                 useFactory: (x) => x[diConfig.method](),
+                                 inject: [
+                                    typeof diConfig.provider === "function"
+                                       ? diConfig.provider
+                                       : diConfig.provider.provide,
+                                 ],
+                              })
+                              break
+                           }
+                           case "value": {
+                              builder.exportProviders({
+                                 provide: provideToToken,
+                                 useExisting:
+                                    typeof diConfig.provider === "function"
+                                       ? diConfig.provider
+                                       : diConfig.provider.provide,
+                              })
+                              break
+                           }
+                        }
+                        break
+                     }
+                     case "function": {
+                        diConfig.modules?.forEach(
+                           (
+                              x:
+                                 | Type
+                                 | DynamicModule
+                                 | Promise<DynamicModule>
+                                 | ForwardReference,
+                           ) => {
+                              builder.importModules(x)
+                           },
+                        )
+                        builder.exportProviders({
+                           provide: provideToToken,
+                           useFactory: diConfig.value,
+                           inject: diConfig.inject?.map((x: any): any => {
+                              if (x.provider !== undefined) {
+                                 builder.exportProviders(x.provider)
+                                 return {
+                                    token:
+                                       typeof x.provider === "function"
+                                          ? x.provider
+                                          : x.provider.provide,
+                                    optional:
+                                       x.optional !== undefined
+                                          ? x.optional
+                                          : false,
+                                 }
+                              } else {
+                                 return x
+                              }
+                           }),
+                        })
+                        break
+                     }
+                     case "value": {
+                        builder.exportProviders({
+                           provide: provideToToken,
+                           useValue: diConfig.value,
+                        })
+                        break
+                     }
                   }
-                  case "value": {
-                     builder.exportProviders({
-                        provide: provideToToken,
-                        useValue: diConfig.value,
-                     })
-                     break
-                  }
-               }
-            })
+               },
+            )
 
-            const director = (this as any)[methodName](
-               internalCfg,
+            const director: DefaultDirector = moduleDefinition(
+               internalConfig,
                injectConfig,
             )
             if (director !== undefined) {
@@ -210,17 +229,12 @@ export class InjectableModuleClassFactory<
             builder.identifyAs(this)
             return builder.build()
          }
-
-         static [methodName](_arg: InternalConfig): DefaultDirector {
-            throw new Error("Must implement this in concrete subclass")
-         }
       }
       this.built = true
 
-      return AbstractInjectableModule as AbstractInjectableModule<
+      return InjectableModule as InjectableModuleClass<
          InternalConfig,
-         ImportTokens,
-         MethodName
+         ImportTokens
       >
    }
 
