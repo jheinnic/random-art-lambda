@@ -231,7 +231,12 @@ export class AppServiceTwo {
          regionMap.pixelHeight,
          "image",
       )
-      const artist: GenModelArtist = new GenModelArtist(genModel, canvas)
+      const artist: GenModelArtist = new GenModelArtist(
+         genModel,
+         canvas,
+         0,
+         regionMap.pixelHeight,
+      )
       await regionMap.directPlotter(artist)
       const stream = fs.createWriteStream(fileName)
       const persister: CanvasPersister = new CanvasPersister(canvas, stream)
