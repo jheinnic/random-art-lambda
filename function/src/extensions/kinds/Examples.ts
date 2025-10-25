@@ -1,5 +1,5 @@
 import { Logger } from "@nestjs/common"
-import "./IExtension.js"
+import "../kinds/ExtensionClassKind.js"
 
 interface IUIComponentExtension {
    render: () => void
@@ -10,7 +10,7 @@ interface IDataSourceExtension {
 
 export {}
 
-declare module "./IExtension.js" {
+declare module "./ExtensionClassKind.js" {
    interface ExtensionPayloadTypeURItoKind {
       readonly "Examples/ui-component": IUIComponentExtension
       readonly "Examples/data-source": IDataSourceExtension
@@ -20,8 +20,8 @@ declare module "./IExtension.js" {
       readonly "Examples/data-source": [string]
    }
    // 🎯 FIX: UI components must always take a Logger and a Config object.
-   type UIComponentClass = IExtensionClass<"Examples", "ui-component">
+   type UIComponentClass = ExtensionClassKind<"Examples", "ui-component">
 
    // 🎯 FIX: Data Sources must always take a ConnectionString.
-   type DataSourceClass = IExtensionClass<"Examples", "data-source">
+   type DataSourceClass = ExtensionClassKind<"Examples", "data-source">
 }

@@ -1,3 +1,4 @@
+import { IGenModelSeedExtensionPoint } from "./../../seeding/interface/IGenModelSeedExtensionPoint"
 import { Inject, Injectable } from "@nestjs/common"
 import { CID } from "multiformats"
 import { Canvas } from "canvas"
@@ -20,6 +21,9 @@ import { PBufRegionMapFactory } from "../../plotting/protobuf/components/PBufReg
 import { ProtobufPlottingModuleTypes } from "../../plotting/protobuf/di/Types.js"
 import { PBufRegionMap } from "../../plotting/protobuf/components/PBufRegionMap.js"
 import { CanvasPersister } from "../../painting/components/CanvasPersister.js"
+import { SeedingModuleTypes } from "../../seeding/di/Types.js"
+import { IGenModelSeedExtension } from "../../seeding/interface/IGenModelSeedExtension.js"
+import { IPhraseSeed } from "../../seeding/builtin/interface/IPhraseSeed.js"
 
 interface Task {
    taskMessage: string
@@ -43,6 +47,8 @@ export class AppServiceTwo {
       // @Inject( PaintingModuleTypes.IRandomArtPainter )
       // @Inject( PaintingModuleTypes.IRandomArtTaskEngine )
       // private readonly taskRepo: IRandomArtTaskEngine,
+      @Inject(SeedingModuleTypes.GenModelSeedExtensionPoint)
+      private readonly seedExtensionPoint: IGenModelSeedExtensionPoint,
    ) {}
 
    public async testRepo(cid: CID): Promise<IRegionMap | undefined> {

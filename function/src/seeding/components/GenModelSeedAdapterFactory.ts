@@ -13,7 +13,9 @@ import {
    GEN_MODEL_SEED_ADAPTER_ID,
    GEN_MODEL_SEED_TYPE_EXTENSION_POINT,
 } from "../interface/SeedTypeExtensionPoint.js"
+import { Injectable } from "@nestjs/common"
 
+@Injectable()
 export class GenModelSeedAdapterFactory
    implements
       IAdapterFactory<

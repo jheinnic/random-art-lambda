@@ -13,6 +13,8 @@ import { PaintingModule } from "../../painting/di/Module.js"
 import { PaintingModuleTypes } from "../../painting/di/Types.js"
 import { QueueingPaintModule } from "../../painting/queue/di/Module.js"
 import { IpldPlottingModuleTypes } from "../../plotting/ipld/di/Types.js"
+import { SeedingModule } from "../../seeding/di/Module.js"
+import { SeedingModuleTypes } from "../../seeding/di/Types.js"
 
 export const plottingModule: DynamicModule = IpldPlottingModule.registerAsync({
    imports: [SharedBlockstoresModule],
@@ -39,6 +41,12 @@ export const paintingModule: DynamicModule = PaintingModule.forRoot({
       for: "value",
       module: CliChannelsModule,
       token: CliChannelsModuleTypes.RandomArtTaskReplyChannel,
+   },
+   genModelSeedExtensionPoint: {
+      use: "token",
+      for: "value",
+      module: SeedingModule,
+      token: SeedingModuleTypes.GenModelSeedExtensionPoint,
    },
 })
 
