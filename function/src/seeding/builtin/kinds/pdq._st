@@ -1,0 +1,8 @@
+import "./def.js"
+import { HexSeedExtension } from "../components/HexSeedExtension.js"
+
+declare module "./def.js" {
+   export interface GenModelSeedExtensions {
+      HexSeed: typeof HexSeedExtension
+   }
+}

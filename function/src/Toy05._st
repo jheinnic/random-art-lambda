@@ -1,0 +1,224 @@
+import {
+  Observable,
+  Subject,
+  merge,
+  mergeMap,
+  map,
+  scan,
+  switchMap,
+  from,
+  of,
+  EMPTY,
+  tap,
+  repeat,
+  share,
+  filter,
+  timer,
+  delay,
+  Subscription,
+  take,
+  startWith,
+} from 'rxjs';
+
+// --- TYPES (unchanged, but necessary for context) ---
+type StreamValue<T> = { id: string; value: T };
+type Batch<T> = StreamValue<T>[];
+
+// CRITICAL: Added 'CONSUME' to clear state after batching
+type CoordinatorAction<T> =
+  | { type: 'VALUE'; streamId: string; value: T }
+  | { type: 'COMPLETE'; streamId: string }
+  | { type: 'CONSUME'; streamId: string } // NEW: Clears a value from readyValues
+  | { type: 'WORK_COMPLETED' };
+
+type BatchState<T> = {
+  activeStreams: Set<string>;
+  readyValues: Map<string, T>;
+};
+
+let streamCounter = 0;
+
+// --- THE FIXED OPERATOR ---
+
+function fairBatchWithWorker<T, R>(
+  source$: Observable<Observable<T>>,
+  workerFn: (batch: Batch<T>) => Observable<R>
+): Observable<R> {
+  
+  // 1. Central Subject to receive all stream updates and control signals
+  const coordinator$ = new Subject<CoordinatorAction<T>>();
+
+  // Subscription management for the incoming streams (enrollment/un-enrollment)
+  const managingSubscription = source$.pipe(
+    mergeMap((innerStream) => {
+      const streamId = `stream-${streamCounter++}`;
+      
+      // CRITICAL: We need to register the stream in the state BEFORE its first value
+      // This is handled implicitly by the state machine on the first 'VALUE' action,
+      // but if the stream completes immediately, the state machine must handle it.
+      
+      return innerStream.pipe(
+        map((value) => ({
+          type: 'VALUE' as const,
+          streamId: streamId,
+          value: value,
+        })),
+        (obs) =>
+          new Observable<CoordinatorAction<T>>((subscriber) => {
+            const sub = obs.subscribe({
+              next: (action) => subscriber.next(action),
+              error: (err) => subscriber.error(err),
+              complete: () => {
+                // Send the COMPLETE action
+                subscriber.next({ type: 'COMPLETE', streamId: streamId } as CoordinatorAction<T>);
+                subscriber.complete();
+              },
+            });
+            return () => sub.unsubscribe();
+          })
+      );
+    })
+  ).subscribe(coordinator$); // Feed all stream events into the coordinator$
+
+  
+  // 2. The Core Batching State Machine
+  const state$ = coordinator$.pipe(
+    scan(
+      (state: BatchState<T>, action: CoordinatorAction<T>): BatchState<T> => {
+        let newState = { ...state }; 
+        newState.activeStreams = new Set(state.activeStreams);
+        newState.readyValues = new Map(state.readyValues); // Deep clone state parts
+
+        if (action.type === 'VALUE') {
+          // Add/Ensure stream is active and store the value
+          newState.activeStreams.add(action.streamId);
+          newState.readyValues.set(action.streamId, action.value);
+        } else if (action.type === 'COMPLETE') {
+          // Remove from active set and clear any pending value
+          newState.activeStreams.delete(action.streamId);
+          newState.readyValues.delete(action.streamId);
+        } else if (action.type === 'CONSUME') {
+          // CRITICAL FIX: Clear the consumed value from the ready cache
+          newState.readyValues.delete(action.streamId);
+        }
+        // WORK_COMPLETED does not change the state, it's purely a signal
+
+        return newState;
+      },
+      // Initial State
+      { activeStreams: new Set<string>(), readyValues: new Map<string, T>() }
+    )
+    // IMPORTANT: Use share() to ensure all subsequent pipes share the single state stream
+  ).pipe(share()); 
+
+
+  // 3. Trigger Control and Work Execution
+
+  // This stream acts as the 'tap' to the state, firing whenever a change occurs
+  // that might enable a batch, OR when the worker finishes (WORK_COMPLETED).
+  const trigger$ = merge(
+      // A change in state (new value, completion, or consumption)
+      state$.pipe(map(s => ({ type: 'STATE_CHANGE', state: s }))),
+      // A signal that the work finished
+      coordinator$.pipe(
+          filter(action => action.type === 'WORK_COMPLETED'),
+          map(action => ({ type: action.type, state: null }))
+      )
+  ).pipe(
+    // CRITICAL FIX: Add a small delay at the start to ensure all initial values land
+    // The delay here must be >= the delay on your source stream (100ms)
+    startWith({ type: 'WORK_COMPLETED', state: null } as any),
+    // Use filter to prevent processing while the worker is busy (implicit in switchMap)
+    // and to ensure we only proceed on a change that might trigger work.
+    filter(action => action.type === 'WORK_COMPLETED' || action.type === 'STATE_CHANGE')
+  );
+
+  
+  return trigger$.pipe(
+    // switchMap ensures work is processed sequentially
+    switchMap(() => {
+        // We need the latest state right now. Since state$ is shared, we use take(1).
+        return state$.pipe(
+            take(1),
+            map(state => {
+                const batch: Batch<T> = [];
+                
+                // Form the next available batch using current ready values
+                for (const id of state.activeStreams) {
+                    const value = state.readyValues.get(id);
+                    if (value !== undefined) {
+                        batch.push({ id: id, value: value });
+                    }
+                }
+                
+                // 🛑 CRITICAL COMPLETION CHECK 🛑
+                if (batch.length === 0 && state.activeStreams.size === 0) {
+                    // All sources are complete AND there is no waiting data. STOP.
+                    return null;
+                }
+                
+                return batch.length > 0 ? batch : false; // false means 'no work yet'
+            })
+        );
+    }),
+    
+    // Now handle the result of the batch check
+    switchMap((batch) => {
+      if (batch === null) {
+        // Signal for final completion
+        managingSubscription.unsubscribe(); // Clean up external subscriptions
+        return EMPTY; 
+      }
+      
+      if (batch === false) {
+        // No batch ready, but the process is NOT finished. Return EMPTY to pause
+        // the switchMap until the next trigger fires.
+        return EMPTY;
+      }
+      
+      // A valid batch is ready (it's an array)
+      const currentBatch = batch as Batch<T>;
+
+      // 1. Send CONSUME action for each item *BEFORE* work starts
+      for (const item of currentBatch) {
+        coordinator$.next({ type: 'CONSUME', streamId: item.id });
+      }
+      
+      // 2. Execute the Worker (workerFn returns Observable<R>)
+      return workerFn(currentBatch).pipe(
+        tap(() => {
+          // 3. Send the trigger signal for the next batch check
+          coordinator$.next({ type: 'WORK_COMPLETED' });
+        })
+      );
+    })
+  );
+}
+
+const a = from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).pipe(repeat(5), delay(5))
+const b = from("abcdefghijklmnopqrstuvwxyz".split("")).pipe(repeat(2), delay(2))
+
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+function doWork(
+   values: Batch<number | string>,
+): Observable<Array<boolean | StreamValue<string | number>>> {
+   console.log("Work: ", values)
+   return timer(15).pipe(
+      map(() => {
+         console.log("Work ending: ", values)
+         return [true, ...values]
+      }),
+   )
+}
+
+fairBatchWithWorker(of(a, b).pipe(delay(100)), doWork).subscribe({
+   next: (action) => {
+      console.log("Subscribe Next: ", action)
+   },
+   error: (err) => {
+      console.error(err)
+   },
+   complete: () => {
+      console.log("Fin")
+   },
+})
