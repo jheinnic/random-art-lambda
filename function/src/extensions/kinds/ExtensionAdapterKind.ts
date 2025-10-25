@@ -1,11 +1,15 @@
-import { KnownExtensionIds } from "./IExtension.js"
-import { NamespaceURI } from "./IExtensionPoint.js"
+import {
+   KnownExtensionClassIds,
+   KnownPayloadIds,
+   PayloadTypeKind,
+} from "./ExtensionClassKind.js"
+import { NamespaceURI } from "./NamespaceURI.js"
 
 // 1. Base interface that plugins will augment
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface ExtensionAdapterURItoKind<
    ExtensionPoint extends string,
-   _ExtensionId extends KnownExtensionIds<ExtensionPoint>,
+   ExtensionId extends KnownPayloadIds<ExtensionPoint>,
 > {
    // Empty by default - plugins fill this in
    // readonly "FauxExtensionPoint/PlaceHoldingAdapter": ExtensionAdapterURItoKind<ExtensionId>
@@ -13,10 +17,13 @@ export interface ExtensionAdapterURItoKind<
 
 // 2. Extract valid URIs from whatever gets registered
 type ExtensionAdapterURIs<ExtensionPoint extends string> =
-   keyof ExtensionAdapterURItoKind<ExtensionPoint, any> &
+   keyof ExtensionAdapterURItoKind<
+      ExtensionPoint,
+      KnownPayloadIds<ExtensionPoint>
+   > &
       NamespaceURI<ExtensionPoint, string>
 
-export type KnownAdapterIds<ExtensionPoint extends string> =
+export type KnownExtensionAdapterIds<ExtensionPoint extends string> =
    ExtensionAdapterURIs<ExtensionPoint> extends NamespaceURI<
       ExtensionPoint,
       infer Id
@@ -28,24 +35,24 @@ export type KnownAdapterIds<ExtensionPoint extends string> =
 
 type ExtensionAdapterURIFromParts<
    ExtensionPoint extends string,
-   AdapterId extends KnownAdapterIds<ExtensionPoint>,
+   AdapterId extends KnownExtensionAdapterIds<ExtensionPoint>,
 > = NamespaceURI<ExtensionPoint, AdapterId> &
    ExtensionAdapterURIs<ExtensionPoint>
 
 // 3. Lookup helper
 export type ExtensionAdapterKind<
    ExtensionPoint extends string,
-   AdapterId extends KnownAdapterIds<ExtensionPoint>,
-   ExtensionId extends KnownExtensionIds<ExtensionPoint>,
+   AdapterId extends KnownExtensionAdapterIds<ExtensionPoint>,
+   ExtensionPayload extends KnownPayloadIds<ExtensionPoint>,
 > = ExtensionAdapterURItoKind<
    ExtensionPoint,
-   ExtensionId
+   ExtensionPayload
 >[ExtensionAdapterURIFromParts<ExtensionPoint, AdapterId>]
 
 // Plugin authors use this
 // declare module "./ExtensionAdapterKind.js" {
-//    interface AdapterURItoKind<K extends string> {
-//       readonly "plugin-a/MyAdapter": MyAdapter<K>
-//       //       ^^^^^^^^^ enforced pattern
+//    interface ExtensionAdapterURItoKind<K extends string> {
+//       readonly "ExtensionPointName/MyAdapterName": MyAdapter<K>
+//       //        ^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^ enforced pattern
 //    }
 // }
