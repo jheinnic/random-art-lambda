@@ -51,6 +51,20 @@ export class AppServiceTwo {
       private readonly seedExtensionPoint: IGenModelSeedExtensionPoint,
    ) {}
 
+   public useSeeder(): void {
+      const phrase: IPhraseSeed = {
+         seedKey: "PhraseSeed",
+         phrase: "It went that way",
+      }
+      const retVal = this.seedExtensionPoint.toSeedModel("PhraseSeed", phrase)
+      retVal.subscribe({
+         next: (retVal) => {
+            console.log(retVal)
+            return retVal
+         },
+      })
+   }
+
    public async testRepo(cid: CID): Promise<IRegionMap | undefined> {
       if (!this.cidCache.has(cid)) {
          await this.mapRepo.load(cid).then((loadedMap) => {
