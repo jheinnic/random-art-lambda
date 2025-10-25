@@ -87,7 +87,7 @@ export class RandomArtTaskEngineRx implements OnModuleDestroy {
       this.destroy$.complete()
    }
 
-   onModuleDestroy() {
-      this.stop()
+   async onModuleDestroy(): Promise<void> {
+      await this.stop()
    }
 }
