@@ -1,45 +1,34 @@
 import {
-   GEN_MODEL_SEED_TYPE_EXTENSION_POINT_STRING,
-   GEN_MODEL_SEED_ADAPTER_ID_STR,
-} from "./../interface/SeedTypeExtensionPoint"
-import {
-   IExtensionClass,
-   KnownExtensionIds,
+   KnownExtensionClassIds,
    PayloadTypeKind,
-} from "../../extensions/interface/IExtension.js"
+} from "../../extensions/kinds/ExtensionClassKind.js"
 import { IAdapterFactory } from "../../extensions/interface/IAdapterFactory.js"
 import { GenModelSeedAdapter } from "./GenModelSeedAdapter.js"
 import {
+   GEN_MODEL_SEED_EXTENSION_POINT_STRING,
+   GEN_MODEL_SEED_ADAPTER_ID_STR,
    GEN_MODEL_SEED_ADAPTER_ID,
-   GEN_MODEL_SEED_TYPE_EXTENSION_POINT,
-} from "../interface/SeedTypeExtensionPoint.js"
+   GEN_MODEL_SEED_EXTENSION_POINT,
+} from "../kinds/Constants.js"
 import { Injectable } from "@nestjs/common"
 
 @Injectable()
 export class GenModelSeedAdapterFactory
    implements
-      IAdapterFactory<
-         GEN_MODEL_SEED_TYPE_EXTENSION_POINT,
-         GEN_MODEL_SEED_ADAPTER_ID
-      >
+      IAdapterFactory<GEN_MODEL_SEED_EXTENSION_POINT, GEN_MODEL_SEED_ADAPTER_ID>
 {
-   readonly URI: `${GEN_MODEL_SEED_TYPE_EXTENSION_POINT}/${GEN_MODEL_SEED_ADAPTER_ID}` = `${GEN_MODEL_SEED_TYPE_EXTENSION_POINT_STRING}/${GEN_MODEL_SEED_ADAPTER_ID_STR}`
+   readonly extensionPoint: GEN_MODEL_SEED_EXTENSION_POINT =
+      GEN_MODEL_SEED_EXTENSION_POINT_STRING
 
-   adapt<
-      ExtensionId extends
-         KnownExtensionIds<GEN_MODEL_SEED_TYPE_EXTENSION_POINT>,
-      ExtensionClass extends IExtensionClass<
-         GEN_MODEL_SEED_TYPE_EXTENSION_POINT,
-         ExtensionId
-      >,
-   >(
-      key: ExtensionId,
-      extensionClass: ExtensionClass,
+   readonly adapterId: GEN_MODEL_SEED_ADAPTER_ID = GEN_MODEL_SEED_ADAPTER_ID_STR
+
+   adapt(
+      extensionId: KnownExtensionClassIds<GEN_MODEL_SEED_EXTENSION_POINT>,
       extension: PayloadTypeKind<
-         GEN_MODEL_SEED_TYPE_EXTENSION_POINT,
-         ExtensionId
+         GEN_MODEL_SEED_EXTENSION_POINT,
+         typeof extensionId
       >,
-   ): GenModelSeedAdapter<ExtensionId> {
-      return new GenModelSeedAdapter(key, extensionClass, extension)
+   ): GenModelSeedAdapter<typeof extensionId> {
+      return new GenModelSeedAdapter<typeof extensionId>(extensionId, extension)
    }
 }

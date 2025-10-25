@@ -1,17 +1,18 @@
 import { OnModuleInit } from "@nestjs/common"
 import { IAdapterFactory } from "../interface/IAdapterFactory.js"
 import {
-   IExtensionClass,
+   ExtensionClassKind,
+   KnownExtensionClassIds,
    KnownTArgsIds,
    TArgsKind,
-} from "../interface/IExtension.js"
+} from "../kinds/ExtensionClassKind.js"
 import { IExtensionCollection } from "../interface/IExtensionCollection.js"
 import { IExtensionPoint } from "../interface/IExtensionPoint.js"
 import { IExtensionWrangler } from "../interface/IExtensionWrangler.js"
 import { ExtensionCollection } from "./ExtensionCollection.js"
 import { IAdapterCollection } from "../interface/IAdapterCollection.js"
 import { AdapterCollection } from "./AdapterCollection.js"
-import { KnownAdapterIds } from "../interface/IExtensionAdapter.js"
+import { KnownExtensionAdapterIds } from "../kinds/ExtensionAdapterKind.js"
 
 export class ExtensionWrangler<ExtensionPoint extends string>
    implements IExtensionWrangler<ExtensionPoint>, OnModuleInit
@@ -23,7 +24,10 @@ export class ExtensionWrangler<ExtensionPoint extends string>
    extensionPoints: Array<IExtensionPoint<ExtensionPoint>>
 
    adapterFactories: {
-      [AdapterId in string]: IAdapterCollection<ExtensionPoint, AdapterId>
+      [AdapterId in KnownExtensionAdapterIds<ExtensionPoint>]: IAdapterCollection<
+         ExtensionPoint,
+         AdapterId
+      >
    }
 
    registrationPhase: boolean
@@ -35,14 +39,15 @@ export class ExtensionWrangler<ExtensionPoint extends string>
       this.registrationPhase = true
    }
 
-   registerExtension<ExtensionId extends KnownTArgsIds<ExtensionPoint>>(
-      extensionKey: ExtensionId,
-      extensionClass: IExtensionClass<ExtensionPoint, ExtensionId>,
-      args: TArgsKind<ExtensionPoint, ExtensionId>,
+   registerExtension(
+      extensionKey: KnownExtensionClassIds<ExtensionPoint>,
+      extensionClass: ExtensionClassKind<ExtensionPoint, typeof extensionKey>,
+      args: TArgsKind<ExtensionPoint, typeof extensionKey>,
    ): void {
       if (extensionKey in this.registeredExtensions) {
          throw new Error(
-            "There is already an extension registered as " + extensionKey,
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            `There is already an extension registered as ${extensionKey}`,
          )
       }
       if (!this.registrationPhase) {
@@ -61,10 +66,16 @@ export class ExtensionWrangler<ExtensionPoint extends string>
       this.extensionPoints.push(extensionPoint)
    }
 
-   registerAdapterFactory<AdapterId extends KnownAdapterIds<ExtensionPoint>>(
+   registerAdapterFactory<
+      AdapterId extends KnownExtensionAdapterIds<ExtensionPoint>,
+   >(
       adapterId: AdapterId,
       factory: IAdapterFactory<ExtensionPoint, AdapterId>,
    ): void {
+      if (!this.registrationPhase) {
+         throw new Error("Registration must happen during Nest's DI stage...")
+      }
+
       this.adapterFactories[adapterId] = new AdapterCollection(factory)
    }
 
@@ -76,10 +87,13 @@ export class ExtensionWrangler<ExtensionPoint extends string>
       }
 
       this.extensionPoints.forEach((x: IExtensionPoint<ExtensionPoint>) => {
-         x.receiveExtensions(this.registeredExtensions, this.adapterFactories)
+         x.receiveExtensions(this.registeredExtensions, {
+            ...this.adapterFactories,
+         })
       })
 
       this.registrationPhase = false
       this.extensionPoints = []
+      this.adapterFactories = {}
    }
 }

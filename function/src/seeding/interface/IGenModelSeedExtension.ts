@@ -1,12 +1,14 @@
-import { GEN_MODEL_SEED_TYPE_EXTENSION_POINT } from "./SeedTypeExtensionPoint"
-import { SeedModelKind } from "./SeedModelKind.js"
-import { ReturnableSeedType } from "./SeedTypes.js"
-import { KnownExtensionIds } from "../../extensions/interface/IExtension.js"
+import {
+   KnownGenModelSeedURIs,
+   GenModelSeedKind,
+} from "../kinds/SeedModelKind.js"
+import { PaintableSeed } from "../models/PaintableSeed.js"
+import { SeedByExtension } from "../models/SeedByExtension.js"
 
-export interface IGenModelSeedExtension<
-   ExtensionId extends KnownExtensionIds<GEN_MODEL_SEED_TYPE_EXTENSION_POINT>,
-> {
-   validate: (input: SeedModelKind<ExtensionId>) => void
+export interface IGenModelSeedExtension<K extends KnownGenModelSeedURIs> {
+   validate: (
+      input: SeedByExtension<KnownGenModelSeedURIs>,
+   ) => input is GenModelSeedKind<K>
 
-   toSeedModel: (input: SeedModelKind<ExtensionId>) => ReturnableSeedType
+   toSeedModel: (input: SeedByExtension<KnownGenModelSeedURIs>) => PaintableSeed
 }

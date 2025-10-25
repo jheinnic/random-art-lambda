@@ -1,103 +1,53 @@
 import { Observable, of, from } from "rxjs"
 
-import "../di/Module.js"
-import {
-   PhrasePair,
-   PrefixSuffix,
-   ReturnableSeedType,
-   SeedType,
-   SinglePhrase,
-} from "../interface/SeedTypes.js"
-// import {
-//    GenModel,
-//    newPicture,
-//    oldPicture,
-//    substringChars,
-// } from "../../painting/components/genjs6.js"
-import { GEN_MODEL_SEED_TYPE_EXTENSION_POINT } from "../interface/SeedTypeExtensionPoint.js"
-import {
-   IExtensionClass,
-   KnownExtensionIds,
-   PayloadTypeKind,
-} from "../../extensions/interface/IExtension.js"
-import { SeedModelKind } from "../interface/SeedModelKind.js"
+// import "../di/Module.js"
+import { PaintableSeed } from "../models/PaintableSeed.js"
+import { GEN_MODEL_SEED_EXTENSION_POINT } from "../kinds/Constants.js"
+import { PayloadTypeKind } from "../../extensions/kinds/index.js"
+import { KnownGenModelSeedURIs } from "../kinds/SeedModelKind.js"
+import { SeedByExtension } from "../models/SeedByExtension.js"
+import { Logger } from "@nestjs/common"
 
-function isSyncValue(
-   seedOut:
-      | SeedType
-      | Iterable<SeedType>
-      | Promise<SeedType>
-      | AsyncIterable<SeedType>,
-): seedOut is SinglePhrase | PhrasePair | PrefixSuffix {
+function isSyncValue(seedOut: PaintableSeed): seedOut is PaintableSeed {
    if ("phrase" in seedOut || "prefix" in seedOut) {
       return true
    }
    return false
 }
 
-// function valueToGenModel(
-//    seedOut: PrefixSuffix | SinglePhrase | PhrasePair,
-// ): GenModel {
-//    if (isSinglePhrase(seedOut)) {
-//       return oldPicture(seedOut.phrase)
-//    } else if (isPrefixSuffix(seedOut)) {
-//       return newPicture([...seedOut.prefix], [...seedOut.suffix])
-//    }
-//    return newPicture(
-//       substringChars(seedOut.prefix, 0, seedOut.prefix.length),
-//       substringChars(seedOut.suffix, 0, seedOut.prefix.length),
-//    )
-// }
+export class GenModelSeedAdapter<ExtensionId extends KnownGenModelSeedURIs> {
+   private readonly logger: Logger
 
-// function isSinglePhrase(
-//    seed: PrefixSuffix | SinglePhrase | PhrasePair,
-// ): seed is SinglePhrase {
-//    return !("suffix" in seed)
-// }
-
-// function isPrefixSuffix(
-//    seed: PrefixSuffix | SinglePhrase | PhrasePair,
-// ): seed is PrefixSuffix {
-//    if ("suffix" in seed) {
-//       if (typeof seed.suffix !== "string") {
-//          return true
-//       }
-//    }
-//    return false
-// }
-
-export class GenModelSeedAdapter<
-   ExtensionId extends KnownExtensionIds<GEN_MODEL_SEED_TYPE_EXTENSION_POINT>,
-> {
    public constructor(
-      private readonly _key: ExtensionId,
-      private readonly TClass: IExtensionClass<
-         GEN_MODEL_SEED_TYPE_EXTENSION_POINT,
-         ExtensionId
-      >,
+      private readonly extensionId: ExtensionId,
       private readonly txFn: PayloadTypeKind<
-         GEN_MODEL_SEED_TYPE_EXTENSION_POINT,
-         ExtensionId
+         GEN_MODEL_SEED_EXTENSION_POINT,
+         typeof extensionId
       >,
    ) {
-      if (!TClass[Symbol.hasInstance](txFn)) {
-         throw new Error(`txFn is not of type ${TClass.name}`)
-      }
+      this.logger = new Logger(`GenModelSeedAdapter<${this.extensionId}>`)
    }
 
-   public toModel(seed: SeedModelKind<ExtensionId>): Observable<SeedType> {
-      if (seed.seedKey !== this.TClass.extensionId) {
+   public toModel(
+      seed: SeedByExtension<ExtensionId>,
+   ): Observable<PaintableSeed> {
+      if (seed.seedKey !== this.extensionId) {
          throw new Error(
-            `Given seed object is for extension ${seed.seedKey}, not ${this.TClass.extensionId}`,
+            `Given seed object is for extension ${seed.seedKey}, not ${this.extensionId}`,
          )
       }
-      this.txFn.validate(seed)
-      const seedOut: ReturnableSeedType = this.txFn.toSeedModel(seed)
-      if (isSyncValue(seedOut)) {
-         // return of(valueToGenModel(seedOut))
-         return of(seedOut)
+      if (this.txFn.validate(seed)) {
+         const seedOut: PaintableSeed = this.txFn.toSeedModel(seed)
+         if (isSyncValue(seedOut)) {
+            // return of(valueToGenModel(seedOut))
+            return of(seedOut)
+         }
+         // return from(seedOut).pipe(map(valueToGenModel))
+         return from(seedOut)
       }
-      // return from(seedOut).pipe(map(valueToGenModel))
-      return from(seedOut)
+      this.logger.error(this.txFn)
+      this.logger.error(this.extensionId)
+      this.logger.error(seed)
+      throw new Error("Wrong extension found for seed")
    }
 }
