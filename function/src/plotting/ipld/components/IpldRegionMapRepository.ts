@@ -303,8 +303,9 @@ export class IpldRegionMapRepository implements IRegionMapRepository {
          )
       }
       console.log(modelEnvelope)
+      console.log(modelEnvelope.RegionMap)
+      // eslint-disable-next-line @typescript-eslint/dot-notation
       const rootObject: RegionMap = modelEnvelope["RegionMap"]
-      console.log(rootObject)
       const paletteBlocks: readonly DataBlock[] = await Promise.all(
          rootObject.palettes.map(async (cidLink: CID) => {
             const dataEncodingBytes: ByteView<DataBlockRepresentation> =
