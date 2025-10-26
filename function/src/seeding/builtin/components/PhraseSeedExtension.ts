@@ -9,10 +9,6 @@ import {
 import { IGenModelSeedExtension } from "../../interface/IGenModelSeedExtension.js"
 import { IPhraseSeed } from "../interface/IPhraseSeed.js"
 import { SeedByExtension } from "../../models/SeedByExtension.js"
-import {
-   GenModelSeedKind,
-   KnownGenModelSeedURIs,
-} from "../../kinds/SeedModelKind.js"
 import { PaintableSeed } from "../../models/PaintableSeed.js"
 import { Logger } from "@nestjs/common"
 
@@ -24,6 +20,8 @@ export class PhraseSeedExtension
 
    static readonly extensionId: PHRASE_SEED_EXTENSION_ID =
       PHRASE_SEED_EXTENSION_ID_STR
+
+   static readonly seedModelType: IPhraseSeed = {} as unknown as IPhraseSeed
 
    private readonly logger: Logger = new Logger("PhraseSeedExtractor")
 

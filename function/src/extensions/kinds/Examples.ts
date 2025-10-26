@@ -1,5 +1,6 @@
 import { Logger } from "@nestjs/common"
-import "../kinds/ExtensionClassKind.js"
+import "./ExtensionClassKind._st"
+import { ExtensionClassKind } from "./ExtensionKind.js"
 
 interface IUIComponentExtension {
    render: () => void
@@ -10,7 +11,7 @@ interface IDataSourceExtension {
 
 export {}
 
-declare module "./ExtensionClassKind.js" {
+declare module "./ExtensionKind.js" {
    interface ExtensionPayloadTypeURItoKind {
       readonly "Examples/ui-component": IUIComponentExtension
       readonly "Examples/data-source": IDataSourceExtension

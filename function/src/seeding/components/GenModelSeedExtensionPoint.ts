@@ -9,9 +9,9 @@ import {
    PAINTABLE_SINGLE_PHRASE_STR,
 } from "../kinds/Constants.js"
 import {
-   KnownExtensionClassIds,
-   PayloadTypeKind,
-} from "../../extensions/kinds/ExtensionClassKind.js"
+   KnownExtensionIds,
+   ExtensionPayloadKind,
+} from "../../extensions/kinds/ExtensionKind.js"
 import { IAdapterCollection } from "../../extensions/interface/IAdapterCollection.js"
 import { IExtensionCollection } from "../../extensions/interface/IExtensionCollection.js"
 import { IExtensionMatchmaker } from "../../extensions/interface/IExtensionMatchmaker.js"
@@ -23,7 +23,7 @@ import { GenModelSeedAdapterFactory } from "./GenModelSeedAdapterFactory.js"
 import {
    GenModelSeedExtensionKind,
    GenModelSeedPayloadKind,
-} from "../kinds/GenModelSeedExtensionKind.js"
+} from "../kinds/GenModelSeedKind.js"
 import { GenModelSeedAdapter } from "./GenModelSeedAdapter.js"
 import { Inject, Injectable } from "@nestjs/common"
 import { SeedingModuleTypes } from "../di/Types.js"
@@ -76,13 +76,13 @@ export class GenModelSeedExtensionPoint
       input: PaintableSeed,
    ): Observable<PaintableSeed>
    toSeedModel(
-      extensionKey: KnownExtensionClassIds<GEN_MODEL_SEED_EXTENSION_POINT>,
+      extensionKey: KnownExtensionIds<GEN_MODEL_SEED_EXTENSION_POINT>,
       input: SeedByExtension<typeof extensionKey>,
    ): Observable<PaintableSeed>
    toSeedModel(
       extensionKey:
          | PaintableSeed["seedKey"]
-         | KnownExtensionClassIds<GEN_MODEL_SEED_EXTENSION_POINT>,
+         | KnownExtensionIds<GEN_MODEL_SEED_EXTENSION_POINT>,
       input:
          | SeedByExtension<
               Exclude<typeof extensionKey, PaintableSeed["seedKey"]>
