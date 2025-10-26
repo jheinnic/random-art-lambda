@@ -7,7 +7,7 @@ from typing import Tuple
 from base64 import b32decode, b32encode
 from uuid import getnode, uuid1, UUID
 
-from .typez import IPublicIdHelper
+from typez import IPublicIdHelper
 
 MAX_CLOCK_SEQ = math.pow(2, 14) - 1
 MAX_CHUNK_RESERVE = 1536

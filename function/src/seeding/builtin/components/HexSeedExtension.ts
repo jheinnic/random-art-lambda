@@ -6,8 +6,7 @@ import {
    HEX_SEED_EXTENSION_ID,
    HEX_SEED_EXTENSION_ID_STR,
 } from "../kinds/Constants.js"
-import { GenModelSeedKind } from "../../kinds/SeedModelKind.js"
-import { KnownExtensionClassIds } from "../../../extensions/kinds/ExtensionClassKind.js"
+import { KnownExtensionIds } from "../../../extensions/kinds/ExtensionKind.js"
 import { PaintableSeed } from "../../models/PaintableSeed.js"
 import { SeedByExtension } from "../../models/SeedByExtension.js"
 import { IHexSeed } from "../interface/IHexSeed.js"
@@ -22,16 +21,18 @@ export class HexSeedExtension
    static readonly extensionId: HEX_SEED_EXTENSION_ID =
       HEX_SEED_EXTENSION_ID_STR
 
-   static readonly SeedModel: IHexSeed = {} as unknown as IHexSeed
+   static readonly seedModelType: IHexSeed = {} as unknown as IHexSeed
 
    get extensionId(): HEX_SEED_EXTENSION_ID {
       return HexSeedExtension.extensionId
    }
 
+   constructor() {
+      this.abc = 1
+   }
+
    validate(
-      input: SeedByExtension<
-         KnownExtensionClassIds<GEN_MODEL_SEED_EXTENSION_POINT>
-      >,
+      input: SeedByExtension<KnownExtensionIds<GEN_MODEL_SEED_EXTENSION_POINT>>,
    ): input is IHexSeed {
       if (input.seedKey !== HexSeedExtension.extensionId) {
          return false
@@ -53,9 +54,7 @@ export class HexSeedExtension
    }
 
    toSeedModel(
-      input: SeedByExtension<
-         KnownExtensionClassIds<GEN_MODEL_SEED_EXTENSION_POINT>
-      >,
+      input: SeedByExtension<KnownExtensionIds<GEN_MODEL_SEED_EXTENSION_POINT>>,
    ): PaintableSeed {
       if (!this.validate(input)) {
          throw new Error(`Incompatible seed model of type: ${input.seedKey}`)

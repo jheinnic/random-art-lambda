@@ -1,7 +1,7 @@
 import "./Extension.js"
-import { KnownPayloadIds } from "../../../extensions/kinds/index.js"
+import { KnownExtensionIds } from "../../../extensions/kinds/index.js"
 
-export const foo: KnownPayloadIds<"GenModelSeed"> = "HexSeed"
-// export const bar: KnownPayloadIds<"GenModelSeedType"> = "NOlkko"
-// export const baz: KnownPayloadIds<"FauxExtensionPoint"> = "GenericExtension"
-export const fko: KnownPayloadIds<"Examples"> = "ui-component"
+export const foo: KnownExtensionIds<"GenModelSeed"> = "HexSeed"
+// export const bar: KnownExtensionIds<"GenModelSeedType"> = "NOlkko"
+// export const baz: KnownExtensionIds<"FauxExtensionPoint"> = "GenericExtension"
+export const fko: KnownExtensionIds<"Examples"> = "ui-component"

@@ -3,8 +3,8 @@ import { IAdapterFactory } from "./IAdapterFactory.js"
 import { IAdapterCollection } from "./IAdapterCollection.js"
 import {
    ExtensionClassKind,
-   KnownExtensionClassIds,
-} from "../kinds/ExtensionClassKind.js"
+   KnownExtensionIds,
+} from "../kinds/ExtensionKind.js"
 import {
    ExtensionAdapterKind,
    KnownExtensionAdapterIds,
@@ -17,7 +17,7 @@ import { IExtensionPoint } from "./IExtensionPoint.js"
 export { IExtensionCollection }
 export { IAdapterFactory }
 export { IAdapterCollection }
-export { ExtensionClassKind, KnownExtensionClassIds }
+export { ExtensionClassKind, KnownExtensionIds }
 export { ExtensionAdapterKind, KnownExtensionAdapterIds }
 export { IExtensionMatchmaker }
 export { IExtensionRegistrar }

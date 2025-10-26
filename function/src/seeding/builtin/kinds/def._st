@@ -1,12 +1,12 @@
 import "./abc.js"
 import {
    ExtensionClassKind,
-   TArgsKind,
+   ExtensionTArgsKind,
 } from "../../../extensions/kinds/ExtensionClassKind.js"
 import { IGenModelSeedExtension } from "../../interface/IGenModelSeedExtension.js"
 import { IHexSeed } from "../interface/IHexSeed.js"
 
-export type KK = TArgsKind<"GenModelSeed", "HexSeed">
+export type KK = ExtensionTArgsKind<"GenModelSeed", "HexSeed">
 export type JJ = ConstructorParameters<
    ExtensionClassKind<"GenModelSeed", "HexSeed">
 >
