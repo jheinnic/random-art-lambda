@@ -1,4 +1,4 @@
-import { KnownExtensionClassIds } from "../../extensions/kinds/ExtensionClassKind.js"
+import { KnownExtensionIds } from "../../extensions/kinds/ExtensionKind.js"
 import { PaintableSeed } from "./PaintableSeed.js"
 import { GEN_MODEL_SEED_EXTENSION_POINT } from "../kinds/Constants.js"
 import { SeedByExtension } from "./SeedByExtension.js"
@@ -24,7 +24,7 @@ export type AsyncPaintableSeed = Async<PaintableSeed>
 
 export type PaintableSeedLike =
    | PaintableSeed
-   | SeedByExtension<KnownExtensionClassIds<GEN_MODEL_SEED_EXTENSION_POINT>>
+   | SeedByExtension<KnownExtensionIds<GEN_MODEL_SEED_EXTENSION_POINT>>
 
 export type AsyncPaintableSeedLike = Async<PaintableSeedLike>
 

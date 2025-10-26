@@ -3,8 +3,8 @@ import { Observable, of, from } from "rxjs"
 // import "../di/Module.js"
 import { PaintableSeed } from "../models/PaintableSeed.js"
 import { GEN_MODEL_SEED_EXTENSION_POINT } from "../kinds/Constants.js"
-import { PayloadTypeKind } from "../../extensions/kinds/index.js"
-import { KnownGenModelSeedURIs } from "../kinds/SeedModelKind.js"
+import { ExtensionPayloadKind } from "../../extensions/kinds/index.js"
+import { KnownGenModelSeedURIs } from "../kinds/SeedModelKind._st"
 import { SeedByExtension } from "../models/SeedByExtension.js"
 import { Logger } from "@nestjs/common"
 
@@ -15,12 +15,12 @@ function isSyncValue(seedOut: PaintableSeed): seedOut is PaintableSeed {
    return false
 }
 
-export class GenModelSeedAdapter<ExtensionId extends KnownGenModelSeedURIs> {
+export class GenModelSeedAdapter<ExtensionId extends string> {
    private readonly logger: Logger
 
    public constructor(
       private readonly extensionId: ExtensionId,
-      private readonly txFn: PayloadTypeKind<
+      private readonly txFn: ExtensionPayloadKind<
          GEN_MODEL_SEED_EXTENSION_POINT,
          typeof extensionId
       >,

@@ -1,53 +1,33 @@
+import { StringKeys } from "simplytyped"
 import {
-   KnownExtensionClassIds,
-   KnownPayloadIds,
-   PayloadTypeKind,
-} from "./ExtensionClassKind.js"
-import { NamespaceURI } from "./NamespaceURI.js"
+   KnownExtensionPointIds,
+   ToAdaptersRefKind,
+} from "./ExtensionPointKind.js"
+import { KnownExtensionIds } from "./ExtensionKind.js"
 
 // 1. Base interface that plugins will augment
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface ExtensionAdapterURItoKind<
-   ExtensionPoint extends string,
-   ExtensionId extends KnownPayloadIds<ExtensionPoint>,
-> {
-   // Empty by default - plugins fill this in
-   // readonly "FauxExtensionPoint/PlaceHoldingAdapter": ExtensionAdapterURItoKind<ExtensionId>
-}
+// export interface ExtensionAdapterURItoKind<
+//    ExtensionPoint extends KnownExtensionPointIds,
+//    ExtensionId extends KnownExtensionIds<ExtensionPoint>,
+// > {
+//    // Empty by default - plugins fill this in
+//    // readonly "FauxExtensionPoint/PlaceHoldingAdapter": ExtensionAdapterURItoKind<ExtensionId>
+// }
 
 // 2. Extract valid URIs from whatever gets registered
-type ExtensionAdapterURIs<ExtensionPoint extends string> =
-   keyof ExtensionAdapterURItoKind<
-      ExtensionPoint,
-      KnownPayloadIds<ExtensionPoint>
-   > &
-      NamespaceURI<ExtensionPoint, string>
-
-export type KnownExtensionAdapterIds<ExtensionPoint extends string> =
-   ExtensionAdapterURIs<ExtensionPoint> extends NamespaceURI<
-      ExtensionPoint,
-      infer Id
-   >
-      ? string extends Id
-         ? never
-         : Id
-      : never
-
-type ExtensionAdapterURIFromParts<
-   ExtensionPoint extends string,
-   AdapterId extends KnownExtensionAdapterIds<ExtensionPoint>,
-> = NamespaceURI<ExtensionPoint, AdapterId> &
-   ExtensionAdapterURIs<ExtensionPoint>
+export type KnownExtensionAdapterIds<
+   ExtensionPoint extends KnownExtensionPointIds,
+> = StringKeys<
+   ToAdaptersRefKind<KnownExtensionIds<ExtensionPoint>>[ExtensionPoint]
+>
 
 // 3. Lookup helper
 export type ExtensionAdapterKind<
-   ExtensionPoint extends string,
+   ExtensionPoint extends KnownExtensionPointIds,
    AdapterId extends KnownExtensionAdapterIds<ExtensionPoint>,
-   ExtensionPayload extends KnownPayloadIds<ExtensionPoint>,
-> = ExtensionAdapterURItoKind<
-   ExtensionPoint,
-   ExtensionPayload
->[ExtensionAdapterURIFromParts<ExtensionPoint, AdapterId>]
+   ExtensionId extends KnownExtensionIds<ExtensionPoint>,
+> = ToAdaptersRefKind<ExtensionId>[ExtensionPoint][AdapterId]
 
 // Plugin authors use this
 // declare module "./ExtensionAdapterKind.js" {

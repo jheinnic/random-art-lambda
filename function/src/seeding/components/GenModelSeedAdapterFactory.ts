@@ -1,7 +1,7 @@
 import {
-   KnownExtensionClassIds,
-   PayloadTypeKind,
-} from "../../extensions/kinds/ExtensionClassKind.js"
+   KnownExtensionIds,
+   ExtensionPayloadKind,
+} from "../../extensions/kinds/ExtensionKind.js"
 import { IAdapterFactory } from "../../extensions/interface/IAdapterFactory.js"
 import { GenModelSeedAdapter } from "./GenModelSeedAdapter.js"
 import {
@@ -23,8 +23,8 @@ export class GenModelSeedAdapterFactory
    readonly adapterId: GEN_MODEL_SEED_ADAPTER_ID = GEN_MODEL_SEED_ADAPTER_ID_STR
 
    adapt(
-      extensionId: KnownExtensionClassIds<GEN_MODEL_SEED_EXTENSION_POINT>,
-      extension: PayloadTypeKind<
+      extensionId: KnownExtensionIds<GEN_MODEL_SEED_EXTENSION_POINT>,
+      extension: ExtensionPayloadKind<
          GEN_MODEL_SEED_EXTENSION_POINT,
          typeof extensionId
       >,
