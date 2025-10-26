@@ -3,6 +3,7 @@ import {
    DomainModelOf,
    RepresentationOf,
    RepresentDomainTuple,
+   SchemaNameOf,
 } from "./RepresentDomainPair.js"
 
 type MaybeUnionDefinition<N extends string> = Record<
@@ -36,7 +37,7 @@ export type UnionAsDomainModel<
 > =
    T extends UnionDefinition<N, T>
       ? UnionizeProperties<{
-           [K in N]: { [P in K]: DomainModelOf<T[P]> }
+           [K in N]: { [P in SchemaNameOf<T[K]>]: DomainModelOf<T[K]> }
         }>
       : never
 
@@ -54,7 +55,7 @@ export type UnionAsRepresentation<
 > =
    T extends UnionDefinition<N, T>
       ? UnionizeProperties<{
-           [K in N]: {
+           [K in N as SchemaNameOf<T[K]>]: {
               //   ? K extends K // RepresentationOf<T[K]> extends infer I
               [D in Discriminant | Model]: D extends Discriminant
                  ? K

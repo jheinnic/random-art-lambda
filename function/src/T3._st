@@ -1,0 +1,145 @@
+import { Type } from "@nestjs/common"
+import { ConstructorFor } from "simplytyped"
+
+class Base {
+   constructor(protected readonly key: string) {}
+}
+class Foo extends Base {
+   showFoo(): string {
+      return super.key
+   }
+}
+class Bar extends Base {
+   showBar(): string {
+      return this.key
+   }
+}
+
+type Cons = new (...args: any[]) => Base
+
+export let Init: Cons = Foo
+export const a = new Init("abc")
+Init = Bar
+export const b = new Init("def")
+console.log(a.constructor.name)
+console.log(b.constructor.name)
+
+export const c: Foo = new Foo("pdq")
+export const d: Bar = new Bar("123")
+
+function initOne<Clazz extends Cons>(
+   clazz: Clazz,
+   inst: InstanceType<typeof clazz>,
+): void {
+   console.log(clazz[Symbol.hasInstance](inst))
+}
+
+function initTwo(clazz: Cons, inst: InstanceType<typeof clazz>): void {
+   console.log(clazz[Symbol.hasInstance](inst))
+}
+
+function initThree<Inst extends InstanceType<Cons>>(
+   clazz: ConstructorFor<Base>,
+   inst: Inst,
+): void {
+   console.log(clazz[Symbol.hasInstance](inst))
+}
+
+initOne<typeof Base>(Foo, a)
+initOne<typeof Base>(Bar, b)
+
+initOne<typeof Foo>(Foo, a)
+initTwo(Foo, a)
+initOne<typeof Bar>(Bar, b)
+initTwo(Bar, b)
+
+initOne<typeof Foo>(Foo, b)
+initTwo(Foo, b)
+initOne<typeof Bar>(Bar, a)
+initTwo(Bar, a)
+
+initOne<typeof Base>(Foo, c)
+initOne<typeof Base>(Bar, d)
+initThree<Base>(Foo, c)
+initThree<Base>(Bar, d)
+
+initOne<typeof Foo>(Foo, c)
+initTwo(Foo, c)
+initThree<Foo>(Foo, c)
+initOne<typeof Bar>(Bar, d)
+initTwo(Bar, d)
+initThree<Bar>(Bar, d)
+
+initOne<typeof Foo>(Foo, d)
+initOne<typeof Bar>(Foo, d)
+initTwo(Foo, d)
+initThree<Foo>(Foo, d)
+initThree<Bar>(Foo, d)
+initOne<typeof Bar>(Bar, c)
+initOne<typeof Foo>(Bar, c)
+initTwo(Bar, c)
+initThree<Bar>(Bar, c)
+initThree<Foo>(Bar, c)
+
+initOne(Foo, c)
+initOne(Foo, d)
+initOne(Bar, c)
+initOne(Bar, d)
+initTwo(Foo, c)
+initTwo(Foo, d)
+initTwo(Bar, c)
+initTwo(Bar, d)
+initThree(Foo, c)
+initThree(Foo, d)
+initThree(Bar, c)
+initThree(Bar, d)
+
+export const x: ConstructorFor<Foo> = Bar
+export const xp: Foo = x.prototype
+export const fp: Foo = Bar.prototype
+console.log(x)
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-interface
+export interface IAdapter<K extends string> {}
+
+export interface BaseObject<K extends string> extends Function {
+   new (...args: any[]): any
+   readonly extensionId: K
+}
+
+// This is not valid TypeScript syntax
+type TConstructor<T extends string> = new <K extends T>(key: K) => IAdapter<K>
+
+interface IAdapterFactory<
+   TConstructor extends abstract new <K extends string>(key: K) => IAdapter<K>,
+> {
+   adapt: <K extends string, Clazz extends BaseObject<K>>(
+      clazz: Clazz,
+      obj: InstanceType<Clazz>,
+   ) => TConstructor extends new (key: K) => infer R ? R : never
+}
+
+class MyAdapter<K extends string> implements IAdapter<K> {
+   constructor(private readonly myK: K) {}
+}
+
+class Foo2 {
+   static readonly extensionId: "Foo" = "Foo"
+
+   constructor(public readonly n: number) {}
+}
+
+class Bar2 {
+   static readonly extensionId: "Bar" = "Bar"
+
+   constructor(public readonly s: string) {}
+}
+
+const myAF: IAdapterFactory<typeof MyAdapter> =
+   {} as unknown as IAdapterFactory<typeof MyAdapter>
+
+const foo2: Foo2 = new Foo2(7)
+const bar2: Bar2 = new Bar2("3")
+
+const adFoo2: MyAdapter<"Foo"> = myAF.adapt(Foo2, foo2)
+const adBar2: MyAdapter<"Bar"> = myAF.adapt(Bar2, bar2)

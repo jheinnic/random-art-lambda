@@ -1,0 +1,248 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+    <title>Random art: 
+make your own
+</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" media="screen" type="text/css" href="/media/css/base.css" />
+    
+<!--[if IE]><script type="text/javascript" src="/media/js/excanvas.js"></script><![endif]-->
+<script type="text/javascript" src="/media/js/callback.js"></script>
+<script type="text/javascript" src="/media/js/genjs.js"></script>
+<script type="text/javascript" src="/media/js/jquery.js"></script>
+<script type="text/javascript">
+
+    function active_menu(m) {
+      $("a.menu").removeClass("active-menu");
+      $("a.menu#"+m).addClass("active-menu");
+    }
+
+$(document).ready(function () {
+	
+  active_menu("menu-online");
+
+  // We write idiotic code in order to be compatible with MSIE.
+
+  var painter, name, rna;
+  var ctx = false;
+  var pdat = false;
+  var idat = false;
+  var res = parseInt($("canvas#picture").attr("width"));
+  var new_picture = ocaml_get("new_picture");
+  var compute_pixel = ocaml_get("compute_pixel");
+
+  var d, i, j, p;
+  var rgbRegex = /^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/;
+
+  $("form#submit").hide();
+
+  function stop_paint() {
+    if (painter) { window.clearTimeout(painter); }
+    $("#progress").text("(stopped)");
+    $("input#stop").hide();
+    rna = new_picture(name);
+  }
+
+  function begin_paint() {
+    ctx.fillStyle = "rgb(255,255,255)";
+    ctx.fillRect(0,0,res,res);
+    stop_paint(ctx,res);
+    $("input#stop").show();
+    $("#progress").text("(preview)");
+    d = 32; j = 0;
+    painter = window.setTimeout(paint_preview, 5);
+  }
+
+  function paint_preview() {
+    for (var k = 0; d * k < res; k++) {
+      var x = 2.0 * d * (k + 0.5) / res - 1.0;
+      var y = 2.0 * d * (j + 0.5) / res - 1.0;
+      var c = compute_pixel(rna,x,y);
+      const match = c.match(rgbRegex);
+      if (match) {
+        const r = parseInt(match[1], 10);
+        const g = parseInt(match[2], 10);
+        const b = parseInt(match[3], 10);
+        const rgba = 255 << 24 | b << 24 | g << 16 | r;
+        const baseIdx = d*(j*res + k)
+        for (var ii = 0; ii<d; ii++) {
+            for (var jj = 0; jj<d; jj++) {
+                pdat[baseIdx+jj+(ii*res)] = rgba;
+            }
+        }
+      }
+    }
+    ctx.putImageData(idat, 0, j*d)
+    j = j + 1;
+    if (d*j >= res) {
+      j = 0;
+      if (d <= 8) {
+        i = 0;
+        p = 0;
+        idat = ctx.createImageData(32, 1)
+        pdat = new Uint32Array(idat.data.buffer)
+        painter = window.setTimeout(paint, 1);
+        return;
+      }
+      else { 
+        d = d/2; 
+        idat = ctx.createImageData(cnv.width, d)
+        pdat = new Uint32Array(idat.data.buffer)
+      }
+    }
+    painter = window.setTimeout(paint_preview, 1);
+  }
+
+  function paint() {
+    $("#progress").text(Math.floor(100*j/res)+ "%");
+    const forJ = j
+    const forI = i
+    for (var k = 0; k < 32; k++) {
+      var x = 2.0 * (i + 0.5) / res - 1.0;
+      var y = 2.0 * (j + 0.5) / res - 1.0;
+      var c = compute_pixel(rna,x,y);
+      const match = c.match(rgbRegex);
+      if (match) {
+        const r = parseInt(match[1], 10);
+        const g = parseInt(match[2], 10);
+        const b = parseInt(match[3], 10);
+        const rgba = 255 << 24 | b << 24 | g << 16 | r;
+        pdat[p++] = rgba;
+      }
+      i = i + 1;
+      if (i >= res) {
+        i = 0;
+        j = j + 1;
+        break;
+      }
+    }
+    ctx.putImageData(idat, forI, forJ)
+    if (j >= res) {
+      $("#progress").text("");
+      $("input#stop").hide();
+      $("form#submit").show();
+    }
+    else { painter = window.setTimeout(paint, 1); }
+  }
+
+  $("form#online").submit(function () {
+    name = $("input#online_name").val();
+    name = name.replace(/^\s*|\s*$/g,'');
+    if (name == '') {
+      alert('Picture name must not be empty.');
+    }
+    else {
+      $("input#submit_name").val(name);
+      $("form#submit").hide();
+      if (!ctx) {
+        var cnv = document.getElementById("picture");
+        if ($.browser.msie) { cnv = G_vmlCanvasManager.initElement(cnv); }
+        ctx = cnv.getContext("2d");
+        idat = ctx.createImageData(cnv.width, 32)
+        pdat = new Uint32Array(idat.data.buffer)
+      }
+      res = parseInt($("canvas#picture").attr("width"));
+      rna = new_picture(name);
+      $("span.caption").text(name);
+      painter = window.setTimeout(begin_paint, 1);
+    }
+    return false;
+  });
+
+  $("form#submit").submit(function () {
+    var name = $("input#submit_name").val();
+    name = name.replace(/^\s*|\s*$/g,'');
+    if (name == '') {
+      alert('Picture name must not be empty.');
+      return false;
+    }
+    else {
+      return true;
+    }
+  });
+
+  $("input#stop").hide();
+
+  $("input#stop").click(function () {
+    stop_paint();
+    return false;
+  });
+});
+</script>
+    
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-18033973-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</head>
+
+<body>
+  <h1><a href="/">Random art</a></h1>
+  <div id="menu">
+  
+  <a class="menu" id="menu-gallery" href="/">gallery</a><a class="menu" id="menu-online"  href="/online/">make-your-own</a><a class="menu" id="menu-about" href="/about/">about</a>
+  
+  </div>
+
+  <div id="content">
+    
+
+<h3>Make your own random picture</h3>
+
+<form id="online">
+<p>Enter a picture name and press "Paint".</p>
+<p>
+ <input type='text' id='online_name' name='online_name' value=''/>
+ <input type='submit' name='paint' value='Paint'/>
+</p>
+
+<p><span id="progress"></span> <input type='submit' id='stop' name='stop' value='Stop'/></p>
+
+<canvas id="picture" width="256" height="256">
+  If you see this text your browser does not support HTML5 canvas
+  element and so you will not be able to generate random pictures
+  online. You should use Google Chrome (it's fast), Mozilla Firefox
+  (it's slow), or Internet Explorer 8 (even slower). Sorry for the
+  inconvenience.
+</canvas>
+<br/>
+<span class="caption"></span>
+</form>
+
+<form method="post" id="submit">
+<input type='hidden' id='submit_name' name='submit_name' value=''/>
+<div id="submit">
+Is this picture good? 
+<input type='submit' id='submit' name='submit' value='Submit'/> it to
+the online gallery!
+</div>
+</form>
+
+
+<p>At the moment the following pictures are scheduled for addition to the library:</p>
+
+<ol>
+
+<li>d@=q3.d@=3.d@= lemins</li>
+
+</ol>
+
+
+
+  </div>
+
+</body>
+
+</html>

@@ -1,3 +1,4 @@
+import { IGenModelSeedExtensionPoint } from "./../../seeding/interface/IGenModelSeedExtensionPoint"
 import { Inject, Injectable } from "@nestjs/common"
 import { CID } from "multiformats"
 import { Canvas } from "canvas"
@@ -20,6 +21,9 @@ import { PBufRegionMapFactory } from "../../plotting/protobuf/components/PBufReg
 import { ProtobufPlottingModuleTypes } from "../../plotting/protobuf/di/Types.js"
 import { PBufRegionMap } from "../../plotting/protobuf/components/PBufRegionMap.js"
 import { CanvasPersister } from "../../painting/components/CanvasPersister.js"
+import { SeedingModuleTypes } from "../../seeding/di/Types.js"
+import { IGenModelSeedExtension } from "../../seeding/interface/IGenModelSeedExtension.js"
+import { IPhraseSeed } from "../../seeding/builtin/interface/IPhraseSeed.js"
 
 interface Task {
    taskMessage: string
@@ -43,7 +47,23 @@ export class AppServiceTwo {
       // @Inject( PaintingModuleTypes.IRandomArtPainter )
       // @Inject( PaintingModuleTypes.IRandomArtTaskEngine )
       // private readonly taskRepo: IRandomArtTaskEngine,
+      @Inject(SeedingModuleTypes.GenModelSeedExtensionPoint)
+      private readonly seedExtensionPoint: IGenModelSeedExtensionPoint,
    ) {}
+
+   public useSeeder(): void {
+      const phrase: IPhraseSeed = {
+         seedKey: "PhraseSeed",
+         phrase: "It went that way",
+      }
+      const retVal = this.seedExtensionPoint.toSeedModel("PhraseSeed", phrase)
+      retVal.subscribe({
+         next: (retVal) => {
+            console.log(retVal)
+            return retVal
+         },
+      })
+   }
 
    public async testRepo(cid: CID): Promise<IRegionMap | undefined> {
       if (!this.cidCache.has(cid)) {
@@ -231,7 +251,12 @@ export class AppServiceTwo {
          regionMap.pixelHeight,
          "image",
       )
-      const artist: GenModelArtist = new GenModelArtist(genModel, canvas)
+      const artist: GenModelArtist = new GenModelArtist(
+         genModel,
+         canvas,
+         0,
+         regionMap.pixelHeight,
+      )
       await regionMap.directPlotter(artist)
       const stream = fs.createWriteStream(fileName)
       const persister: CanvasPersister = new CanvasPersister(canvas, stream)

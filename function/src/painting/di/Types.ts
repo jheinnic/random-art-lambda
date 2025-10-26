@@ -10,11 +10,14 @@
 
 export const PaintingModuleTypes = {
    IRandomArtTaskEngine: Symbol("Painting::IRandomArtTaskEngine"),
-   IGenModelFactory: Symbol("Painting::IGenModelFactory"),
-   IGenModelSeedRegistry: Symbol("Painting::IGenModelSeedRegistry"),
+   // IGenModelFactory: Symbol("Painting::IGenModelFactory"),
+   // IGenModelSeedRegistry: Symbol("Painting::IGenModelSeedRegistry"),
    RandomArtTaskCallChannel: Symbol("Painting::Chan<RandomArtTaskCall>"),
    RandomArtTaskReplyChannel: Symbol("Painting::Chan<RandomArtTaskReply>"),
    InjectedRegionMapRepository: Symbol("Painting::IRegionMapRepository"),
+   InjectedGenModelSeedExtensionPoint: Symbol(
+      "Painting::IGenModelSeedExtensionPoint",
+   ),
    // ModuleConfiguration: PAINTING_MODULE_CONFIGURATION,
    // ModuleConfiguration: INJECTED_REGION_MAP_REPOSITORY,
    // IRandomArtPainterFactory: I_RANDOM_ART_PAINTER_FACTORY,

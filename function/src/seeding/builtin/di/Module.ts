@@ -1,25 +1,20 @@
-import "../../../extensions/interface/IExtension.js"
-import { HexSeedExtension } from "../components/HexSeedExtension.js"
-import { PhraseSeedExtension } from "../components/PhraseSeedExtension.js"
-import { IHexSeed } from "../interface/IHexSeed.js"
-import { IPhraseSeed } from "../interface/IPhraseSeed.js"
+import { Module } from "@nestjs/common"
+import { SeedingModule } from "../../di/Module.js"
+import { SeedingModuleTypes } from "../../di/Types.js"
+import { BuiltInSeedModuleTypes } from "./Types.js"
+import { ModuleActivator } from "../components/ModuleActivator.js"
 
-export {}
-
-declare module "../../../extensions/interface/IExtension.js" {
-   interface ExtensionPayloadTypeURItoKind {
-      readonly "GenModelSeedType/HexSeed": HexSeedExtension
-      readonly "GenModelSeedType/PhraseSeed": PhraseSeedExtension
-   }
-   interface ExtensionTArgsURItoKind {
-      readonly "GenModelSeedType/HexSeed": []
-      readonly "GenModelSeedType/PhraseSeed": []
-   }
-}
-
-declare module "../../interface/SeedModelKind.js" {
-   interface SeedModelURItoKind {
-      HexSeed: IHexSeed
-      PhraseSeed: IPhraseSeed
-   }
-}
+@Module({
+   imports: [SeedingModule],
+   providers: [
+      {
+         provide: BuiltInSeedModuleTypes.ModuleActivator,
+         useClass: ModuleActivator,
+      },
+      {
+         provide: BuiltInSeedModuleTypes.GenModelSeedExtensionRegistry,
+         useExisting: SeedingModuleTypes.GenModelSeedExtensionRegistry,
+      },
+   ],
+})
+export class BuiltInGenModelSeedingModule {}

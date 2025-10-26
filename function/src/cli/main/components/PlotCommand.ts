@@ -1,5 +1,5 @@
-import { Command, CommandRunner, Option } from "nest-commander"
-import { Chan, take, put, close } from "medium"
+import { Command, CommandRunner } from "nest-commander"
+import { Chan } from "medium"
 import { Inject } from "@nestjs/common"
 
 import { CliMainModuleTypes } from "../di/Types.js"
@@ -7,10 +7,6 @@ import {
    RandomArtTaskCall,
    RandomArtTaskReply,
 } from "../../../painting/message"
-import {
-   EnrollSourceFileCall,
-   EnrollSourceFileReply,
-} from "../../../plotting/protobuf/message/index.js"
 import { IRandomArtTaskEngine } from "../../../painting/index.js"
 /**
  * A sample CLI command that takes an option and uses it to configure a service.

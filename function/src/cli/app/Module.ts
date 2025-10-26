@@ -3,11 +3,9 @@ import { SharedBlockstoresModule } from "../../app/di/SharedBlockstoresModule.js
 
 import { CliChannelsModuleTypes } from "../../channels/di/Types.js"
 import { PaintingModuleTypes } from "../../painting/di/Types.js"
-import { IpldPlottingModuleTypes } from "../../plotting/ipld/di/Types.js"
 import { CliChannelsModule } from "../../channels/di/Module.js"
 import { IpldPlottingModule } from "../../plotting/ipld/di/Module.js"
 import { PaintingModule } from "../../painting/di/Module.js"
-import { QueueingPaintModule } from "../../painting/queue/di/Module.js"
 import { CliMainModule } from "../main/di/Module.js"
 
 import { plottingModule, paintingModule, queueModule } from "./Imports.js"

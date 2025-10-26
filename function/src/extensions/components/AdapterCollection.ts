@@ -1,20 +1,26 @@
-import { IExtensionClass } from "../interface/IExtension.js"
-import { IAdapterFactory } from "../interface/IAdapterFactory.js"
-import { IAdapterCollection } from "../interface/IAdapterCollection.js"
+import "../kinds/Examples.js"
+import {
+   KnownPayloadIds,
+   KnownExtensionClassIds,
+   PayloadTypeKind,
+   ExtensionClassKind,
+} from "../kinds/ExtensionClassKind.js"
 import {
    ExtensionAdapterKind,
-   ExtensionAdapterURIFromParts,
-} from "../interface/IExtensionAdapter.js"
-import { NamespaceURI } from "../interface/IExtensionPoint.js"
+   KnownExtensionAdapterIds,
+} from "../kinds/ExtensionAdapterKind.js"
+import { IAdapterFactory } from "../interface/IAdapterFactory.js"
+import { IAdapterCollection } from "../interface/IAdapterCollection.js"
 
 export class AdapterCollection<
    ExtensionPoint extends string,
-   AdapterId extends string,
+   AdapterId extends KnownExtensionAdapterIds<ExtensionPoint>,
 > implements IAdapterCollection<ExtensionPoint, AdapterId>
 {
    private readonly adapterMap: {
-      [ExtensionId in string]: ExtensionAdapterKind<
-         ExtensionAdapterURIFromParts<ExtensionPoint, AdapterId>,
+      [ExtensionId in KnownPayloadIds<ExtensionPoint>]: ExtensionAdapterKind<
+         ExtensionPoint,
+         AdapterId,
          ExtensionId
       >
    }
@@ -28,80 +34,54 @@ export class AdapterCollection<
       this.adapterMap = {}
    }
 
-   get adapterId(): NamespaceURI<ExtensionPoint, AdapterId> {
-      return this.adapterFactory.URI
-   }
-
    fromFactory(): IAdapterFactory<ExtensionPoint, AdapterId> {
       return this.adapterFactory
    }
 
-   adapt<
-      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
-      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
-   >(
-      key: ExtensionId,
-      clazz: ExtensionClass,
-      extension: InstanceType<ExtensionClass>,
-   ): ExtensionAdapterKind<
-      ExtensionAdapterURIFromParts<ExtensionPoint, AdapterId>,
-      ExtensionId
-   > {
+   adapt(
+      extensionId: KnownExtensionClassIds<ExtensionPoint>,
+      extensionClass: ExtensionClassKind<ExtensionPoint, typeof extensionId>,
+      extension: PayloadTypeKind<ExtensionPoint, typeof extensionId>,
+   ): ExtensionAdapterKind<ExtensionPoint, AdapterId, typeof extensionId> {
       if (
          extension === undefined ||
-         clazz === undefined ||
+         extensionClass === undefined ||
          extension === null ||
-         clazz === null
+         extensionClass === null
       ) {
          throw new Error(`Class or extension is undefined or null`)
       }
-      if (!clazz[Symbol.hasInstance](extension)) {
+      if (!extensionClass[Symbol.hasInstance](extension)) {
          throw new Error(
-            `Extension object for extension ${key} is not an object of type ${clazz.name}, but rather ${extension.constructor.name}`,
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/dot-notation
+            `Extension object for extension ${extensionId} is not an object of type ${extensionClass.name}, but rather ${extension["constructor"]["name"]}`,
          )
       }
       let retVal: ExtensionAdapterKind<
-         ExtensionAdapterURIFromParts<ExtensionPoint, AdapterId>,
-         ExtensionId
+         ExtensionPoint,
+         AdapterId,
+         typeof extensionId
       >
-      if (key in this.adapterMap) {
-         retVal = this.adapterMap[key]
+      if (extensionId in this.adapterMap) {
+         retVal = this.adapterMap[extensionId]
       } else {
-         retVal = this.adapterFactory.adapt(key, clazz, extension)
+         retVal = this.adapterFactory.adapt(extensionId, extension)
          if (retVal === undefined) {
             throw new Error(
-               `Adapter factory failed to adapt extension for ${key} of type ${clazz.name}`,
+               // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+               `Adapter factory failed to adapt extension for ${extensionId} of type ${extensionClass.name}`,
             )
          }
-         this.adapterMap[key] = retVal
+         this.adapterMap[extensionId] = retVal
       }
 
       return retVal
    }
 
-   unadapt<
-      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
-      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
-   >(
-      key: ExtensionId,
-      clazz: ExtensionClass,
-      extension: InstanceType<ExtensionClass>,
-   ): void {
-      if (
-         extension === undefined ||
-         clazz === undefined ||
-         extension === null ||
-         clazz === null
-      ) {
-         throw new Error(`Class or extension is undefined or null`)
-      }
-      if (!clazz[Symbol.hasInstance](extension)) {
-         throw new Error(
-            `Extension object for extension ${key} is not an object of type ${clazz.name}, but rather ${extension.constructor.name}`,
-         )
-      }
-      if (key in this.adapterMap) {
-         delete this.adapterMap[key]
+   unadapt(extensionId: KnownExtensionClassIds<ExtensionPoint>): void {
+      if (extensionId in this.adapterMap) {
+         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+         delete this.adapterMap[extensionId]
       }
    }
 }
