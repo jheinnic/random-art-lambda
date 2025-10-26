@@ -1,28 +1,36 @@
 import {
-   ExtensionPayloadTypeURIFromParts,
-   ExtensionTArgsURIFromParts,
-   IExtensionClass,
+   KnownExtensionClassIds,
+   ExtensionClassKind,
    PayloadTypeKind,
    TArgsKind,
-} from "../interface/IExtension.js"
+   KnownTArgsIds,
+   KnownPayloadIds,
+} from "../kinds/ExtensionClassKind.js"
 import { IExtensionCollection } from "../interface/IExtensionCollection.js"
+import { objectKeys } from "simplytyped"
+import "../kinds/Examples.js"
 
-export class ExtensionCollection<ExtensionPoint extends string>
+export class ExtensionCollection<ExtensionPoint extends string = "Example">
    implements IExtensionCollection<ExtensionPoint>
 {
    private readonly classMap: {
-      [ExtensionId in string]: IExtensionClass<ExtensionPoint, ExtensionId>
+      [ExtensionId in KnownExtensionClassIds<ExtensionPoint>]: ExtensionClassKind<
+         ExtensionPoint,
+         ExtensionId
+      >
    }
 
    private readonly argsMap: {
-      [ExtensionId in string]: TArgsKind<
-         ExtensionTArgsURIFromParts<ExtensionPoint, ExtensionId>
+      [ExtensionId in KnownTArgsIds<ExtensionPoint>]: TArgsKind<
+         ExtensionPoint,
+         ExtensionId
       >
    }
 
    private readonly extensionMap: {
-      [ExtensionId in string]: PayloadTypeKind<
-         ExtensionPayloadTypeURIFromParts<ExtensionPoint, ExtensionId>
+      [ExtensionId in KnownPayloadIds<ExtensionPoint>]: PayloadTypeKind<
+         ExtensionPoint,
+         ExtensionId
       >
    }
 
@@ -32,81 +40,71 @@ export class ExtensionCollection<ExtensionPoint extends string>
       this.argsMap = {}
    }
 
-   setClass<
-      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
-      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
-   >(
-      key: ExtensionId,
-      clazz: ExtensionClass,
-      ...args: TArgsKind<
-         ExtensionTArgsURIFromParts<ExtensionPoint, ExtensionId>
-      >
+   setClass(
+      extensionId: KnownExtensionClassIds<ExtensionPoint>,
+      extensionClass: ExtensionClassKind<ExtensionPoint, typeof extensionId>,
+      ...args: TArgsKind<ExtensionPoint, typeof extensionId>
    ): void {
-      this.classMap[key] = clazz as unknown as IExtensionClass<
-         ExtensionPoint,
-         string
-      >
-      this.argsMap[key] = args
+      this.classMap[extensionId] = extensionClass
+      this.argsMap[extensionId] = args
    }
 
    // set<
    //    ExtensionId extends KnownPayloadIds<ExtensionPoint> & KnownTArgsIds<ExtensionPoint>,
    //    ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
    // >(
-   //    key: ExtensionId,
-   //    clazz: ExtensionClass,
+   //    extensionId: ExtensionId,
+   //    extensionClass: ExtensionClass,
    //    value: InstanceType<ExtensionClass>,
    // ): void {
-   //    if (!clazz[Symbol.hasInstance](value)) {
-   //       throw new Error(`Value is not of type ${clazz.name}`)
+   //    if (!extensionClass[Symbol.hasInstance](value)) {
+   //       throw new Error(`Value is not of type ${extensionClass.name}`)
    //    }
-   //    this.extensionMap[key] = value
+   //    this.extensionMap[extensionId] = value
    // }
 
-   getClass<
-      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
-      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
-   >(key: ExtensionId): ExtensionClass | undefined {
-      let retVal: ExtensionClass | undefined
-      if (key in this.classMap) {
-         retVal = this.classMap[key] as unknown as ExtensionClass
-      }
-
-      return retVal
-   }
-
-   get<
-      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
-      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
-   >(
-      key: ExtensionId,
-      Clazz: ExtensionClass,
-   ): InstanceType<ExtensionClass> | undefined {
-      let retVal: InstanceType<ExtensionClass> | undefined
-      if (key in this.extensionMap) {
-         retVal = this.extensionMap[
-            key
-         ] as unknown as InstanceType<ExtensionClass>
-      } else if (key in this.argsMap) {
-         const tArgs = this.argsMap[key] as unknown as TArgsKind<
-            ExtensionTArgsURIFromParts<ExtensionPoint, ExtensionId>
-         >
-         retVal = new Clazz(...tArgs) as InstanceType<ExtensionClass>
-         this.extensionMap[key] = retVal as unknown as PayloadTypeKind<
-            ExtensionPayloadTypeURIFromParts<ExtensionPoint, ExtensionId>
-         >
+   getClass(
+      extensionId: KnownExtensionClassIds<ExtensionPoint>,
+   ): ExtensionClassKind<ExtensionPoint, typeof extensionId> {
+      let retVal: ExtensionClassKind<ExtensionPoint, typeof extensionId>
+      if (extensionId in this.classMap) {
+         retVal = this.classMap[extensionId]
       } else {
-         throw new Error(`No extension registered for <${key}>`)
+         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+         throw new Error(`No class for ${extensionId} has been registered...`)
       }
 
       return retVal
    }
 
-   classKeys(): string[] {
-      return Object.keys(this.classMap)
+   get(
+      extensionId: KnownExtensionClassIds<ExtensionPoint>,
+   ): PayloadTypeKind<ExtensionPoint, typeof extensionId> {
+      let retVal: PayloadTypeKind<ExtensionPoint, typeof extensionId>
+      if (extensionId in this.extensionMap) {
+         retVal = this.extensionMap[extensionId]
+      } else if (extensionId in this.classMap && extensionId in this.argsMap) {
+         const tArgs: TArgsKind<ExtensionPoint, typeof extensionId> =
+            this.argsMap[extensionId]
+         const ExtensionClass: ExtensionClassKind<
+            ExtensionPoint,
+            typeof extensionId
+         > = this.classMap[extensionId]
+         retVal = new ExtensionClass(...tArgs)
+         this.extensionMap[extensionId] = retVal
+      } else {
+         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+         throw new Error(`No extension registered for <${extensionId}>`)
+      }
+
+      return retVal
    }
 
-   keys(): string[] {
-      return Object.keys(this.extensionMap)
+   get classKeys(): Array<KnownExtensionClassIds<ExtensionPoint>> {
+      return objectKeys(this.classMap)
+   }
+
+   get keys(): Array<KnownExtensionClassIds<ExtensionPoint>> {
+      return objectKeys(this.extensionMap)
    }
 }

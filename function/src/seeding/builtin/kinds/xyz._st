@@ -1,0 +1,36 @@
+import "./pdq.js"
+import { A1, A2, ExtensionsRef, Extension } from "./abc.js"
+
+export const ad: A1 = {
+   GenModelSeed: {
+      // HexSeed: 88,
+   },
+}
+
+export const kl: A2<"GenModelSeed"> = {
+   // HexSeed: 92,
+   // Pe: 93,
+}
+export type lkj = keyof A2<"GenModelSeed">
+export type kj = ExtensionsRef["GenModelSeed"]["HexSeed"]
+export type jk = Extension<"GenModelSeed", "HexSeed">
+
+export let ewe: kj = {} as unknown as kj
+export let qh: jk = {} as unknown as jk
+ewe = qh
+qh = ewe
+
+export let tt: keyof A1 = "dd"
+export let kj: keyof A1 = tt
+export let ka: keyof A1["b"]
+
+kj = tt
+tt = "b"
+tt = "c"
+tt = "a"
+tt = kj
+tt = 7
+tt = { d: 5 }
+
+ka = "Placeholder"
+ka = "Bad"

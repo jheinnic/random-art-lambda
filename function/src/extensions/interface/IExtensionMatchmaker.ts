@@ -1,6 +1,6 @@
 import { IExtensionPoint } from "./IExtensionPoint.js"
 import { IAdapterFactory } from "./IAdapterFactory.js"
-import { KnownAdapterIds } from "./IExtensionAdapter.js"
+import { KnownExtensionAdapterIds } from "../kinds/ExtensionAdapterKind.js"
 
 /**
  */
@@ -9,7 +9,9 @@ export interface IExtensionMatchmaker<ExtensionPoint extends string> {
       extensionPoint: IExtensionPoint<ExtensionPoint>,
    ) => void
 
-   registerAdapterFactory: <AdapterId extends KnownAdapterIds<ExtensionPoint>>(
+   registerAdapterFactory: <
+      AdapterId extends KnownExtensionAdapterIds<ExtensionPoint>,
+   >(
       adapterId: AdapterId,
       adapterFactory: IAdapterFactory<ExtensionPoint, AdapterId>,
    ) => void

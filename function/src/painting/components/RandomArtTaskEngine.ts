@@ -3,6 +3,7 @@ import {
    Injectable,
    Logger,
    OnApplicationBootstrap,
+   OnApplicationShutdown,
 } from "@nestjs/common"
 import { close, put, repeatTake, Chan } from "medium"
 import { Canvas } from "canvas"
@@ -18,14 +19,15 @@ import type {
    RandomArtTaskReply,
    RandomArtTaskWordsCall,
 } from "../message/index.js"
-import type { IRandomArtTaskEngine } from "../interface/index.js"
 
 import { GenModelArtist } from "./GenModelArtist.js"
 import { GenModel, newPicture, substringChars } from "./genjs6.js"
 import { ChannelWrapper } from "../../channels/ChannelWrapper.js"
 
 @Injectable()
-export class RandomArtTaskEngine implements IRandomArtTaskEngine {
+export class RandomArtTaskEngine
+   implements OnApplicationBootstrap, OnApplicationShutdown
+{
    private readonly requests: Chan<RandomArtTaskCall>
    private readonly replies: Chan<RandomArtTaskReply>
    private handles: Array<Promise<void>>
@@ -46,7 +48,7 @@ export class RandomArtTaskEngine implements IRandomArtTaskEngine {
       this.replies = repliesWrapper.unwrap()
    }
 
-   public async begin(): Promise<void> {
+   public async onApplicationBootstrap(): Promise<void> {
       for (let ii = 1; ii <= this.concurrency; ii++) {
          const seedRefs: WorkContext = {
             regionMapRepo: this.regionMapRepository,
@@ -68,7 +70,7 @@ export class RandomArtTaskEngine implements IRandomArtTaskEngine {
    /**
     * Force the service to complete by closing the Channel with its input requests.
     */
-   public async stop(): Promise<void> {
+   public async onApplicationShutdown(): Promise<void> {
       await close(this.requests)
    }
 }
@@ -102,7 +104,12 @@ async function performPaintTask(
          regionMap.pixelHeight,
          "image",
       )
-      const artist: GenModelArtist = new GenModelArtist(genModel, canvas)
+      const artist: GenModelArtist = new GenModelArtist(
+         genModel,
+         canvas,
+         0,
+         regionMap.pixelHeight,
+      )
       await regionMap.directPlotter(artist)
       if (!(await put(context.replies, request.prepareReply(canvas)))) {
          return false

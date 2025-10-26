@@ -1,14 +1,15 @@
 import { Injectable, OnModuleInit, Inject } from "@nestjs/common"
-import { Queue } from "bullmq"
 import { Subject, mergeMap, from, tap, Observable } from "rxjs"
+import { Queue } from "bullmq"
+
 import { RxChannel } from "../../../channels/components/RxChannel.js"
-import { RandomArtTaskCall } from "../../message/RandomArtTaskCall.js"
+import { RandomArtTaskCall, RandomArtTaskReply } from "../../message/index.js"
 
 @Injectable()
 export class RxBullMQBridge implements OnModuleInit {
    private readonly queue: Queue
-   private readonly taskInput$ = new Subject<PaintTask>()
-   private readonly taskOutput$ = new Subject<PaintResult>()
+   private readonly taskInput$ = new Subject<RandomArtTaskCall>()
+   private readonly taskOutput$ = new Subject<RandomArtTaskReply>()
 
    constructor(
       @Inject("TASK_CHANNEL")
@@ -19,7 +20,7 @@ export class RxBullMQBridge implements OnModuleInit {
       })
    }
 
-   async onModuleInit() {
+   async onModuleInit(): Promise<void> {
       // Bridge RxChannel to BullMQ
       this.taskChannel
          .asObservable()
@@ -29,19 +30,25 @@ export class RxBullMQBridge implements OnModuleInit {
                (task) => from(this.queue.add("paint", task)),
                8, // Process up to 8 concurrent additions
             ),
-            tap((job) => console.log(`Queued job ${job.id}`)),
+            tap((job) => console.log(`Queued job ${job.id ?? "undefined"}`)),
          )
          .subscribe()
 
       // Create workers that publish results back
-      const worker = new Worker("paint-jobs", async (job) => {
-         const result = await this.processPaintJob(job.data)
-         this.taskOutput$.next(result)
-         return result
-      })
+      const worker = new Worker("paint-jobs", {})
    }
 
-   getResults(): Observable<PaintResult> {
+   // async processIt(job) => {
+   //       const result: RandomArtTaskReply = this.processPaintJob(job.data)
+   //       this.taskOutput$.next(result)
+   //       return result
+   //    }
+   // }
+   processPaintJob(data: any): RandomArtTaskReply {
+      throw new Error("Method not implemented.")
+   }
+
+   getResults(): Observable<RandomArtTaskReply> {
       return this.taskOutput$.asObservable()
    }
 }

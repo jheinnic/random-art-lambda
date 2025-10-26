@@ -53,10 +53,14 @@ export class GenModelArtist implements IRegionPlotter {
       // console.log(`${pixelX}, ${pixelY}) => (${regionX}, ${regionY}) => ${rgb} => ${strv}`)
       // this.painter.paint(pixelX, pixelY, `#${BYTES[rgb[0]]}${BYTES[rgb[1]]}${BYTES[rgb[2]]}`)
       // this.painter.paint(pixelX, pixelY, COLORS[(rgb[0] << 16) + (rgb[1] << 8) + rgb[2]]
-      const rgb = computePixel(this.genModel, regionX, regionY)
       // this.context.fillStyle = COLORS[(rgb[0] << 16) | (rgb[1] << 8) | rgb[2]]
       // this.context.fillRect(pixelX, pixelY, 1, 1)
       // const index = (pixelY * this.canvas.width + pixelX) * 4
+      const rgb: [number, number, number] = computePixel(
+         this.genModel,
+         regionX,
+         regionY,
+      )
       this.pixelData[this.plotIndex++] =
          ALPHA_OPAQUE |
          (rgb[2] << BLUE_SHIFT) |
@@ -66,6 +70,12 @@ export class GenModelArtist implements IRegionPlotter {
 
    public finish(): void {
       // Draw the data onto the canvas
+      const finalIndex = this.canvas.width * this.finalY
+      if (this.plotIndex !== finalIndex) {
+         throw new Error(
+            `Plotting did not iterate to ${finalIndex}, but rather to ${this.plotIndex}`,
+         )
+      }
       this.context.putImageData(this.imageData, 0, this.initialY)
    }
 }

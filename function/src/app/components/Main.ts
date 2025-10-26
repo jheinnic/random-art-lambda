@@ -45,7 +45,7 @@ async function bootstrap(): Promise<INestApplicationContext> {
       console.log(appSvc)
 
       // await appSvc.testRun()
-      await appSvc.loadRepo()
+      await appSvc.useSeeder()
 
       // This has not been tried
       // const regionMap = appSvc.testRepo( CID.parse( "zdpuAsQEbAYrfbrgcR7EgDarTSGePziWyX3m8jL4gmJtn9V1v" ) )
