@@ -15,7 +15,7 @@ export interface IAdapter<E extends string, R extends ConfigBaseType> {
 
 // The core Factory interface definition
 export interface IAdapterFactory<
-   ExtensionPoint extends string,
+   ExtensionPoint extends KnownExtensionPointIds,
    ConfigType extends ConfigBaseType,
    Adapter extends abstract new <T extends ConfigType>(
       ...args: any

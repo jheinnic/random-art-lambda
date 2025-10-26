@@ -1,25 +1,28 @@
 import {
-   KnownExtensionClassIds,
+   KnownExtensionIds,
    ExtensionClassKind,
-   TArgsKind,
-   PayloadTypeKind,
-} from "../kinds/ExtensionClassKind.js"
+   ExtensionTArgsKind,
+   ExtensionPayloadKind,
+} from "../kinds/ExtensionKind.js"
+import { KnownExtensionPointIds } from "../kinds/ExtensionPointKind.js"
 
-export interface IExtensionCollection<ExtensionPoint extends string> {
+export interface IExtensionCollection<
+   ExtensionPoint extends KnownExtensionPointIds,
+> {
    setClass: (
-      extensionId: KnownExtensionClassIds<ExtensionPoint>,
+      extensionId: KnownExtensionIds<ExtensionPoint>,
       extensionClass: ExtensionClassKind<ExtensionPoint, typeof extensionId>,
-      ...args: TArgsKind<ExtensionPoint, typeof extensionId>
+      ...args: ExtensionTArgsKind<ExtensionPoint, typeof extensionId>
    ) => void
 
    getClass: (
-      extensionId: KnownExtensionClassIds<ExtensionPoint>,
+      extensionId: KnownExtensionIds<ExtensionPoint>,
    ) => ExtensionClassKind<ExtensionPoint, typeof extensionId>
 
    get: (
-      extensionId: KnownExtensionClassIds<ExtensionPoint>,
-   ) => PayloadTypeKind<ExtensionPoint, typeof extensionId>
+      extensionId: KnownExtensionIds<ExtensionPoint>,
+   ) => ExtensionPayloadKind<ExtensionPoint, typeof extensionId>
 
-   readonly classKeys: Array<KnownExtensionClassIds<ExtensionPoint>>
-   readonly keys: Array<KnownExtensionClassIds<ExtensionPoint>>
+   readonly classKeys: Array<KnownExtensionIds<ExtensionPoint>>
+   readonly keys: Array<KnownExtensionIds<ExtensionPoint>>
 }

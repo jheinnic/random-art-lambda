@@ -1,20 +1,20 @@
 import { OnModuleInit } from "@nestjs/common"
-import { IAdapterFactory } from "../interface/IAdapterFactory.js"
 import {
    ExtensionClassKind,
-   KnownExtensionClassIds,
-   KnownTArgsIds,
-   TArgsKind,
-} from "../kinds/ExtensionClassKind.js"
-import { IExtensionCollection } from "../interface/IExtensionCollection.js"
-import { IExtensionPoint } from "../interface/IExtensionPoint.js"
-import { IExtensionWrangler } from "../interface/IExtensionWrangler.js"
-import { ExtensionCollection } from "./ExtensionCollection.js"
-import { IAdapterCollection } from "../interface/IAdapterCollection.js"
-import { AdapterCollection } from "./AdapterCollection.js"
+   KnownExtensionIds,
+} from "../kinds/ExtensionKind.js"
 import { KnownExtensionAdapterIds } from "../kinds/ExtensionAdapterKind.js"
 
-export class ExtensionWrangler<ExtensionPoint extends string>
+import { IExtensionCollection } from "../interface/IExtensionCollection.js"
+import { IExtensionWrangler } from "../interface/IExtensionWrangler.js"
+import { IExtensionPoint } from "../interface/IExtensionPoint.js"
+import { IAdapterCollection } from "../interface/IAdapterCollection.js"
+import { IAdapterFactory } from "../interface/IAdapterFactory.js"
+import { ExtensionCollection } from "./ExtensionCollection.js"
+import { AdapterCollection } from "./AdapterCollection.js"
+import { KnownExtensionPointIds } from "../kinds/ExtensionPointKind.js"
+
+export class ExtensionWrangler<ExtensionPoint extends KnownExtensionPointIds>
    implements IExtensionWrangler<ExtensionPoint>, OnModuleInit
 {
    // extensionKeys: string[]
@@ -24,7 +24,7 @@ export class ExtensionWrangler<ExtensionPoint extends string>
    extensionPoints: Array<IExtensionPoint<ExtensionPoint>>
 
    adapterFactories: {
-      [AdapterId in KnownExtensionAdapterIds<ExtensionPoint>]: IAdapterCollection<
+      [AdapterId in KnownExtensionAdapterIds<ExtensionPoint>]?: IAdapterCollection<
          ExtensionPoint,
          AdapterId
       >
@@ -40,9 +40,11 @@ export class ExtensionWrangler<ExtensionPoint extends string>
    }
 
    registerExtension(
-      extensionKey: KnownExtensionClassIds<ExtensionPoint>,
+      extensionKey: KnownExtensionIds<ExtensionPoint>,
       extensionClass: ExtensionClassKind<ExtensionPoint, typeof extensionKey>,
-      args: TArgsKind<ExtensionPoint, typeof extensionKey>,
+      args: ConstructorParameters<
+         ExtensionClassKind<ExtensionPoint, typeof extensionKey>
+      >,
    ): void {
       if (extensionKey in this.registeredExtensions) {
          throw new Error(

@@ -6,20 +6,16 @@ import { IPhraseSeed } from "../interface/IPhraseSeed.js"
 
 export {}
 
-declare module "../../../extensions/kinds/ExtensionClassKind.js" {
-   interface ExtensionPayloadTypeURItoKind {
-      readonly "GenModelSeed/HexSeed": HexSeedExtension
-      readonly "GenModelSeed/PhraseSeed": PhraseSeedExtension
-   }
-   interface ExtensionTArgsURItoKind {
-      readonly "GenModelSeed/HexSeed": []
-      readonly "GenModelSeed/PhraseSeed": []
+declare module "../../kinds/GenModelSeedModule.js" {
+   interface GenModelExtensions {
+      readonly HexSeed: HexSeedExtension
+      readonly PhraseSeed: typeof PhraseSeedExtension
    }
 }
 
-declare module "../../kinds/SeedModelKind.js" {
-   interface GenModelSeedURItoKind {
-      HexSeed: IHexSeed
-      PhraseSeed: IPhraseSeed
-   }
-}
+// declare module "../../kinds/SeedModelKind.js" {
+//    interface GenModelSeedURItoKind {
+//       HexSeed: IHexSeed
+//       PhraseSeed: IPhraseSeed
+//    }
+// }

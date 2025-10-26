@@ -1,18 +1,20 @@
-import { NamespaceURI } from "./NamespaceURI.js"
+import { KnownExtensionPointIds } from "./ExtensionPointKind.js"
 import {
    ExtensionClassKind,
-   KnownExtensionClassIds,
-   PayloadTypeKind,
-   KnownPayloadIds,
-   TArgsKind,
-   KnownTArgsIds,
-} from "./ExtensionClassKind.js"
+   ExtensionPayloadKind,
+   ExtensionTArgsKind,
+   KnownExtensionIds,
+} from "./ExtensionKind.js"
 import {
    ExtensionAdapterKind,
    KnownExtensionAdapterIds,
 } from "./ExtensionAdapterKind.js"
 
-export { NamespaceURI }
-export { ExtensionClassKind, KnownExtensionClassIds }
-export { PayloadTypeKind, KnownPayloadIds, TArgsKind, KnownTArgsIds }
+export {
+   ExtensionClassKind,
+   ExtensionPayloadKind,
+   ExtensionTArgsKind,
+   KnownExtensionPointIds,
+   KnownExtensionIds,
+}
 export { ExtensionAdapterKind, KnownExtensionAdapterIds }
