@@ -1,6 +1,8 @@
+import { KnownExtensionPointIds } from "../kinds/ExtensionPointKind.js"
 import { IExtensionMatchmaker } from "./IExtensionMatchmaker.js"
 import { IExtensionRegistrar } from "./IExtensionRegistrar.js"
 
-export interface IExtensionWrangler<ExtensionPoint extends string>
-   extends IExtensionRegistrar<ExtensionPoint>,
+export interface IExtensionWrangler<
+   ExtensionPoint extends KnownExtensionPointIds,
+> extends IExtensionRegistrar<ExtensionPoint>,
       IExtensionMatchmaker<ExtensionPoint> {}
