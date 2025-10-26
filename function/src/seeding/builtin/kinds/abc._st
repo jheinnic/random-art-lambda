@@ -1,0 +1,58 @@
+/* eslint-disable @typescript-eslint/no-empty-interface */
+
+export interface Payload<ExtensionId extends string> {}
+
+export interface TArgs<ExtensionId extends string> {}
+
+export interface StaticBody<ExtensionId extends string> {}
+
+export interface ExtensionsRef {}
+
+type CandidateExtensionPoints = keyof Payload<string> &
+   keyof TArgs<string> &
+   keyof StaticBody<string> &
+   keyof ExtensionsRef
+
+export type Extension<
+   ExtensionPoint extends CandidateExtensionPoints,
+   ExtensionId extends string = string,
+> = {
+   new (
+      ...args: TArgs<ExtensionId>[ExtensionPoint]
+   ): Payload<ExtensionId>[ExtensionPoint]
+   readonly extensionFor: ExtensionPoint
+   readonly extensionId: ExtensionId
+} & StaticBody<ExtensionId>[ExtensionPoint]
+
+export type ExtensionIdsFilter<
+   ExtensionPoint extends CandidateExtensionPoints,
+> = {
+   [ExtensionId in keyof ExtensionsRef[ExtensionPoint] &
+      string]: ExtensionsRef[ExtensionPoint][ExtensionId] extends Extension<
+      ExtensionPoint,
+      ExtensionId
+   >
+      ? ExtensionId
+      : never
+}[keyof ExtensionsRef[ExtensionPoint] & string]
+
+export type A2<ExtensionPoint extends CandidateExtensionPoints> = {
+   [ExtensionId in ExtensionIdsFilter<ExtensionPoint>]: ExtensionsRef[ExtensionPoint][ExtensionId]
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export type A1 = {
+   [ExtensionPoint in CandidateExtensionPoints]: A2<ExtensionPoint>
+}
+
+// export type A1Filter = {
+//    [K in CandidateExtensionPoint]: A1<"dummy">[K] extends Extension<K, "dummy">
+//       ? K
+//       : never
+// }[CandidateExtensionPoint]
+
+// // keyof Omit<StaticBody<ExtensionId>, "extensionPoint" | "extension">]
+
+// export type A1Selected<ExtensionId extends string> = {
+//    [K in A1Filter]: A1<ExtensionId>[K]
+// }

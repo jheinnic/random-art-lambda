@@ -1,24 +1,16 @@
+import { KnownGenModelSeedExtensionIds } from "./../kinds/GenModelSeedExtensionKind"
 import { Observable } from "rxjs"
 
-import { KnownExtensionIds } from "../../extensions/interface/IExtension.js"
-import { GEN_MODEL_SEED_TYPE_EXTENSION_POINT } from "./SeedTypeExtensionPoint"
-import { SeedModelKind } from "./SeedModelKind.js"
-import { SeedType } from "./SeedTypes.js"
+import { PaintableSeed } from "../models/PaintableSeed.js"
+import { SeedByExtension } from "../models/SeedByExtension.js"
 
 export interface IGenModelSeedExtensionPoint {
-   validate: <
-      ExtensionId extends
-         KnownExtensionIds<GEN_MODEL_SEED_TYPE_EXTENSION_POINT>,
-   >(
-      extensionId: ExtensionId,
-      input: SeedModelKind<ExtensionId>,
-   ) => void
-
-   toSeedModel: <
-      ExtensionId extends
-         KnownExtensionIds<GEN_MODEL_SEED_TYPE_EXTENSION_POINT>,
-   >(
-      extensionId: ExtensionId,
-      input: SeedModelKind<ExtensionId>,
-   ) => Observable<SeedType>
+   toSeedModel: ((
+      extensionId: KnownGenModelSeedExtensionIds,
+      input: SeedByExtension<typeof extensionId>,
+   ) => Observable<PaintableSeed>) &
+      ((
+         extensionId: PaintableSeed["seedKey"],
+         input: PaintableSeed,
+      ) => Observable<PaintableSeed>)
 }

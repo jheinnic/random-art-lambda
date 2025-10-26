@@ -1,28 +1,25 @@
-import { IExtensionClass, KnownExtensionIds } from "./IExtension.js"
+import {
+   ExtensionClassKind,
+   KnownExtensionClassIds,
+   PayloadTypeKind,
+} from "../kinds/ExtensionClassKind.js"
 import { IAdapterFactory } from "./IAdapterFactory.js"
-import { ExtensionAdapterKind, KnownAdapterIds } from "./IExtensionAdapter.js"
+import {
+   ExtensionAdapterKind,
+   KnownExtensionAdapterIds,
+} from "../kinds/ExtensionAdapterKind.js"
 
 export interface IAdapterCollection<
    ExtensionPoint extends string,
-   AdapterId extends KnownAdapterIds<ExtensionPoint>,
+   AdapterId extends KnownExtensionAdapterIds<ExtensionPoint>,
 > {
    fromFactory: () => IAdapterFactory<ExtensionPoint, AdapterId>
 
-   adapt: <
-      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
-      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
-   >(
-      key: ExtensionId,
-      clazz: ExtensionClass,
-      extension: InstanceType<ExtensionClass>,
-   ) => ExtensionAdapterKind<ExtensionPoint, AdapterId, ExtensionId>
+   adapt: (
+      extensionId: KnownExtensionClassIds<ExtensionPoint>,
+      extensionClass: ExtensionClassKind<ExtensionPoint, typeof extensionId>,
+      extension: PayloadTypeKind<ExtensionPoint, typeof extensionId>,
+   ) => ExtensionAdapterKind<ExtensionPoint, AdapterId, typeof extensionId>
 
-   unadapt: <
-      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
-      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
-   >(
-      key: ExtensionId,
-      clazz: ExtensionClass,
-      extension: InstanceType<ExtensionClass>,
-   ) => void
+   unadapt: (extensionId: KnownExtensionClassIds<ExtensionPoint>) => void
 }
