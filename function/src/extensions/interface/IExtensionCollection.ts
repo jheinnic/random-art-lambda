@@ -1,53 +1,25 @@
 import {
-   ExtensionTArgsURIFromParts,
-   IExtensionClass,
+   KnownExtensionClassIds,
+   ExtensionClassKind,
    TArgsKind,
-} from "./IExtension.js"
-
-// export type IExtensionCollection<
-//    ExtensionPoint extends string,
-//    ExtensionApi extends {} = {},
-//    ExtensionId extends KnownPayloadIds<ExtensionPoint> & KnownTArgsIds<ExtensionPoint> = string,
-// > = {
-//    [K in ExtensionId]: [K, IExtension<ExtensionPoint, K> & ExtensionApi]
-// }
+   PayloadTypeKind,
+} from "../kinds/ExtensionClassKind.js"
 
 export interface IExtensionCollection<ExtensionPoint extends string> {
-   setClass: <
-      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
-      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
-   >(
-      key: ExtensionId,
-      clazz: ExtensionClass,
-      ...args: TArgsKind<
-         ExtensionTArgsURIFromParts<ExtensionPoint, ExtensionId>
-      >
+   setClass: (
+      extensionId: KnownExtensionClassIds<ExtensionPoint>,
+      extensionClass: ExtensionClassKind<ExtensionPoint, typeof extensionId>,
+      ...args: TArgsKind<ExtensionPoint, typeof extensionId>
    ) => void
 
-   // set: <
-   //    ExtensionId extends KnownPayloadIds<ExtensionPoint> & KnownTArgsIds<ExtensionPoint>,
-   //    ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
-   // >(
-   //    key: ExtensionId,
-   //    clazz: ExtensionClass,
-   //    value: InstanceType<ExtensionClass>,
-   // ) => void
+   getClass: (
+      extensionId: KnownExtensionClassIds<ExtensionPoint>,
+   ) => ExtensionClassKind<ExtensionPoint, typeof extensionId>
 
-   getClass: <
-      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
-      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
-   >(
-      key: ExtensionId,
-   ) => ExtensionClass | undefined
+   get: (
+      extensionId: KnownExtensionClassIds<ExtensionPoint>,
+   ) => PayloadTypeKind<ExtensionPoint, typeof extensionId>
 
-   get: <
-      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
-      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
-   >(
-      key: ExtensionId,
-      clazz: ExtensionClass,
-   ) => InstanceType<ExtensionClass> | undefined
-
-   classKeys: () => string[]
-   keys: () => string[]
+   readonly classKeys: Array<KnownExtensionClassIds<ExtensionPoint>>
+   readonly keys: Array<KnownExtensionClassIds<ExtensionPoint>>
 }

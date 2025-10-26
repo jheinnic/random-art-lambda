@@ -1,0 +1,68 @@
+import "./abc.js"
+import {
+   ExtensionClassKind,
+   TArgsKind,
+} from "../../../extensions/kinds/ExtensionClassKind.js"
+import { IGenModelSeedExtension } from "../../interface/IGenModelSeedExtension.js"
+import { IHexSeed } from "../interface/IHexSeed.js"
+
+export type KK = TArgsKind<"GenModelSeed", "HexSeed">
+export type JJ = ConstructorParameters<
+   ExtensionClassKind<"GenModelSeed", "HexSeed">
+>
+
+export let a1: KK = []
+export let a2: JJ = []
+a2 = a1
+a1 = a2
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface GenModelSeedExtensions {}
+
+declare module "./abc.js" {
+   export interface Duck<ID extends string> {
+      readonly id: ID
+      name: string
+      age: number
+   }
+
+   export interface A1B {
+      Placeholder: Duck<"Placeholder">
+      Bad: number[]
+   }
+
+   export type A1BKeys = {
+      [K in string & keyof A1B]: A1B[K] extends Duck<K> ? K : never
+   }[keyof A1B]
+
+   export interface A3<ExtensionId extends string> {
+      b: {
+         [K in A1BKeys]: A1B[K]
+      }
+   }
+
+   // eslint-disable-next-line @typescript-eslint/no-empty-interface
+   export interface ExtensionsRef {
+      GenModelSeed: GenModelSeedExtensions
+   }
+
+   export interface Payload<ExtensionId extends string> {
+      GenModelSeed: IGenModelSeedExtension<ExtensionId>
+   }
+
+   export interface TArgs<ExtensionId extends string> {
+      GenModelSeed: []
+   }
+
+   export interface StaticBody<ExtensionId extends string> {
+      GenModelSeed: {
+         SeedModel: IHexSeed
+      }
+   }
+}
+
+// declare module "./abc.js" {
+//    export interface A1 {
+//       a: 44
+//    }
+// }

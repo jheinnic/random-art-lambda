@@ -1,26 +1,10 @@
 import {
-   IExtensionClass,
+   ExtensionClassKind,
+   KnownExtensionClassIds,
    KnownPayloadIds,
    KnownTArgsIds,
    TArgsKind,
-} from "./IExtension.js"
-
-// export interface IExtensionRegistrar<
-//    ExtensionPoint extends string,
-//    ExtensionApi extends new <ExtensionId extends KnownPayloadIds<ExtensionPoint> & KnownTArgsIds<ExtensionPoint>>(
-//       extensionPoint: ExtensionPoint,
-//       extensionId: ExtensionId,
-//    ) => IExtensionClass<ExtensionPoint, ExtensionId>,
-// > {
-//    registerExtension: <
-//       ExtensionId extends KnownPayloadIds<ExtensionPoint> & KnownTArgsIds<ExtensionPoint>,
-//       // ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
-//    >(
-//       key: ExtensionId,
-//       clazz: ExtensionApi<ExtensionId>,
-//       extension: InstanceType<typeof clazz>,
-//    ) => void
-// }
+} from "../kinds/ExtensionClassKind.js"
 
 /**
  * The Registrar is generic over the ExtensionPoint and the specific CLASS type
@@ -36,9 +20,9 @@ export interface IExtensionRegistrar<ExtensionPoint extends string> {
     * * @param key The specific ExtensionId.
     * @param clazz The concrete class constructor being registered.
     */
-   registerExtension: <ExtensionId extends KnownExtensionIds<ExtensionPoint>>(
-      key: ExtensionId,
-      clazz: IExtensionClass<ExtensionPoint, ExtensionId>,
-      args: TArgsKind<ExtensionPoint, ExtensionId>,
+   registerExtension: (
+      extensionId: KnownExtensionClassIds<ExtensionPoint>,
+      clazz: ExtensionClassKind<ExtensionPoint, typeof extensionId>,
+      args: TArgsKind<ExtensionPoint, typeof extensionId>,
    ) => void
 }

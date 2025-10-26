@@ -1,24 +1,22 @@
-import { NamespaceURI } from "./IExtensionPoint.js"
 import {
-   IExtensionClass,
-   KnownExtensionIds,
+   KnownExtensionClassIds,
    PayloadTypeKind,
-} from "./IExtension.js"
-import { ExtensionAdapterKind, KnownAdapterIds } from "./IExtensionAdapter.js"
-import "../../seeding/interface/SeedTypeExtensionPoint.js"
+} from "../kinds/ExtensionClassKind.js"
+import {
+   ExtensionAdapterKind,
+   KnownExtensionAdapterIds,
+} from "../kinds/ExtensionAdapterKind.js"
+import "../../seeding/kinds/Constants.js"
 
 export interface IAdapterFactory<
    ExtensionPoint extends string,
-   AdapterId extends KnownAdapterIds<ExtensionPoint>,
+   AdapterId extends KnownExtensionAdapterIds<ExtensionPoint>,
 > {
-   URI: NamespaceURI<ExtensionPoint, AdapterId>
+   readonly extensionPoint: ExtensionPoint
+   readonly adapterId: AdapterId
 
-   adapt: <
-      ExtensionId extends KnownExtensionIds<ExtensionPoint>,
-      ExtensionClass extends IExtensionClass<ExtensionPoint, ExtensionId>,
-   >(
-      key: ExtensionId,
-      clazz: ExtensionClass,
-      extension: PayloadTypeKind<ExtensionPoint, ExtensionId>,
-   ) => ExtensionAdapterKind<ExtensionPoint, AdapterId, ExtensionId>
+   adapt: (
+      extensionId: KnownExtensionClassIds<ExtensionPoint>,
+      extension: PayloadTypeKind<ExtensionPoint, typeof extensionId>,
+   ) => ExtensionAdapterKind<ExtensionPoint, AdapterId, typeof extensionId>
 }

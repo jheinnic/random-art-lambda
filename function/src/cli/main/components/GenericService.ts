@@ -11,10 +11,7 @@ import {
    RandomArtTaskReply,
    RandomArtTaskWordsCall,
 } from "../../../painting/message/index.js"
-import { PBufRegionMapRepository } from "../../../plotting/protobuf/components/PBufRegionMapRepository.js"
-import { QueuedPaintingTypes } from "../../../painting/queue/di/Types.js"
 import { RandomArtFlowProducer } from "../../../painting/queue/components/RandomArtFlowProducer.js"
-import { IRegionMapRepository } from "../../../plotting/index.js"
 
 /**
  * A sample CLI command that takes an option and uses it to configure a service.
