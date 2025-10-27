@@ -4,7 +4,7 @@ import {
    ExtensionTArgsKind,
    ExtensionPayloadKind,
 } from "../kinds/ExtensionKind.js"
-import { KnownExtensionPointIds } from "../kinds/ExtensionPointKind.js"
+import { KnownExtensionPointIds } from "../kinds/index.js"
 
 export interface IExtensionCollection<
    ExtensionPoint extends KnownExtensionPointIds,

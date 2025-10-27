@@ -1,16 +1,13 @@
 import "../kinds/Examples.js"
 import {
-   KnownExtensionIds,
-   ExtensionClassKind,
    ExtensionPayloadKind,
-} from "../kinds/ExtensionKind.js"
-import {
    ExtensionAdapterKind,
+   KnownExtensionIds,
+   KnownExtensionPointIds,
    KnownExtensionAdapterIds,
-} from "../kinds/ExtensionAdapterKind.js"
+} from "../kinds/index.js"
 import { IAdapterFactory } from "../interface/IAdapterFactory.js"
 import { IAdapterCollection } from "../interface/IAdapterCollection.js"
-import { KnownExtensionPointIds } from "../kinds/ExtensionPointKind.js"
 
 export class AdapterCollection<
    ExtensionPoint extends KnownExtensionPointIds,
