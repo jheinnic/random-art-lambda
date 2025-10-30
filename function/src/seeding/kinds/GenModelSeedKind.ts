@@ -1,3 +1,4 @@
+import { ExtensionClassKind } from "./../../extensions/kinds/ExtensionKind"
 import "./GenModelSeedExtensionKind.js"
 
 import { ToExtensionsRefKind } from "../../extensions/kinds/ExtensionPointKind.js"
@@ -11,7 +12,11 @@ import {
    KnownExtensionIds,
 } from "../../extensions/kinds/index.js"
 
-import { GEN_MODEL_SEED_EXTENSION_POINT } from "./Constants.js"
+import {
+   GEN_MODEL_BATCH_ADAPTER_ID_STR,
+   GEN_MODEL_SEED_EXTENSION_POINT,
+   GEN_MODEL_SEED_EXTENSION_POINT_STRING,
+} from "./Constants.js"
 import { SeedByExtension } from "../models/SeedByExtension.js"
 import { Type } from "@nestjs/common"
 
@@ -86,3 +91,12 @@ export type POo = number
 
 export type Lkw = Isit<"HexSeed", pkw>
 export type Dkw = Isit<"PhraseSeed", obn>
+
+export const oiur = new ExtensionClassKind<
+   GEN_MODEL_SEED_EXTENSION_POINT,
+   "PhraseSeed"
+>()
+export const iwj = new ExtensionClassKind<
+   GEN_MODEL_SEED_EXTENSION_POINT,
+   "HexSeed"
+>()
