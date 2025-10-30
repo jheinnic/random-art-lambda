@@ -12,19 +12,19 @@ import { IGenModelSeedStaticExtension } from "../interface/IGenModelSeedStaticEx
 import { GenModelExtensions } from "./GenModelSeedModule.js"
 
 declare module "../../extensions/kinds/ExtensionPointKind.js" {
-   export interface ToPayloadKind<ExtensionId extends string> {
+   export interface ToExtPayloadKind<ExtensionId extends string> {
       [GEN_MODEL_SEED_EXTENSION_POINT_STRING]: IGenModelSeedExtension<ExtensionId>
    }
 
-   export interface ToExtensionTArgsKind<ExtensionId extends string> {
+   export interface ToExtTArgsKind<ExtensionId extends string> {
       [GEN_MODEL_SEED_EXTENSION_POINT_STRING]: []
    }
 
-   export interface ToStaticBodyKind<ExtensionId extends string> {
+   export interface ToExtStaticBodyKind<ExtensionId extends string> {
       [GEN_MODEL_SEED_EXTENSION_POINT_STRING]: IGenModelSeedStaticExtension<ExtensionId>
    }
 
-   export interface ToAdaptersRefKind<ExtensionId extends string> {
+   export interface ToExtAdaptersRefKind<ExtensionId extends string> {
       [GEN_MODEL_SEED_EXTENSION_POINT_STRING]: {
          [GEN_MODEL_SEED_ADAPTER_ID_STR]: GenModelSeedAdapter<ExtensionId>
       }

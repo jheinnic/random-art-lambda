@@ -1,44 +1,67 @@
 import { StringKeys } from "simplytyped"
 import {
-   KnownExtensionPointIds,
+   ToExtTArgsKind,
+   ToExtPayloadKind,
+   ToExtStaticBodyKind,
+   ToExtAdaptersRefKind,
    ToExtensionsRefKind,
-   ToExtensionTArgsKind,
-   ToPayloadKind,
-   ToStaticBodyKind,
 } from "./ExtensionPointKind.js"
 import type { GenModelExtensions } from "../../seeding/kinds/GenModelSeedModule.js"
 import { HexSeedExtension } from "../../seeding/builtin/components/HexSeedExtension.js"
+import { Type } from "@nestjs/common"
 
-type CandidateExtensionIds<ExtensionPoint extends KnownExtensionPointIds> =
-   StringKeys<ToExtensionsRefKind[ExtensionPoint]>
+/**
+ * Any extension point that has specified all its extension requirements will find
+ * its key listed in this union.
+ */
+export type KnownExtensionPointIds = StringKeys<ToExtPayloadKind<string>> &
+   StringKeys<ToExtTArgsKind<string>> &
+   StringKeys<ToExtStaticBodyKind<string>> &
+   StringKeys<ToExtAdaptersRefKind<string>> &
+   StringKeys<ToExtensionsRefKind>
+
+export type CandidateExtensionIds<
+   ExtensionPoint extends KnownExtensionPointIds,
+> = StringKeys<ToExtensionsRefKind[ExtensionPoint]>
+
+export type ExtensionPayloadKind<
+   ExtensionPoint extends KnownExtensionPointIds,
+   ExtensionId extends CandidateExtensionIds<ExtensionPoint>,
+> = ToExtPayloadKind<ExtensionId>[ExtensionPoint]
+
+export type ExtensionTArgsKind<
+   ExtensionPoint extends KnownExtensionPointIds,
+   ExtensionId extends CandidateExtensionIds<ExtensionPoint>,
+> = ToExtTArgsKind<ExtensionId>[ExtensionPoint]
+
+export type ExtensionStaticBodyKind<
+   ExtensionPoint extends KnownExtensionPointIds,
+   ExtensionId extends CandidateExtensionIds<ExtensionPoint>,
+> = ToExtStaticBodyKind<ExtensionId>[ExtensionPoint]
 
 export type ExtensionValidityRequirements<
    ExtensionPoint extends KnownExtensionPointIds,
    ExtensionId extends CandidateExtensionIds<ExtensionPoint>,
 > = {
    new (
-      ...args: ToExtensionTArgsKind<ExtensionId>[ExtensionPoint]
-   ): ToPayloadKind<ExtensionId>[ExtensionPoint]
+      ...args: ExtensionTArgsKind<ExtensionPoint, ExtensionId>
+   ): ExtensionPayloadKind<ExtensionPoint, ExtensionId>
    readonly extensionFor: ExtensionPoint
    readonly extensionId: ExtensionId
 } & Omit<
-   ToStaticBodyKind<ExtensionId>[ExtensionPoint],
+   ExtensionStaticBodyKind<ExtensionPoint, ExtensionId>,
    "extensionFor" | "extensionId"
 >
 
-type ExtensionValidityTest<
+export type ExtensionValidityTest<
    ExtensionPoint extends KnownExtensionPointIds,
    ExtensionId extends CandidateExtensionIds<ExtensionPoint>,
 > =
-   ToExtensionsRefKind[ExtensionPoint][ExtensionId] extends ExtensionValidityRequirements<
-      ExtensionPoint,
-      ExtensionId
-   >
+   Type<
+      ToExtensionsRefKind[ExtensionPoint][ExtensionId]
+   > extends ExtensionValidityRequirements<ExtensionPoint, ExtensionId>
       ? ExtensionId
       : never
-
-type LoP = ToExtensionsRefKind["GenModelSeed"]["HexSeed"]
-type PP = ExtensionValidityTest<"GenModelSeed", "HexSeed">
 
 export type KnownExtensionIds<ExtensionPoint extends KnownExtensionPointIds> = {
    [ExtensionId in CandidateExtensionIds<ExtensionPoint>]: ExtensionValidityTest<
@@ -52,50 +75,11 @@ export type ExtensionClassKind<
    ExtensionId extends KnownExtensionIds<ExtensionPoint>,
 > = ToExtensionsRefKind[ExtensionPoint][ExtensionId]
 
-export type ExtensionPayloadKind<
-   ExtensionPoint extends KnownExtensionPointIds,
-   ExtensionId extends KnownExtensionIds<ExtensionPoint>,
-> = InstanceType<ExtensionClassKind<ExtensionPoint, ExtensionId>>
-
-export type ExtensionTArgsKind<
-   ExtensionPoint extends KnownExtensionPointIds,
-   ExtensionId extends KnownExtensionIds<ExtensionPoint>,
-> = ConstructorParameters<ExtensionClassKind<ExtensionPoint, ExtensionId>>
-
-export type ExtensionPointToExtensionKinds = {
-   [ExtensionPoint in KnownExtensionPointIds]: {
-      [ExtensionId in KnownExtensionIds<ExtensionPoint>]: ExtensionClassKind<
-         ExtensionPoint,
-         ExtensionId
-      >
-   }
-}
-
-export type LEK = ExtensionClassKind<
-   "GenModelSeed",
-   "HexSeed" | "PhraseSeed"
-   // KnownExtensionIds<"GenModelSeed">
->
-
-export type LKW = KnownExtensionIds<"GenModelSeed">
-export type KWJ = keyof ToExtensionsRefKind["GenModelSeed"]
-export type MJJ = keyof GenModelExtensions
-export const skJJ: any = {
-   HexSeed: HexSeedExtension,
-   PhraseSeed: HexSeedExtension,
-}
-export interface FSHHj {
-   new (...args: any[]): any
-   lidfas: nunber
-}
-
-export const ABN = new GenModelExtensions.HexSeed("abcd")
-// export let JWO: FSHHj
-export let JWO: ExtensionClassKind<"GenModelSeed", "HexSeed">
-export const rr = HexSeedExtension
-JWO = rr
-JWO = HexSeedExtension
-JWO = typeof HexSeedExtension
-export const ABN = new HexSeedExtension("abcd")
-
-JWO = rr
+// export type ExtensionPointToExtensionKinds = {
+//    [ExtensionPoint in KnownExtensionPointIds]: {
+//       [ExtensionId in KnownExtensionIds<ExtensionPoint>]: ExtensionClassKind<
+//          ExtensionPoint,
+//          ExtensionId
+//       >
+//    }
+// }

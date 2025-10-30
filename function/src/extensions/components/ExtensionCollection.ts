@@ -2,12 +2,12 @@ import { objectKeys } from "simplytyped"
 
 import "../kinds/Examples.js"
 import {
-   KnownExtensionIds,
    ExtensionClassKind,
    ExtensionPayloadKind,
    ExtensionTArgsKind,
+   KnownExtensionIds,
+   KnownExtensionPointIds,
 } from "../kinds/index.js"
-import { KnownExtensionPointIds } from "../kinds/ExtensionPointKind.js"
 import { IExtensionCollection } from "../interface/IExtensionCollection.js"
 
 export class ExtensionCollection<ExtensionPoint extends KnownExtensionPointIds>
