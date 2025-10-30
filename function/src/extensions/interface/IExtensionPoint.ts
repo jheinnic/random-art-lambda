@@ -1,7 +1,9 @@
+import {
+   KnownExtensionAdapterIds,
+   KnownExtensionPointIds,
+} from "../kinds/index.js"
 import { IExtensionCollection } from "./IExtensionCollection.js"
 import { IAdapterCollection } from "./IAdapterCollection.js"
-import { KnownExtensionAdapterIds } from "../kinds/ExtensionAdapterKind.js"
-import { KnownExtensionPointIds } from "../kinds/ExtensionPointKind.js"
 
 export interface IExtensionPoint<
    ExtensionPoint extends KnownExtensionPointIds,

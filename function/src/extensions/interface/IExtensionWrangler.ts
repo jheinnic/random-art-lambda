@@ -1,4 +1,4 @@
-import { KnownExtensionPointIds } from "../kinds/ExtensionPointKind.js"
+import { KnownExtensionPointIds } from "../kinds/index.js"
 import { IExtensionMatchmaker } from "./IExtensionMatchmaker.js"
 import { IExtensionRegistrar } from "./IExtensionRegistrar.js"
 

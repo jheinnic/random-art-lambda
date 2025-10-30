@@ -1,9 +1,12 @@
-import { KnownExtensionPointIds } from "./ExtensionPointKind.js"
 import {
    ExtensionClassKind,
    ExtensionPayloadKind,
    ExtensionTArgsKind,
+   KnownExtensionPointIds,
    KnownExtensionIds,
+   CandidateExtensionIds,
+   ExtensionValidityRequirements,
+   ExtensionValidityTest,
 } from "./ExtensionKind.js"
 import {
    ExtensionAdapterKind,
@@ -16,5 +19,8 @@ export {
    ExtensionTArgsKind,
    KnownExtensionPointIds,
    KnownExtensionIds,
+   CandidateExtensionIds,
+   ExtensionValidityRequirements,
+   ExtensionValidityTest,
 }
 export { ExtensionAdapterKind, KnownExtensionAdapterIds }

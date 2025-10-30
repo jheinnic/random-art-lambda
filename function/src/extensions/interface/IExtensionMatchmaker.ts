@@ -1,7 +1,9 @@
 import { IExtensionPoint } from "./IExtensionPoint.js"
 import { IAdapterFactory } from "./IAdapterFactory.js"
-import { KnownExtensionAdapterIds } from "../kinds/ExtensionAdapterKind.js"
-import { KnownExtensionPointIds } from "../kinds/ExtensionPointKind.js"
+import {
+   KnownExtensionAdapterIds,
+   KnownExtensionPointIds,
+} from "../kinds/index.js"
 
 /**
  */

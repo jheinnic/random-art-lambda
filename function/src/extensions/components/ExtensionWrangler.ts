@@ -2,6 +2,7 @@ import { OnModuleInit } from "@nestjs/common"
 import {
    ExtensionClassKind,
    KnownExtensionIds,
+   KnownExtensionPointIds,
 } from "../kinds/ExtensionKind.js"
 import { KnownExtensionAdapterIds } from "../kinds/ExtensionAdapterKind.js"
 
@@ -12,7 +13,6 @@ import { IAdapterCollection } from "../interface/IAdapterCollection.js"
 import { IAdapterFactory } from "../interface/IAdapterFactory.js"
 import { ExtensionCollection } from "./ExtensionCollection.js"
 import { AdapterCollection } from "./AdapterCollection.js"
-import { KnownExtensionPointIds } from "../kinds/ExtensionPointKind.js"
 
 export class ExtensionWrangler<ExtensionPoint extends KnownExtensionPointIds>
    implements IExtensionWrangler<ExtensionPoint>, OnModuleInit

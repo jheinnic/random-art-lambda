@@ -1,13 +1,11 @@
 import {
-   KnownExtensionIds,
    ExtensionPayloadKind,
-} from "../kinds/ExtensionKind.js"
-import {
    ExtensionAdapterKind,
+   KnownExtensionIds,
+   KnownExtensionPointIds,
    KnownExtensionAdapterIds,
-} from "../kinds/ExtensionAdapterKind.js"
+} from "../kinds/index.js"
 import "../../seeding/kinds/Constants.js"
-import { KnownExtensionPointIds } from "../kinds/ExtensionPointKind.js"
 
 export interface IAdapterFactory<
    ExtensionPoint extends KnownExtensionPointIds,

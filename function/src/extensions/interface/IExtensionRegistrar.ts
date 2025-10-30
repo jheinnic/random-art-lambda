@@ -1,9 +1,9 @@
 import {
    ExtensionClassKind,
-   KnownExtensionIds,
    ExtensionTArgsKind,
-} from "../kinds/ExtensionKind.js"
-import { KnownExtensionPointIds } from "../kinds/ExtensionPointKind.js"
+   KnownExtensionIds,
+   KnownExtensionPointIds,
+} from "../kinds/index.js"
 
 /**
  * The Registrar is generic over the ExtensionPoint and the specific CLASS type

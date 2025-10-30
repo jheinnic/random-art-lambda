@@ -1,3 +1,4 @@
+import { Inject, Injectable } from "@nestjs/common"
 import { Observable, of, from } from "rxjs"
 
 import {
@@ -8,25 +9,19 @@ import {
    PAINTABLE_PREFIX_SUFFIX_STR,
    PAINTABLE_SINGLE_PHRASE_STR,
 } from "../kinds/Constants.js"
+import { KnownExtensionIds } from "../../extensions/kinds/ExtensionKind.js"
+import { SeedingModuleTypes } from "../di/Types.js"
 import {
-   KnownExtensionIds,
-   ExtensionPayloadKind,
-} from "../../extensions/kinds/ExtensionKind.js"
-import { IAdapterCollection } from "../../extensions/interface/IAdapterCollection.js"
-import { IExtensionCollection } from "../../extensions/interface/IExtensionCollection.js"
-import { IExtensionMatchmaker } from "../../extensions/interface/IExtensionMatchmaker.js"
-import { IExtensionPoint } from "../../extensions/interface/IExtensionPoint.js"
+   IAdapterCollection,
+   IExtensionCollection,
+   IExtensionMatchmaker,
+   IExtensionPoint,
+} from "../../extensions/interface/index.js"
 import { PaintableSeed } from "../models/PaintableSeed.js"
 import { SeedByExtension } from "../models/SeedByExtension.js"
 import { IGenModelSeedExtensionPoint } from "../interface/IGenModelSeedExtensionPoint.js"
 import { GenModelSeedAdapterFactory } from "./GenModelSeedAdapterFactory.js"
-import {
-   GenModelSeedExtensionKind,
-   GenModelSeedPayloadKind,
-} from "../kinds/GenModelSeedKind.js"
 import { GenModelSeedAdapter } from "./GenModelSeedAdapter.js"
-import { Inject, Injectable } from "@nestjs/common"
-import { SeedingModuleTypes } from "../di/Types.js"
 
 @Injectable()
 export class GenModelSeedExtensionPoint
@@ -51,12 +46,10 @@ export class GenModelSeedExtensionPoint
       | IExtensionCollection<GEN_MODEL_SEED_EXTENSION_POINT>
       | undefined
 
-   private adapters:
-      | IAdapterCollection<
-           GEN_MODEL_SEED_EXTENSION_POINT,
-           GEN_MODEL_SEED_ADAPTER_ID
-        >
-      | undefined
+   private adapters: IAdapterCollection<
+      GEN_MODEL_SEED_EXTENSION_POINT,
+      GEN_MODEL_SEED_ADAPTER_ID
+   >
 
    receiveExtensions(
       extensions: IExtensionCollection<GEN_MODEL_SEED_EXTENSION_POINT>,
