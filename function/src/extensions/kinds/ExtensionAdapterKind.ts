@@ -1,7 +1,7 @@
 import { StringKeys } from "simplytyped"
 import {
    KnownExtensionPointIds,
-   ToAdaptersRefKind,
+   ToExtAdaptersRefKind,
 } from "./ExtensionPointKind.js"
 import { KnownExtensionIds } from "./ExtensionKind.js"
 
@@ -19,7 +19,7 @@ import { KnownExtensionIds } from "./ExtensionKind.js"
 export type KnownExtensionAdapterIds<
    ExtensionPoint extends KnownExtensionPointIds,
 > = StringKeys<
-   ToAdaptersRefKind<KnownExtensionIds<ExtensionPoint>>[ExtensionPoint]
+   ToExtAdaptersRefKind<KnownExtensionIds<ExtensionPoint>>[ExtensionPoint]
 >
 
 // 3. Lookup helper
@@ -27,7 +27,7 @@ export type ExtensionAdapterKind<
    ExtensionPoint extends KnownExtensionPointIds,
    AdapterId extends KnownExtensionAdapterIds<ExtensionPoint>,
    ExtensionId extends KnownExtensionIds<ExtensionPoint>,
-> = ToAdaptersRefKind<ExtensionId>[ExtensionPoint][AdapterId]
+> = ToExtAdaptersRefKind<ExtensionId>[ExtensionPoint][AdapterId]
 
 // Plugin authors use this
 // declare module "./ExtensionAdapterKind.js" {

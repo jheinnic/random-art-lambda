@@ -1,4 +1,4 @@
-import { KnownGenModelSeedExtensionIds } from "../kinds/GenModelSeedKind"
+import { KnownGenModelSeedExtensionIds } from "../kinds/GenModelSeedKind.js"
 import { Observable } from "rxjs"
 
 import { PaintableSeed } from "../models/PaintableSeed.js"
