@@ -1,4 +1,3 @@
-import { IGenModelSeedExtensionPoint } from "./../../seeding/interface/IGenModelSeedExtensionPoint"
 import { Inject, Injectable } from "@nestjs/common"
 import { CID } from "multiformats"
 import { Canvas } from "canvas"
@@ -16,14 +15,16 @@ import {
    newPicture,
    oldPicture,
 } from "../../painting/components/genjs6.js"
+
+import { SeedingModuleTypes } from "../../seeding/di/Types.js"
 import { IpldPlottingModuleTypes } from "../../plotting/ipld/di/Types.js"
-import { PBufRegionMapFactory } from "../../plotting/protobuf/components/PBufRegionMapFactory.js"
 import { ProtobufPlottingModuleTypes } from "../../plotting/protobuf/di/Types.js"
+import type { IPhraseSeed } from "../../seeding/builtin/interface/index.js"
+import { IGMSeedExtensionPoint } from "../../seeding/interface/IGMSeedExtensionPoint.js"
+
+import { PBufRegionMapFactory } from "../../plotting/protobuf/components/PBufRegionMapFactory.js"
 import { PBufRegionMap } from "../../plotting/protobuf/components/PBufRegionMap.js"
 import { CanvasPersister } from "../../painting/components/CanvasPersister.js"
-import { SeedingModuleTypes } from "../../seeding/di/Types.js"
-import { IGenModelSeedExtension } from "../../seeding/interface/IGenModelSeedExtension.js"
-import { IPhraseSeed } from "../../seeding/builtin/interface/IPhraseSeed.js"
 
 interface Task {
    taskMessage: string
@@ -47,8 +48,8 @@ export class AppServiceTwo {
       // @Inject( PaintingModuleTypes.IRandomArtPainter )
       // @Inject( PaintingModuleTypes.IRandomArtTaskEngine )
       // private readonly taskRepo: IRandomArtTaskEngine,
-      @Inject(SeedingModuleTypes.GenModelSeedExtensionPoint)
-      private readonly seedExtensionPoint: IGenModelSeedExtensionPoint,
+      @Inject(SeedingModuleTypes.GMSeedExtensionPoint)
+      private readonly seedExtensionPoint: IGMSeedExtensionPoint,
    ) {}
 
    public useSeeder(): void {
@@ -56,7 +57,7 @@ export class AppServiceTwo {
          seedKey: "PhraseSeed",
          phrase: "It went that way",
       }
-      const retVal = this.seedExtensionPoint.toSeedModel("PhraseSeed", phrase)
+      const retVal = this.seedExtensionPoint.toSeedModel(phrase)
       retVal.subscribe({
          next: (retVal) => {
             console.log(retVal)

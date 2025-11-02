@@ -2,31 +2,33 @@
 /* eslint-disable @typescript-eslint/no-empty-interface */
 
 import { StringKeys } from "simplytyped"
+import { KnownExtensionAdapterIds } from "./ExtensionAdapterKind.js"
+import { KnownExtensionIds, KnownExtensionPointIds } from "./ExtensionKind.js"
 
 /**
  * Extension classes must implement the interface their extension point places
  * here.
  */
-export interface ToExtPayloadKind<ExtensionId extends string> {}
+export interface ToExtPayloadPoint<ExtensionId extends string> {}
 
 /**
  * Extension classes must accept constructor args their extension point places
  * here.
  */
-export interface ToExtTArgsKind<ExtensionId extends string> {}
+export interface ToExtTArgsPoint<ExtensionId extends string> {}
 
 /**
  * Extension classes must provide static fields their extension point places
  * here.
  */
-export interface ToExtStaticBodyKind<ExtensionId extends string> {}
+export interface ToExtStaticPayloadPoint<ExtensionId extends string> {}
 
 /**
  * An extension point will add an entry pointing to the interface where it will
  * register any extension adapters it has created for wrapping contributed
  * extensions.
  */
-export interface ToExtAdaptersRefKind<ExtensionId extends string> {}
+export interface ToToAdapterFactoryPointPoint<ExtensionId extends string> {}
 
 /**
  * An extension point will add an entry keyed by their ExtensionPoint ID string

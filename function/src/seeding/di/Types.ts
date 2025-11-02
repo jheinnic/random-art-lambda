@@ -1,7 +1,7 @@
 export const SeedingModuleTypes = {
-   GenModelSeedExtensionPointWrangler: Symbol("ExtensionPointWrangler"),
-   GenModelSeedExtensionPoint: Symbol("GenModelSeedExtensionPoint"),
-   GenModelSeedExtensionRegistry: Symbol("GenModelSeedExtensionRegistry"),
-   GenModelSeedMatchmaker: Symbol("GenModelSeedMatchmaker"),
-   GenModelSeedAdapterFactory: Symbol("GenModelSeedAdapterFactory"),
+   GMSeedExtensionWrangler: Symbol("ExtensionPointWrangler"),
+   GMSeedExtensionPoint: Symbol("GenModelSeedExtensionPoint"),
+   GMSeedExtensionRegistry: Symbol("GenModelSeedExtensionRegistry"),
+   GMSeedExtensionMatchmaker: Symbol("GenModelSeedMatchmaker"),
+   GMSeedAdapterFactory: Symbol("GenModelSeedAdapterFactory"),
 }

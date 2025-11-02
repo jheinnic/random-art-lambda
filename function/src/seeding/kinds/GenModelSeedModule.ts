@@ -1,2 +1,15 @@
+/**
+ * Modular extension interface provided for extension point plugins to
+ * add their Extension class contributions, keyed by their extension Ids,
+ * each of which must conform to the
+ */
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface GenModelExtensions {}
+export interface ToGMSeedExtClassKind {}
+
+/**
+ * Modular extension interface provided for extension point plugins to
+ * contribute their SeedByExtension discriminated union model additions,
+ * each of which
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface ToGMSeedExtModelKind {}

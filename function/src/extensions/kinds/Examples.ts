@@ -1,6 +1,15 @@
+import { UseValueInjection } from "./../../modules/interface/IInjectableModuleClassFactory"
+import { ToExtPayloadPoint } from "../../extensions/kinds/ExtensionPoints.js"
 import { Logger } from "@nestjs/common"
 import "./ExtensionClassKind._st"
-import { ExtensionClassKind } from "./ExtensionKind.js"
+import {
+   CandidateExtensionIds,
+   ExtensionClassKind,
+   ExtensionValidityRequirements,
+   ExtensionValidityTest,
+   KnownExtensionIds,
+   KnownExtensionPointIds,
+} from "./ExtensionKind.js"
 
 interface IUIComponentExtension {
    render: () => void
@@ -9,20 +18,84 @@ interface IDataSourceExtension {
    fetch: () => void
 }
 
+class UIComponentExtension implements IUIComponentExtension {
+   static readonly extensionFor: "Examples" = "Examples"
+   static readonly extensionId: "ui-component" = "ui-component"
+
+   constructor(private readonly logger: Logger) {}
+
+   render(): void {
+      console.log("Rendering!")
+   }
+}
+
+class DataSourceExtension implements IDataSourceExtension {
+   static readonly extensionFor: "Examples" = "Examples"
+   static readonly extensionId: "data-source" = "data-source"
+
+   constructor(data: string) {
+      console.log(data)
+   }
+
+   fetch(): void {
+      console.log("Fetching")
+   }
+}
+
 export {}
 
-declare module "./ExtensionKind.js" {
-   interface ExtensionPayloadTypeURItoKind {
-      readonly "Examples/ui-component": IUIComponentExtension
-      readonly "Examples/data-source": IDataSourceExtension
+declare module "../../extensions/kinds/ExtensionPoints.js" {
+   interface ToExtPayloadPoint<ExtensionId extends string> {
+      readonly Examples: ExtensionId extends "ui-component"
+         ? IUIComponentExtension
+         : IDataSourceExtension
    }
-   interface ExtensionTArgsURItoKind {
-      readonly "Examples/ui-component": [Logger]
-      readonly "Examples/data-source": [string]
+   interface ToExtTArgsPoint<ExtensionId extends string> {
+      readonly Examples: ExtensionId extends "ui-component"
+         ? [Logger]
+         : [string]
    }
-   // 🎯 FIX: UI components must always take a Logger and a Config object.
-   type UIComponentClass = ExtensionClassKind<"Examples", "ui-component">
 
-   // 🎯 FIX: Data Sources must always take a ConnectionString.
-   type DataSourceClass = ExtensionClassKind<"Examples", "data-source">
+   interface ToExtStaticPayloadPoint<ExtensionId extends string> {
+      readonly Examples: {}
+   }
+
+   // eslint-disable-next-line @typescript-eslint/no-empty-interface
+   export interface AdaptersRef<ExtensionId extends string> {}
+
+   // eslint-disable-next-line @typescript-eslint/no-empty-interface
+   export interface ExtensionsRef {
+      "ui-component": typeof UIComponentExtension
+      "data-source": typeof DataSourceExtension
+   }
+
+   interface ToToAdapterFactoryPointPoint<
+      // ExtensionPoint extends KnownExtensionPointIds,
+      ExtensionId extends string, // KnownExtensionIds<ExtensionPoint>,
+   > {
+      readonly Examples: AdaptersRef<ExtensionId>
+   }
+
+   interface ToExtensionsRefKind {
+      readonly Examples: ExtensionsRef
+   }
 }
+
+type AA = CandidateExtensionIds<"Examples">
+type BB = KnownExtensionIds<"GenModelSeed">
+
+type c = {
+   [ExtensionId in CandidateExtensionIds<"Examples">]: ExtensionValidityTest<
+      "Examples",
+      ExtensionId
+   >
+}
+type DD = ExtensionValidityRequirements<"Examples", "ui-component">
+
+// 🎯 FIX: UI components must always take a Logger and a Config object.
+type UIComponentClass = ExtensionClassKind<"Examples", "ui-component">
+
+// 🎯 FIX: Data Sources must always take a ConnectionString.
+type DataSourceClass = ExtensionClassKind<"Examples", "data-source">
+
+type LaLa = KnownExtensionIds<"Examples">

@@ -12,7 +12,7 @@ import { PhraseSeedExtension } from "./PhraseSeedExtension.js"
 @Injectable()
 export class ModuleActivator {
    constructor(
-      @Inject(BuiltInSeedModuleTypes.GenModelSeedExtensionRegistry)
+      @Inject(BuiltInSeedModuleTypes.GMSeedExtRegistry)
       extensionRegistry: IExtensionRegistrar<GEN_MODEL_SEED_EXTENSION_POINT>,
    ) {
       extensionRegistry.registerExtension(
