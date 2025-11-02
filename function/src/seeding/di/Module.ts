@@ -1,32 +1,32 @@
 import { Module } from "@nestjs/common"
 import { SeedingModuleTypes } from "./Types.js"
-import { wranglerSupportDynamicModule } from "./ChildModule.js"
+import { DynamicWranglerModule } from "./ChildModule.js"
 import { GenModelSeedAdapterFactory } from "../components/GenModelSeedAdapterFactory.js"
 import { GenModelSeedExtensionPoint } from "../components/GenModelSeedExtensionPoint.js"
 
 @Module({
-   imports: [wranglerSupportDynamicModule],
+   imports: [DynamicWranglerModule],
    providers: [
       {
-         provide: SeedingModuleTypes.GenModelSeedAdapterFactory,
+         provide: SeedingModuleTypes.GMSeedExtensionMatchmaker,
+         useExisting: SeedingModuleTypes.GMSeedExtensionWrangler,
+      },
+      {
+         provide: SeedingModuleTypes.GMSeedExtensionRegistry,
+         useExisting: SeedingModuleTypes.GMSeedExtensionWrangler,
+      },
+      {
+         provide: SeedingModuleTypes.GMSeedAdapterFactory,
          useClass: GenModelSeedAdapterFactory,
       },
       {
-         provide: SeedingModuleTypes.GenModelSeedMatchmaker,
-         useExisting: SeedingModuleTypes.GenModelSeedExtensionPointWrangler,
-      },
-      {
-         provide: SeedingModuleTypes.GenModelSeedExtensionRegistry,
-         useExisting: SeedingModuleTypes.GenModelSeedExtensionPointWrangler,
-      },
-      {
-         provide: SeedingModuleTypes.GenModelSeedExtensionPoint,
+         provide: SeedingModuleTypes.GMSeedExtensionPoint,
          useClass: GenModelSeedExtensionPoint,
       },
    ],
    exports: [
-      SeedingModuleTypes.GenModelSeedExtensionRegistry,
-      SeedingModuleTypes.GenModelSeedExtensionPoint,
+      SeedingModuleTypes.GMSeedExtensionRegistry,
+      SeedingModuleTypes.GMSeedExtensionPoint,
    ],
 })
 export class SeedingModule {}

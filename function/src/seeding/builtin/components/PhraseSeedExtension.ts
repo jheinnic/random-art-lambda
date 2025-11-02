@@ -1,3 +1,6 @@
+import { Logger } from "@nestjs/common"
+
+import "../kinds/Extension.js"
 import {
    GEN_MODEL_SEED_EXTENSION_POINT,
    GEN_MODEL_SEED_EXTENSION_POINT_STRING,
@@ -6,14 +9,15 @@ import {
    PHRASE_SEED_EXTENSION_ID,
    PHRASE_SEED_EXTENSION_ID_STR,
 } from "../kinds/Constants.js"
-import { IGenModelSeedExtension } from "../../interface/IGenModelSeedExtension.js"
-import { IPhraseSeed } from "../interface/IPhraseSeed.js"
-import { SeedByExtension } from "../../models/SeedByExtension.js"
+
 import { PaintableSeed } from "../../models/PaintableSeed.js"
-import { Logger } from "@nestjs/common"
+import { SeedByExtension } from "../../models/SeedByExtension.js"
+
+import { IGMSeedExtPayload } from "../../interface/IGMSeedExtPayload.js"
+import { IPhraseSeed } from "../interface/IPhraseSeed.js"
 
 export class PhraseSeedExtension
-   implements IGenModelSeedExtension<PHRASE_SEED_EXTENSION_ID>
+   implements IGMSeedExtPayload<PHRASE_SEED_EXTENSION_ID>
 {
    static readonly extensionFor: GEN_MODEL_SEED_EXTENSION_POINT =
       GEN_MODEL_SEED_EXTENSION_POINT_STRING
@@ -21,35 +25,33 @@ export class PhraseSeedExtension
    static readonly extensionId: PHRASE_SEED_EXTENSION_ID =
       PHRASE_SEED_EXTENSION_ID_STR
 
-   static readonly seedModelType: IPhraseSeed = {} as unknown as IPhraseSeed
+   get extensionId(): PHRASE_SEED_EXTENSION_ID {
+      return PHRASE_SEED_EXTENSION_ID_STR
+   }
 
-   private readonly logger: Logger = new Logger("PhraseSeedExtractor")
-
-   readonly extensionId: PHRASE_SEED_EXTENSION_ID = PHRASE_SEED_EXTENSION_ID_STR
-   validate(
-      input: SeedByExtension<KnownGenModelSeedURIs>,
-   ): input is IPhraseSeed {
+   validate(input: SeedByExtension<string>): input is IPhraseSeed {
       if (input.seedKey !== PhraseSeedExtension.extensionId) {
-         this.logger.error(
+         const logger: Logger = new Logger("PhraseSeedGMSeedExtension")
+         logger.error(
             `${input.seedKey} would not match ${PhraseSeedExtension.extensionId}`,
          )
          return false
       }
-      // TODO: Ensure prefix and suffix strings are both in hex
-      const castInput: GenModelSeedKind<PHRASE_SEED_EXTENSION_ID> =
-         input as GenModelSeedKind<PHRASE_SEED_EXTENSION_ID>
-      if (castInput.phrase.length <= 0) {
-         // throw new Error("Length mismatch, is prefix all hex?")
+      if (
+         !("phrase" in input) ||
+         typeof input.phrase !== "string" ||
+         input.phrase.length <= 0
+      ) {
          return false
       }
 
       return true
    }
 
-   toSeedModel(input: SeedByExtension<KnownGenModelSeedURIs>): PaintableSeed {
-      if (!this.validate(input)) {
-         throw new Error(`Incompatible seed model of type ${input.seedKey}`)
-      }
+   toSeedModel(input: IPhraseSeed): PaintableSeed {
+      // if (!this.validate(input)) {
+      // throw new Error(`Incompatible seed model of type ${input.seedKey}`)
+      // }
 
       return {
          seedKey: "SinglePhrase",

@@ -1,44 +1,57 @@
 import { StringKeys } from "simplytyped"
 import {
-   ToExtTArgsKind,
-   ToExtPayloadKind,
-   ToExtStaticBodyKind,
-   ToExtAdaptersRefKind,
-   ToExtensionsRefKind,
-} from "./ExtensionPointKind.js"
-import type { GenModelExtensions } from "../../seeding/kinds/GenModelSeedModule.js"
-import { HexSeedExtension } from "../../seeding/builtin/components/HexSeedExtension.js"
-import { Type } from "@nestjs/common"
+   PointForExtTArgs,
+   PointForExtPayload,
+   PointForExtStaticPayload,
+   PointForPointForAdapterFactory,
+   PointForPointForExtensions,
+} from "../../extensions/kinds/ExtensionPoints.js"
 
 /**
  * Any extension point that has specified all its extension requirements will find
  * its key listed in this union.
  */
-export type KnownExtensionPointIds = StringKeys<ToExtPayloadKind<string>> &
-   StringKeys<ToExtTArgsKind<string>> &
-   StringKeys<ToExtStaticBodyKind<string>> &
-   StringKeys<ToExtAdaptersRefKind<string>> &
-   StringKeys<ToExtensionsRefKind>
+export type KnownExtensionPointIds = StringKeys<PointForExtPayload<string>> &
+   StringKeys<PointForExtTArgs<string>> &
+   StringKeys<PointForExtStaticPayload<string>> &
+   StringKeys<PointForPointForAdapterFactory<string>> &
+   StringKeys<PointForPointForExtensions>
 
 export type CandidateExtensionIds<
    ExtensionPoint extends KnownExtensionPointIds,
-> = StringKeys<ToExtensionsRefKind[ExtensionPoint]>
+> = StringKeys<PointForPointForExtensions[ExtensionPoint]>
 
 export type ExtensionPayloadKind<
    ExtensionPoint extends KnownExtensionPointIds,
    ExtensionId extends CandidateExtensionIds<ExtensionPoint>,
-> = ToExtPayloadKind<ExtensionId>[ExtensionPoint]
+> = PointForExtPayload<ExtensionId>[ExtensionPoint]
 
 export type ExtensionTArgsKind<
    ExtensionPoint extends KnownExtensionPointIds,
    ExtensionId extends CandidateExtensionIds<ExtensionPoint>,
-> = ToExtTArgsKind<ExtensionId>[ExtensionPoint]
+> = PointForExtTArgs<ExtensionId>[ExtensionPoint]
 
 export type ExtensionStaticBodyKind<
    ExtensionPoint extends KnownExtensionPointIds,
    ExtensionId extends CandidateExtensionIds<ExtensionPoint>,
-> = ToExtStaticBodyKind<ExtensionId>[ExtensionPoint]
+> = Omit<
+   PointForExtStaticPayload<ExtensionId>[ExtensionPoint],
+   "extensionFor" | "extensionId"
+>
 
+/**
+ * Captures most of the type requirements of an extension class kind, but it is unable to correctly accommodate
+ * type extensions from an extension itself, so we cannot simply use this definition to directly implement the
+ * ExtensionClassKind type.
+ *
+ * For example, the "GenModel Seed" extension requires that extension providers register and use an additional
+ * member of its distributed union that uses the extension ID as a discriminator key.   This validator can
+ * assert that the contributed class includes use of a type that satisfies the existence of the discriminator key,
+ * but it cannot accommodate the remainder of its definition that is registered because that would require
+ * knowledge of the extensible interface module defined within the extension for capturing this subtype declaration.
+ *
+ * If we
+ */
 export type ExtensionValidityRequirements<
    ExtensionPoint extends KnownExtensionPointIds,
    ExtensionId extends CandidateExtensionIds<ExtensionPoint>,
@@ -48,18 +61,16 @@ export type ExtensionValidityRequirements<
    ): ExtensionPayloadKind<ExtensionPoint, ExtensionId>
    readonly extensionFor: ExtensionPoint
    readonly extensionId: ExtensionId
-} & Omit<
-   ExtensionStaticBodyKind<ExtensionPoint, ExtensionId>,
-   "extensionFor" | "extensionId"
->
+} & ExtensionStaticBodyKind<ExtensionPoint, ExtensionId>
 
 export type ExtensionValidityTest<
    ExtensionPoint extends KnownExtensionPointIds,
    ExtensionId extends CandidateExtensionIds<ExtensionPoint>,
 > =
-   Type<
-      ToExtensionsRefKind[ExtensionPoint][ExtensionId]
-   > extends ExtensionValidityRequirements<ExtensionPoint, ExtensionId>
+   PointForPointForExtensions[ExtensionPoint][ExtensionId] extends ExtensionValidityRequirements<
+      ExtensionPoint,
+      ExtensionId
+   >
       ? ExtensionId
       : never
 
@@ -70,10 +81,16 @@ export type KnownExtensionIds<ExtensionPoint extends KnownExtensionPointIds> = {
    >
 }[CandidateExtensionIds<ExtensionPoint>]
 
+// export type KnownExtensionIds<ExtensionPoint extends KnownExtensionPointIds> =
+//    ExtensionValidityTest<ExtensionPoint, CandidateExtensionIds<ExtensionPoint>>
+
 export type ExtensionClassKind<
    ExtensionPoint extends KnownExtensionPointIds,
    ExtensionId extends KnownExtensionIds<ExtensionPoint>,
-> = ToExtensionsRefKind[ExtensionPoint][ExtensionId]
+> = {
+   [K in ExtensionId]: PointForPointForExtensions[ExtensionPoint][K] &
+      ExtensionValidityRequirements<ExtensionPoint, K>
+}[ExtensionId]
 
 // export type ExtensionPointToExtensionKinds = {
 //    [ExtensionPoint in KnownExtensionPointIds]: {

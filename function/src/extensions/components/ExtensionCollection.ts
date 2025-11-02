@@ -40,10 +40,10 @@ export class ExtensionCollection<ExtensionPoint extends KnownExtensionPointIds>
       this.argsMap = {}
    }
 
-   setClass(
-      extensionId: KnownExtensionIds<ExtensionPoint>,
-      extensionClass: ExtensionClassKind<ExtensionPoint, typeof extensionId>,
-      ...args: ExtensionTArgsKind<ExtensionPoint, typeof extensionId>
+   setClass<ExtensionId extends KnownExtensionIds<ExtensionPoint>>(
+      extensionId: ExtensionId,
+      extensionClass: ExtensionClassKind<ExtensionPoint, ExtensionId>,
+      ...args: ExtensionTArgsKind<ExtensionPoint, ExtensionId>
    ): void {
       this.classMap[extensionId] = extensionClass
       this.argsMap[extensionId] = args
@@ -63,9 +63,9 @@ export class ExtensionCollection<ExtensionPoint extends KnownExtensionPointIds>
    //    this.extensionMap[extensionId] = value
    // }
 
-   getClass(
-      extensionId: KnownExtensionIds<ExtensionPoint>,
-   ): ExtensionClassKind<ExtensionPoint, typeof extensionId> {
+   getClass<ExtensionId extends KnownExtensionIds<ExtensionPoint>>(
+      extensionId: ExtensionId,
+   ): ExtensionClassKind<ExtensionPoint, ExtensionId> {
       if (
          !(extensionId in this.classMap) ||
          this.classMap[extensionId] === undefined
@@ -77,25 +77,27 @@ export class ExtensionCollection<ExtensionPoint extends KnownExtensionPointIds>
       return this.classMap[extensionId]
    }
 
-   get(
-      extensionId: KnownExtensionIds<ExtensionPoint>,
-   ): ExtensionPayloadKind<ExtensionPoint, typeof extensionId> {
+   get<ExtensionId extends KnownExtensionIds<ExtensionPoint>>(
+      extensionId: ExtensionId,
+   ): ExtensionPayloadKind<ExtensionPoint, ExtensionId> {
       if (
          !(extensionId in this.extensionMap) ||
-         this.extensionMap[extensionId] === undefined
+         this.extensionMap[extensionId] === undefined ||
+         this.extensionMap[extensionId] === null
       ) {
+         const tArgs:
+            | ExtensionTArgsKind<ExtensionPoint, ExtensionId>
+            | undefined = this.argsMap[extensionId]
+         const ExtensionClass:
+            | ExtensionClassKind<ExtensionPoint, ExtensionId>
+            | undefined = this.classMap[extensionId]
          if (
-            extensionId in this.classMap &&
-            this.classMap[extensionId] !== undefined &&
-            extensionId in this.argsMap &&
-            this.argsMap[extensionId] !== undefined
+            tArgs !== undefined &&
+            tArgs !== null &&
+            ExtensionClass !== undefined &&
+            ExtensionClass !== null
          ) {
-            const tArgs = this.argsMap[extensionId]
-            const ExtensionClassKind: ExtensionClassKind<
-               ExtensionPoint,
-               typeof extensionId
-            > = this.classMap[extensionId]
-            return (this.extensionMap[extensionId] = new ExtensionClassKind(
+            return (this.extensionMap[extensionId] = new ExtensionClass(
                ...tArgs,
             ))
          }

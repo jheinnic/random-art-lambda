@@ -5,18 +5,18 @@ import {
 } from "./../kinds/Constants.js"
 import { SeedType } from "./SeedType.js"
 
-export interface PrefixSuffix extends SeedType {
+export interface PrefixSuffix extends SeedType<PAINTABLE_PREFIX_SUFFIX> {
    readonly seedKey: PAINTABLE_PREFIX_SUFFIX
    readonly prefix: Uint8Array
    readonly suffix: Uint8Array
 }
 
-export interface SinglePhrase extends SeedType {
+export interface SinglePhrase extends SeedType<PAINTABLE_SINGLE_PHRASE> {
    readonly seedKey: PAINTABLE_SINGLE_PHRASE
    readonly phrase: string
 }
 
-export interface PhrasePair extends SeedType {
+export interface PhrasePair extends SeedType<PAINTABLE_PHRASE_PAIR> {
    readonly seedKey: PAINTABLE_PHRASE_PAIR
    readonly prefix: string
    readonly suffix: string
