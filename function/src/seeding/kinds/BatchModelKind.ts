@@ -1,6 +1,3 @@
-import { GEN_MODEL_BATCH_EXTENSION_POINT } from "./Constants.js"
-import { KnownExtensionIds } from "../../extensions/kinds/ExtensionKind.js"
-
 // 1. Base interface that plugins will augment
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface GenModelBatchURItoKind {
@@ -9,8 +6,8 @@ export interface GenModelBatchURItoKind {
 }
 
 // 2. Extract valid URIs from whatever gets registered
-export type KnownGenModelBatchURIs = keyof GenModelBatchURItoKind &
-   KnownExtensionIds<GEN_MODEL_BATCH_EXTENSION_POINT>
+export type KnownGenModelBatchURIs = keyof GenModelBatchURItoKind
+// KnownExtensionIds<GEN_MODEL_BATCH_EXTENSION_POINT>
 
 // 3. Lookup helper
 export type GenModelBatchKind<ExtensionId extends KnownGenModelBatchURIs> =

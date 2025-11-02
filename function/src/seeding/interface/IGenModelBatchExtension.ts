@@ -1,7 +1,7 @@
 import { KnownExtensionIds } from "../../extensions/kinds/ExtensionKind.js"
 import { GenModelBatchKind } from "../kinds/BatchModelKind.js"
 import { GEN_MODEL_BATCH_EXTENSION_POINT } from "../kinds/Constants.js"
-import { NestedBatch } from "../models/NestedBatch.js"
+import { NestedBatch } from "../models/PaintableBatch.js"
 import { SeedByExtension } from "../models/SeedByExtension.js"
 
 export interface IGenModelBatchExtension<

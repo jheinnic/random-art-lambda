@@ -45,11 +45,11 @@ const paintingModule: DynamicModule = PaintingModule.forRoot({
       module: CliChannelsModule,
       token: CliChannelsModuleTypes.RandomArtTaskReplyChannel,
    },
-   genModelSeedExtensionPoint: {
+   GMSeedExtPoint: {
       use: "token",
       for: "value",
       module: SeedingModule,
-      token: SeedingModuleTypes.GenModelSeedExtensionPoint,
+      token: SeedingModuleTypes.GMSeedExtensionPoint,
    },
 })
 

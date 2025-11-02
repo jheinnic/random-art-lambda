@@ -11,7 +11,7 @@ export interface IExtensionPoint<
    receiveExtensions: (
       extensions: IExtensionCollection<ExtensionPoint>,
       adapters: {
-         [AdapterId in KnownExtensionAdapterIds<ExtensionPoint>]?: IAdapterCollection<
+         [AdapterId in KnownExtensionAdapterIds<ExtensionPoint>]: IAdapterCollection<
             ExtensionPoint,
             AdapterId
          >

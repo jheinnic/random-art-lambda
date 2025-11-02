@@ -1,3 +1,3 @@
-export interface SeedType {
-   readonly seedKey: string
+export interface SeedType<K extends string> {
+   readonly seedKey: K
 }
