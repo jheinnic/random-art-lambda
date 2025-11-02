@@ -1,15 +1,5 @@
-import { UseValueInjection } from "./../../modules/interface/IInjectableModuleClassFactory"
-import { ToExtPayloadPoint } from "../../extensions/kinds/ExtensionPoints.js"
 import { Logger } from "@nestjs/common"
-import "./ExtensionClassKind._st"
-import {
-   CandidateExtensionIds,
-   ExtensionClassKind,
-   ExtensionValidityRequirements,
-   ExtensionValidityTest,
-   KnownExtensionIds,
-   KnownExtensionPointIds,
-} from "./ExtensionKind.js"
+import { ExtensionClassKind, KnownExtensionIds } from "./ExtensionKind.js"
 
 interface IUIComponentExtension {
    render: () => void
@@ -45,57 +35,43 @@ class DataSourceExtension implements IDataSourceExtension {
 export {}
 
 declare module "../../extensions/kinds/ExtensionPoints.js" {
-   interface ToExtPayloadPoint<ExtensionId extends string> {
-      readonly Examples: ExtensionId extends "ui-component"
+   export interface PointForExtPayload<_ExtensionId extends string> {
+      readonly Examples: _ExtensionId extends "ui-component"
          ? IUIComponentExtension
          : IDataSourceExtension
    }
-   interface ToExtTArgsPoint<ExtensionId extends string> {
-      readonly Examples: ExtensionId extends "ui-component"
+   export interface PointForExtTArgs<_ExtensionId extends string> {
+      readonly Examples: _ExtensionId extends "ui-component"
          ? [Logger]
          : [string]
    }
 
-   interface ToExtStaticPayloadPoint<ExtensionId extends string> {
+   export interface PointForExtStaticPayload<_ExtensionId extends string> {
       readonly Examples: {}
    }
 
    // eslint-disable-next-line @typescript-eslint/no-empty-interface
-   export interface AdaptersRef<ExtensionId extends string> {}
+   export interface PointForAdapterFactories<_ExtensionId extends string> {}
 
    // eslint-disable-next-line @typescript-eslint/no-empty-interface
-   export interface ExtensionsRef {
+   export interface PointForExtensions {
       "ui-component": typeof UIComponentExtension
       "data-source": typeof DataSourceExtension
    }
 
-   interface ToToAdapterFactoryPointPoint<
+   export interface PointForPointForAdapterFactory<
       // ExtensionPoint extends KnownExtensionPointIds,
       ExtensionId extends string, // KnownExtensionIds<ExtensionPoint>,
    > {
-      readonly Examples: AdaptersRef<ExtensionId>
+      readonly Examples: PointForAdapterFactories<ExtensionId>
    }
 
-   interface ToExtensionsRefKind {
-      readonly Examples: ExtensionsRef
+   interface PointForPointForExtensions {
+      readonly Examples: PointForExtensions
    }
 }
+export type UIComponentClass = ExtensionClassKind<"Examples", "ui-component">
 
-type AA = CandidateExtensionIds<"Examples">
-type BB = KnownExtensionIds<"GenModelSeed">
+export type DataSourceClass = ExtensionClassKind<"Examples", "data-source">
 
-type c = {
-   [ExtensionId in CandidateExtensionIds<"Examples">]: ExtensionValidityTest<
-      "Examples",
-      ExtensionId
-   >
-}
-type DD = ExtensionValidityRequirements<"Examples", "ui-component">
-
-// 🎯 FIX: UI components must always take a Logger and a Config object.
-type UIComponentClass = ExtensionClassKind<"Examples", "ui-component">
-
-// 🎯 FIX: Data Sources must always take a ConnectionString.
-type DataSourceClass = ExtensionClassKind<"Examples", "data-source">
-
-type LaLa = KnownExtensionIds<"Examples">
+export type LaLa = KnownExtensionIds<"Examples">

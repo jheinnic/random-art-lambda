@@ -5,7 +5,7 @@ import {
    ExtensionValidityRequirements,
    CandidateExtensionIds,
 } from "../../extensions/kinds/ExtensionKind.js"
-import { ToExtensionsRefKind } from "../../extensions/kinds/ExtensionPoints.js"
+import { PointForPointForExtensions } from "../../extensions/kinds/ExtensionPoints.js"
 import { HexSeedExtension } from "../builtin/components/HexSeedExtension.js"
 import { PhraseSeedExtension } from "../builtin/components/PhraseSeedExtension.js"
 import { GEN_MODEL_SEED_EXTENSION_POINT } from "./Constants.js"
@@ -39,8 +39,9 @@ type obn = ExtensionValidityRequirements<
    GEN_MODEL_SEED_EXTENSION_POINT,
    "PhraseSeed"
 >
-type OJj = ToExtensionsRefKind[GEN_MODEL_SEED_EXTENSION_POINT]["HexSeed"]
-type Mhb = ToExtensionsRefKind[GEN_MODEL_SEED_EXTENSION_POINT]["PhraseSeed"]
+type OJj = PointForPointForExtensions[GEN_MODEL_SEED_EXTENSION_POINT]["HexSeed"]
+type Mhb =
+   PointForPointForExtensions[GEN_MODEL_SEED_EXTENSION_POINT]["PhraseSeed"]
 
 export const Klo: OJj = HexSeedExtension
 export const Owo: Mhb = PhraseSeedExtension
@@ -49,44 +50,44 @@ export const Owa: obn = PhraseSeedExtension
 
 export const jsw = new Klo()
 
-export const Gluk: ExtensionClassKind<
+export const Glue: ExtensionClassKind<
    GEN_MODEL_SEED_EXTENSION_POINT,
    "PhraseSeed"
 > = Owa
 
-export const gsk = new Gluk()
+export const gsk = new Glue()
 
-export const Pluk: ExtensionClassKind<
+export const Plum: ExtensionClassKind<
    GEN_MODEL_SEED_EXTENSION_POINT,
    "PhraseSeed"
 > = Owo
 
-export const psk = new Pluk()
+export const psk = new Plum()
 
-export const Sluk: ExtensionClassKind<
+export const Slur: ExtensionClassKind<
    GEN_MODEL_SEED_EXTENSION_POINT,
    "PhraseSeed"
 > = PhraseSeedExtension
 
-export const ssk = new Sluk()
+export const ssk = new Slur()
 
-export const Gwot: ExtensionClassKind<
+export const Gnat: ExtensionClassKind<
    GEN_MODEL_SEED_EXTENSION_POINT,
    "HexSeed"
 > = Kla
 
-export const gtg = new Gwot()
+export const gtg = new Gnat()
 
-export const Pwot: ExtensionClassKind<
+export const Prat: ExtensionClassKind<
    GEN_MODEL_SEED_EXTENSION_POINT,
    "HexSeed"
 > = Klo
 
-export const ptg = new Pwot()
+export const ptg = new Prat()
 
-export const Swot: ExtensionClassKind<
+export const Slat: ExtensionClassKind<
    GEN_MODEL_SEED_EXTENSION_POINT,
    "HexSeed"
 > = HexSeedExtension
 
-export const stg = new Swot()
+export const stg = new Slat()

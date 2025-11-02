@@ -1,6 +1,6 @@
 import { StringKeys } from "simplytyped"
 import { KnownExtensionPointIds, KnownExtensionIds } from "./ExtensionKind.js"
-import { ToToAdapterFactoryPointPoint } from "../../extensions/kinds/ExtensionPoints.js"
+import { PointForPointForAdapterFactory } from "../../extensions/kinds/ExtensionPoints.js"
 
 // 1. Base interface that plugins will augment
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -16,7 +16,7 @@ import { ToToAdapterFactoryPointPoint } from "../../extensions/kinds/ExtensionPo
 export type KnownExtensionAdapterIds<
    ExtensionPoint extends KnownExtensionPointIds,
 > = StringKeys<
-   ToToAdapterFactoryPointPoint<
+   PointForPointForAdapterFactory<
       KnownExtensionIds<ExtensionPoint>
    >[ExtensionPoint]
 >
@@ -26,7 +26,7 @@ export type ExtensionAdapterKind<
    ExtensionPoint extends KnownExtensionPointIds,
    AdapterId extends KnownExtensionAdapterIds<ExtensionPoint>,
    ExtensionId extends KnownExtensionIds<ExtensionPoint>,
-> = ToToAdapterFactoryPointPoint<ExtensionId>[ExtensionPoint][AdapterId]
+> = PointForPointForAdapterFactory<ExtensionId>[ExtensionPoint][AdapterId]
 
 // Plugin authors use this
 // declare module "./ExtensionAdapterKind.js" {

@@ -1,41 +1,41 @@
 import { StringKeys } from "simplytyped"
 import {
-   ToExtTArgsPoint,
-   ToExtPayloadPoint,
-   ToExtStaticPayloadPoint,
-   ToToAdapterFactoryPointPoint,
-   ToExtensionsRefKind,
+   PointForExtTArgs,
+   PointForExtPayload,
+   PointForExtStaticPayload,
+   PointForPointForAdapterFactory,
+   PointForPointForExtensions,
 } from "../../extensions/kinds/ExtensionPoints.js"
 
 /**
  * Any extension point that has specified all its extension requirements will find
  * its key listed in this union.
  */
-export type KnownExtensionPointIds = StringKeys<ToExtPayloadPoint<string>> &
-   StringKeys<ToExtTArgsPoint<string>> &
-   StringKeys<ToExtStaticPayloadPoint<string>> &
-   StringKeys<ToToAdapterFactoryPointPoint<string>> &
-   StringKeys<ToExtensionsRefKind>
+export type KnownExtensionPointIds = StringKeys<PointForExtPayload<string>> &
+   StringKeys<PointForExtTArgs<string>> &
+   StringKeys<PointForExtStaticPayload<string>> &
+   StringKeys<PointForPointForAdapterFactory<string>> &
+   StringKeys<PointForPointForExtensions>
 
 export type CandidateExtensionIds<
    ExtensionPoint extends KnownExtensionPointIds,
-> = StringKeys<ToExtensionsRefKind[ExtensionPoint]>
+> = StringKeys<PointForPointForExtensions[ExtensionPoint]>
 
 export type ExtensionPayloadKind<
    ExtensionPoint extends KnownExtensionPointIds,
    ExtensionId extends CandidateExtensionIds<ExtensionPoint>,
-> = ToExtPayloadPoint<ExtensionId>[ExtensionPoint]
+> = PointForExtPayload<ExtensionId>[ExtensionPoint]
 
 export type ExtensionTArgsKind<
    ExtensionPoint extends KnownExtensionPointIds,
    ExtensionId extends CandidateExtensionIds<ExtensionPoint>,
-> = ToExtTArgsPoint<ExtensionId>[ExtensionPoint]
+> = PointForExtTArgs<ExtensionId>[ExtensionPoint]
 
 export type ExtensionStaticBodyKind<
    ExtensionPoint extends KnownExtensionPointIds,
    ExtensionId extends CandidateExtensionIds<ExtensionPoint>,
 > = Omit<
-   ToExtStaticPayloadPoint<ExtensionId>[ExtensionPoint],
+   PointForExtStaticPayload<ExtensionId>[ExtensionPoint],
    "extensionFor" | "extensionId"
 >
 
@@ -67,7 +67,7 @@ export type ExtensionValidityTest<
    ExtensionPoint extends KnownExtensionPointIds,
    ExtensionId extends CandidateExtensionIds<ExtensionPoint>,
 > =
-   ToExtensionsRefKind[ExtensionPoint][ExtensionId] extends ExtensionValidityRequirements<
+   PointForPointForExtensions[ExtensionPoint][ExtensionId] extends ExtensionValidityRequirements<
       ExtensionPoint,
       ExtensionId
    >
@@ -88,7 +88,7 @@ export type ExtensionClassKind<
    ExtensionPoint extends KnownExtensionPointIds,
    ExtensionId extends KnownExtensionIds<ExtensionPoint>,
 > = {
-   [K in ExtensionId]: ToExtensionsRefKind[ExtensionPoint][K] &
+   [K in ExtensionId]: PointForPointForExtensions[ExtensionPoint][K] &
       ExtensionValidityRequirements<ExtensionPoint, K>
 }[ExtensionId]
 
