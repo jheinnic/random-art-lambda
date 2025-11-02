@@ -12,8 +12,8 @@ import { ModuleActivator } from "../components/ModuleActivator.js"
          useClass: ModuleActivator,
       },
       {
-         provide: BuiltInSeedModuleTypes.GenModelSeedExtensionRegistry,
-         useExisting: SeedingModuleTypes.GenModelSeedExtensionRegistry,
+         provide: BuiltInSeedModuleTypes.GMSeedExtRegistry,
+         useExisting: SeedingModuleTypes.GMSeedExtensionRegistry,
       },
    ],
 })

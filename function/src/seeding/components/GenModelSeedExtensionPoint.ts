@@ -1,5 +1,7 @@
+import { IGMSeedAdapterFactory } from "./../interface/IGMSeedAdapterFactory"
+import { KnownGenModelSeedExtensionIds } from "./../kinds/GenModelSeedKind"
 import { Inject, Injectable } from "@nestjs/common"
-import { Observable, of, from } from "rxjs"
+import { Observable, of } from "rxjs"
 
 import {
    GEN_MODEL_SEED_ADAPTER_ID,
@@ -10,46 +12,50 @@ import {
    PAINTABLE_SINGLE_PHRASE_STR,
 } from "../kinds/Constants.js"
 import { KnownExtensionIds } from "../../extensions/kinds/ExtensionKind.js"
+
 import { SeedingModuleTypes } from "../di/Types.js"
+
+import { SeedType } from "../models/SeedType.js"
+import { PaintableSeed } from "../models/PaintableSeed.js"
+import { SeedByExtension } from "../models/SeedByExtension.js"
+
 import {
    IAdapterCollection,
    IExtensionCollection,
    IExtensionMatchmaker,
-   IExtensionPoint,
 } from "../../extensions/interface/index.js"
-import { PaintableSeed } from "../models/PaintableSeed.js"
-import { SeedByExtension } from "../models/SeedByExtension.js"
-import { IGenModelSeedExtensionPoint } from "../interface/IGenModelSeedExtensionPoint.js"
-import { GenModelSeedAdapterFactory } from "./GenModelSeedAdapterFactory.js"
+import { IGMSeedExtensionPoint, IGMSeedExtPayload } from "../interface/index.js"
+
 import { GenModelSeedAdapter } from "./GenModelSeedAdapter.js"
 
+const DUMMY: IExtensionCollection<GEN_MODEL_SEED_EXTENSION_POINT> &
+   IAdapterCollection<
+      GEN_MODEL_SEED_EXTENSION_POINT,
+      GEN_MODEL_SEED_ADAPTER_ID
+   > = {} as unknown as any
+
 @Injectable()
-export class GenModelSeedExtensionPoint
-   implements
-      IExtensionPoint<GEN_MODEL_SEED_EXTENSION_POINT>,
-      IGenModelSeedExtensionPoint
-{
+export class GenModelSeedExtensionPoint implements IGMSeedExtensionPoint {
    constructor(
-      @Inject(SeedingModuleTypes.GenModelSeedMatchmaker)
-      private readonly matchMaker: IExtensionMatchmaker<GEN_MODEL_SEED_EXTENSION_POINT>,
-      @Inject(SeedingModuleTypes.GenModelSeedAdapterFactory)
-      private readonly adapterFactory: GenModelSeedAdapterFactory,
+      @Inject(SeedingModuleTypes.GMSeedExtensionMatchmaker)
+      readonly matchMaker: IExtensionMatchmaker<GEN_MODEL_SEED_EXTENSION_POINT>,
+      @Inject(SeedingModuleTypes.GMSeedAdapterFactory)
+      readonly adapterFactory: IGMSeedAdapterFactory,
    ) {
       matchMaker.registerExtensionPoint(this)
       matchMaker.registerAdapterFactory(
          GEN_MODEL_SEED_ADAPTER_ID_STR,
-         this.adapterFactory,
+         adapterFactory,
       )
    }
 
-   private extensions:
-      | IExtensionCollection<GEN_MODEL_SEED_EXTENSION_POINT>
-      | undefined
+   private extensions: IExtensionCollection<GEN_MODEL_SEED_EXTENSION_POINT> =
+      DUMMY
 
    private adapters: IAdapterCollection<
       GEN_MODEL_SEED_EXTENSION_POINT,
       GEN_MODEL_SEED_ADAPTER_ID
-   >
+   > = DUMMY
 
    receiveExtensions(
       extensions: IExtensionCollection<GEN_MODEL_SEED_EXTENSION_POINT>,
@@ -65,62 +71,37 @@ export class GenModelSeedExtensionPoint
    }
 
    toSeedModel(
-      extensionKey: PaintableSeed["seedKey"],
-      input: PaintableSeed,
-   ): Observable<PaintableSeed>
-   toSeedModel(
-      extensionKey: KnownExtensionIds<GEN_MODEL_SEED_EXTENSION_POINT>,
-      input: SeedByExtension<typeof extensionKey>,
-   ): Observable<PaintableSeed>
-   toSeedModel(
-      extensionKey:
-         | PaintableSeed["seedKey"]
-         | KnownExtensionIds<GEN_MODEL_SEED_EXTENSION_POINT>,
-      input:
-         | SeedByExtension<
-              Exclude<typeof extensionKey, PaintableSeed["seedKey"]>
-           >
-         | PaintableSeed,
+      input: PaintableSeed | SeedByExtension<KnownGenModelSeedExtensionIds>,
    ): Observable<PaintableSeed> {
-      // if ("seedKey" in key) {
-      //    return key
-      // }
+      if (isPaintableSeedType(input)) {
+         return of(input)
+      }
 
-      if (this.extensions === undefined || this.adapters === undefined) {
+      if (this.extensions === DUMMY || this.adapters === DUMMY) {
          throw new Error(
             "Only call toSeedModel() after the ApplicationInitialization lifecycle event!",
          )
       }
 
-      if (
-         input.seedKey === PAINTABLE_PHRASE_PAIR_STR ||
-         input.seedKey === PAINTABLE_PREFIX_SUFFIX_STR ||
-         input.seedKey === PAINTABLE_SINGLE_PHRASE_STR
-      ) {
-         return of(input)
-      }
+      const extension: IGMSeedExtPayload<typeof input.seedKey> =
+         this.extensions.get(input.seedKey)
+      const adapter: GenModelSeedAdapter<typeof input.seedKey> =
+         this.adapters.adapt(input.seedKey, extension)
 
-      const extensionClass: GenModelSeedExtensionKind<
-         Exclude<typeof extensionKey, PaintableSeed["seedKey"]>
-      > = this.extensions.getClass(input.seedKey)
-      if (extensionClass === undefined) {
-         throw new Error(
-            `No extension class registered under ${input.seedKey} was found`,
-         )
-      }
-
-      const extension: GenModelSeedPayloadKind<
-         Exclude<typeof extensionKey, PaintableSeed["seedKey"]>
-      > = this.extensions.get(input.seedKey)
-      if (extension === undefined) {
-         throw new Error(
-            `Extension ${input.seedKey} has class ${extensionClass.name}, but no instance of it was found`,
-         )
-      }
-      const adapter: GenModelSeedAdapter<
-         Exclude<typeof extensionKey, PaintableSeed["seedKey"]>
-      > = this.adapters.adapt(input.seedKey, extensionClass, extension)
-
-      return adapter.toModel(input)
+      return of(adapter.toPaintable(input))
    }
+}
+
+const BUILT_IN_TYPES = new Set([
+   PAINTABLE_PHRASE_PAIR_STR,
+   PAINTABLE_PREFIX_SUFFIX_STR,
+   PAINTABLE_SINGLE_PHRASE_STR,
+])
+function isPaintableSeedType(
+   input: SeedType<
+      | PaintableSeed["seedKey"]
+      | KnownExtensionIds<GEN_MODEL_SEED_EXTENSION_POINT>
+   >,
+): input is PaintableSeed {
+   return input.seedKey in BUILT_IN_TYPES
 }

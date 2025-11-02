@@ -8,8 +8,7 @@ import { PaintingModuleTypes } from "./Types.js"
 import { RandomArtTaskEngine } from "../components/RandomArtTaskEngine.js"
 
 const injectModuleTokens = {
-   genModelSeedExtensionPoint:
-      PaintingModuleTypes.InjectedGenModelSeedExtensionPoint,
+   GMSeedExtPoint: PaintingModuleTypes.InjectedGenModelSeedExtensionPoint,
    regionMapRepo: PaintingModuleTypes.InjectedRegionMapRepository,
    taskCallChannel: PaintingModuleTypes.RandomArtTaskCallChannel,
    taskReplyChannel: PaintingModuleTypes.RandomArtTaskReplyChannel,

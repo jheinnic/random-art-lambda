@@ -1,13 +1,13 @@
 export class RandomArtPaintTask {
-  constructor (
-    public readonly cid: string,
-    public readonly prefixCid: string,
-    public readonly prefixBytes: Uint8Array,
-    public readonly suffixCid: string,
-    public readonly suffixBytes: Uint8Array,
-    public readonly plotMapCid: string,
-    public readonly plotMapBytes: Uint8Array
-  ) {}
+   constructor(
+      public readonly cid: string,
+      public readonly prefixCid: string,
+      public readonly prefixBytes: Uint8Array,
+      public readonly suffixCid: string,
+      public readonly suffixBytes: Uint8Array,
+      public readonly plotMapCid: string,
+      public readonly plotMapBytes: Uint8Array,
+   ) {}
 }
 // partitionSpecUrl?: string;
 // assignedIndices: number[];

@@ -1,14 +1,19 @@
-// import "../../../extensions/kinds/ExtensionClassKind.js"
+import "../../kinds/GenModelSeedModule.js"
 import { HexSeedExtension } from "../components/HexSeedExtension.js"
 import { PhraseSeedExtension } from "../components/PhraseSeedExtension.js"
 
 export {}
 
 declare module "../../kinds/GenModelSeedModule.js" {
-   abstract class GenModelExtensions {
-      readonly HexSeed: HexSeedExtension
+   interface ToGMSeedExtClassKind {
+      readonly HexSeed: typeof HexSeedExtension
       readonly PhraseSeed: typeof PhraseSeedExtension
    }
+
+   // interface ToGMSeedExtModelKind {
+   //    readonly HexSeed: IHexSeed
+   //    readonly PhraseSeed: IPhraseSeed
+   // }
 }
 
 // declare module "../../kinds/SeedModelKind.js" {
