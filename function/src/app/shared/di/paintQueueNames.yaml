@@ -1,0 +1,6 @@
+queueNames:
+   toPaintParts: "paintParts"
+   toGatherParts: "gatherParts"
+   toGatherTasks: "gatherTasks"
+flowProducerNames:
+   forJobSpecs: "paintFlows"

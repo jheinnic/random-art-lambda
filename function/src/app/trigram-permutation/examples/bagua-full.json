@@ -1,0 +1,17 @@
+{
+  "projectId": "bagua-full-8x8",
+  "name": "Complete Bagua Gallery (All 64 Hexagrams)",
+  "regionMapCatalog": {
+    "bagua-8-region-320x240": {
+      "cid": "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",
+      "description": "Standard 8-region bagua layout (320x240 pixels)"
+    }
+  },
+  "permutation": {
+    "expandType": "permuteAllPairs",
+    "regionMapNames": ["bagua-8-region-320x240"],
+    "sources": ["☰", "☱", "☲", "☳", "☴", "☵", "☶", "☷"],
+    "includeIdentity": true
+  },
+  "createdAt": "2026-01-14T00:00:00Z"
+}
