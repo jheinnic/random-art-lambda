@@ -1,0 +1,25 @@
+{
+  "projectId": "multi-resolution-gallery",
+  "name": "Multi-Resolution Bagua Gallery",
+  "regionMapCatalog": {
+    "thumbnail": {
+      "cid": "QmThumbnailCID240x240",
+      "description": "240x240 thumbnail preview"
+    },
+    "standard": {
+      "cid": "QmStandardCID640x480",
+      "description": "640x480 standard view"
+    },
+    "detail": {
+      "cid": "QmDetailCID1920x1080",
+      "description": "1920x1080 high-resolution detail"
+    }
+  },
+  "permutation": {
+    "expandType": "permuteAllPairs",
+    "regionMapNames": ["thumbnail", "standard", "detail"],
+    "sources": ["☰", "☱", "☲", "☳"],
+    "includeIdentity": false
+  },
+  "createdAt": "2026-01-15T00:00:00Z"
+}

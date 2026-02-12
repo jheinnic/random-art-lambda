@@ -1,0 +1,16 @@
+{
+  "projectId": "custom-experiment-001",
+  "name": "Custom RegionMap Experiment",
+  "regionMapCatalog": {
+    "custom-region": {
+      "cid": "QmCustomCID123456789ABCDEF",
+      "description": "Experimental custom RegionMap configuration"
+    }
+  },
+  "permutation": {
+    "expandType": "permutePrefixSuffix",
+    "regionMapNames": ["custom-region"],
+    "prefixes": ["A", "B"],
+    "suffixes": ["X", "Y"]
+  }
+}

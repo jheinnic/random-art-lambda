@@ -12,8 +12,7 @@ import { GenericService } from "../components/GenericService.js"
 const injectModuleTokens = {
    paintEngine: CliMainModuleTypes.RandomArtTaskEngine,
    // regionMapRepo: CliMainModuleTypes.RegionMapRepository,
-   taskCallChannel: CliMainModuleTypes.RandomArtTaskCallChannel,
-   taskReplyChannel: CliMainModuleTypes.RandomArtTaskReplyChannel,
+   // taskCallChannel: CliMainModuleTypes.RandomArtTaskCallChannel,
    queueFlowProducer: CliMainModuleTypes.RandomArtQueueFlowProducer,
 }
 
