@@ -49,6 +49,7 @@
       "Pixelheight",
       "Pixelref",
       "Pixelwidth",
+      "Retryable",
       "Serdes",
       "smksport",
       "sprintf",
@@ -61,5 +62,6 @@
    ],
    "github.copilot.enable": {
       "*": false
-   }
+   },
+   "compile-hero.disable-compile-files-on-did-save-code": true
 }

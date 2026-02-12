@@ -1,0 +1,18 @@
+{
+	"compilerOptions": {
+		"assets": [
+			{
+				"include": "../config/*.yaml",
+				"outDir": "./dist/app/di"
+			},
+			{
+				"include": "../src/painting/artwork/components/genjs6.js",
+				"outDir": "./dist/painting/artwork/components"
+			},
+			{
+				"include": "../src/plotting/protobuf/components/pb*.js",
+				"outDir": "./dist/plotting/protobuf/components"
+			}
+		]
+	}
+}

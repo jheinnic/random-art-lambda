@@ -1,0 +1,14 @@
+{
+  "name": "bull-board",
+  "version": "1.0.0",
+  "description": "Bull Manager GUI",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@bull-board/api": "^6.14.1",
+    "@bull-board/express": "^6.14.1",
+    "@bull-board/ui": "^6.14.1",
+    "bullmq": "^5.63.0",
+    "express": "^5.1.0"
+  }
+}
