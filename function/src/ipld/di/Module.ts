@@ -8,7 +8,7 @@ import { ISerdesModuleBuilder } from "./Extra.js"
 import { IpldModuleTypes } from "./Types.js"
 import { IpldSerdesFactory } from "../components/IpldSerdesFactory.js"
 import {
-   SimpleDynamicModule,
+   simpleDynamicModule,
    IDynamicModuleBuilder,
 } from "../../modules/index.js"
 import {
@@ -20,10 +20,8 @@ import {
 } from "../interface/index.js"
 
 @Module({})
-export class IpldModule {
-   static registerModule<
-      T extends RepresentDomainTuple<string, unknown, unknown>,
-   >(
+export class IpldModule extends simpleDynamicModule("IpldSerdesModule") {
+   static register<T extends RepresentDomainTuple<string, unknown, unknown>>(
       schemaDsl: string,
       director: (builder: ISerdesModuleBuilder<T>) => void,
    ): DynamicModule {
@@ -35,10 +33,7 @@ export class IpldModule {
       )
       director(builder)
 
-      return SimpleDynamicModule.registerModule(
-         "IpldSerdesModule",
-         builder.build(),
-      )
+      return this.registerModule(builder.build())
    }
 }
 

@@ -6,7 +6,7 @@ import { ModuleConfiguration } from "./Configuration.js"
 import { FsBlockstore, buildLruCache } from "../components/FsBlockstore.js"
 import {
    IDynamicModuleBuilder,
-   SimpleDynamicModule,
+   simpleDynamicModule,
 } from "../../modules/index.js"
 
 // const ConduitBaseClass: ConduitModuleClass<[Blockstore]> =
@@ -15,29 +15,26 @@ import {
 //    ]).build()
 
 @Module({})
-export class IpfsModule extends SimpleDynamicModule {
+export class IpfsModule extends simpleDynamicModule("IpldBlockstoreModule") {
    public static register(moduleConfig: ModuleConfiguration): DynamicModule {
-      return SimpleDynamicModule.registerModule(
-         "IpldBlockstoreModule",
-         (builder: IDynamicModuleBuilder) => {
-            builder
-               .identifyAs(this)
-               .defineProviders(
-                  {
-                     provide: IpfsModuleTypes.LruCache,
-                     useFactory: buildLruCache,
-                     inject: [IpfsModuleTypes.FsBlockstoreConfiguration],
-                  },
-                  {
-                     provide: IpfsModuleTypes.FsBlockstoreConfiguration,
-                     useValue: moduleConfig,
-                  },
-               )
-               .exportProviders({
-                  provide: moduleConfig.injectToken,
-                  useClass: FsBlockstore,
-               })
-         },
-      )
+      return this.registerModule((builder: IDynamicModuleBuilder) => {
+         builder
+            .identifyAs(this)
+            .defineProviders(
+               {
+                  provide: IpfsModuleTypes.LruCache,
+                  useFactory: buildLruCache,
+                  inject: [IpfsModuleTypes.FsBlockstoreConfiguration],
+               },
+               {
+                  provide: IpfsModuleTypes.FsBlockstoreConfiguration,
+                  useValue: moduleConfig,
+               },
+            )
+            .exportProviders({
+               provide: moduleConfig.injectToken,
+               useClass: FsBlockstore,
+            })
+      })
    }
 }
