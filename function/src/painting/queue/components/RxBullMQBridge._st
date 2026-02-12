@@ -1,0 +1,69 @@
+import { Injectable, OnModuleInit, Inject } from "@nestjs/common"
+import { mergeMap, from, tap, Observable } from "rxjs"
+import { Queue } from "bullmq"
+
+import { QueuedPaintingTypes } from "../di/Types.js"
+import { IRxLocalCallChannel } from "../../../channels/interface/index.js"
+import {
+   PartialPaintRequest,
+   PartialPaintResult,
+} from "../../messages/index.js"
+import { PAINTABLE_PHRASE_PAIR } from "../../seeding/kinds/Constants.js"
+
+@Injectable()
+export class RxBullMQBridge implements OnModuleInit {
+   private readonly queue: Queue
+
+   constructor(
+      @Inject(QueuedPaintingTypes.InjectedRandomArtTaskCallChannel)
+      private readonly taskChannel: IRxLocalCallChannel<
+         PartialPaintRequest,
+         PartialPaintResult
+      >,
+   ) {
+      this.queue = new Queue("paint-jobs", {
+         connection: { host: "localhost", port: 6379 },
+      })
+      this.taskChannel.call(requy
+         
+            request: PartialPaintRequest,
+            logger: Logger,
+         ): Promise<void> => {
+            await this.queue.add("paint", request)
+            logger.log(`Queued job ${JSON.stringify(request)}`)
+         },
+      )
+   }
+
+   async onModuleInit(): Promise<void> {
+      // Bridge RxChannel to BullMQ
+      this.taskChannel
+         .asObservable()
+         .pipe(
+            // Add to BullMQ queue
+            mergeMap(
+               (task) => from(this.queue.add("paint", task)),
+               8, // Process up to 8 concurrent additions
+            ),
+            tap((job) => console.log(`Queued job ${job.id ?? "undefined"}`)),
+         )
+         .subscribe()
+
+      // Create workers that publish results back
+      const worker = new Worker("paint-jobs", {})
+   }
+
+   // async processIt(job) => {
+   //       const result: RandomArtTaskReply = this.processPaintJob(job.data)
+   //       this.taskOutput$.next(result)
+   //       return result
+   //    }
+   // }
+   processPaintJob(data: any): RandomArtTaskReply {
+      throw new Error("Method not implemented.")
+   }
+
+   getResults(): Observable<RandomArtTaskReply> {
+      return this.taskOutput$.asObservable()
+   }
+}
