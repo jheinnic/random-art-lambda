@@ -4,7 +4,7 @@
       "module": "es2022",
       "lib": ["DOM", "ES2022"],
       "moduleResolution": "node",
-      "outDir": "./build",
+      "outDir": "./dist",
       "rootDir": "./src",
       "noLib": false,
       "noEmit": false,
@@ -27,15 +27,16 @@
       "emitDecoratorMetadata": true,
       "esModuleInterop": true
    },
-   "include": ["./src/**/*.ts", "./typings/medium.d.ts"],
+   "include": ["./src/**/*.ts"],
    "references": [],
    "exclude": [
-      "./node_modules/**/*",
-      "./attic/**/*",
-      "./build/**/*",
-      "./dist/**/*",
+      "node_modules",
+      "attic",
+      "atticV1",
+      "build",
+      "dist",
       "**/*.spec.ts",
-      "../.history/**/*.ts",
-      "./.history/**/*"
+      "../.history",
+      ".history"
    ]
 }

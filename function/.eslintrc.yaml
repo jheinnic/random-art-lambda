@@ -1,27 +1,27 @@
 env:
-  browser: false
-  es2021: true
+   browser: false
+   es2021: true
 extends:
-  - "eslint:recommended"
-  - standard-with-typescript
-  - "plugin:prettier/recommended"
+   - "eslint:recommended"
+   - standard-with-typescript
+   - "plugin:prettier/recommended"
 overrides: []
 parserOptions:
-  ecmaVersion: latest
-  project: /home/ionadmin/Git/lambdas/random-art-lambda/function/tsconfig.json
-  sourceType: module
+   ecmaVersion: latest
+   project: /home/ionadmin/Git/lambdas/random-art-lambda/function/tsconfig_test.json
+   sourceType: module
 rules:
-  no-unused-vars: off
-  comma-dangle: 
-    - error
-    - always-multiline
-  "@typescript-eslint/no-unused-vars":
-    - warn
-    - args: all
-      argsIgnorePattern: "^_"
-      caughtErrors: all
-      caughtErrorsIgnorePattern: "^_"
-      destructuredArrayIgnorePattern: "^_"
-      ignoreRestSiblings: true
-      varsIgnorePattern: "^_"
-  no-lone-blocks: error
+   no-unused-vars: off
+   comma-dangle:
+      - error
+      - always-multiline
+   "@typescript-eslint/no-unused-vars":
+      - warn
+      - args: all
+        argsIgnorePattern: "^_"
+        caughtErrors: all
+        caughtErrorsIgnorePattern: "^_"
+        destructuredArrayIgnorePattern: "^_"
+        ignoreRestSiblings: true
+        varsIgnorePattern: "^_"
+   no-lone-blocks: error

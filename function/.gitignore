@@ -1,7 +1,11 @@
 build/
+logs/
+dist/
 rdocs/
 rdoc02
 rdoc03
 qdoc2/
 qdoc2_proto/
 qdoc2_idlp/
+*.png
+*.jpg

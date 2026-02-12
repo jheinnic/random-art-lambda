@@ -5,16 +5,46 @@
    "version": "0.2.0",
    "configurations": [
       {
-         "type": "node",
+         "name": "ts-node",
+         "type": "pwa-node",
+         "request": "launch",
+         "args": ["${relativeFile}"],
+         "runtimeArgs": ["-r", "ts-node/register"],
+         "cwd": "${workspaceRoot}",
+         "internalConsoleOptions": "openOnSessionStart"
+      },
+      {
+         "type": "pwa-node",
          "request": "launch",
          "name": "Launch Built Main",
          "skipFiles": ["<node_internals>/**"],
          "runtimeExecutable": "/home/ionadmin/.nvm/versions/node/v20.19.3/bin/node",
          "program": "${workspaceFolder}/build/app/components/Main.js",
-         "outFiles": ["${workspaceFolder}/build/**/*.js"]
+         "outFiles": ["${workspaceFolder}/build/**/*.js"],
+         "env": {
+            "UNIQUE_ID": "peon",
+            "RA_APP_ROLES": "[\"mainApp\", \"stageWorker\", \"paintWorker\"]"
+         }
       },
       {
-         "type": "node",
+         "type": "pwa-node",
+         "request": "launch",
+         "name": "Launch app/trigram-permutation/cli/submit-project.js",
+         "skipFiles": ["<node_internals>/**"],
+         "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/tsx",
+         "program": "${workspaceFolder}/src/app/trigram-permutation/cli/submit-project.ts --blockstore-path /home/ionadmin/Documents/mapBlocks --dry-run ${workspaceFolder}/bagua-spec.json",
+         "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+         "env": {
+            "UNIQUE_ID": "peon",
+            "RA_APP_ROLES": "[\"mainApp\", \"stageWorker\", \"paintWorker\"]"
+            // "NESTJS_DEBUG": 1,
+            // "NEST_DEBUG": 1,
+            // "DEBUG_NESTJS": 1,
+            // "DEBUG_NEST": 1
+         }
+      },
+      {
+         "type": "pwa-node",
          "request": "launch",
          "name": "Launch app/components/Main.ts",
          "skipFiles": ["<node_internals>/**"],
@@ -22,14 +52,16 @@
          "program": "${workspaceFolder}/src/app/components/Main.ts",
          "outFiles": ["${workspaceFolder}/build/**/*.js"],
          "env": {
-            "NESTJS_DEBUG": 1,
-            "NEST_DEBUG": 1,
-            "DEBUG_NESTJS": 1,
-            "DEBUG_NEST": 1
+            "UNIQUE_ID": "peon",
+            "RA_APP_ROLES": "[\"mainApp\", \"stageWorker\", \"paintWorker\"]"
+            // "NESTJS_DEBUG": 1,
+            // "NEST_DEBUG": 1,
+            // "DEBUG_NESTJS": 1,
+            // "DEBUG_NEST": 1
          }
       },
       {
-         "type": "node",
+         "type": "pwa-node",
          "request": "launch",
          "name": "Lunch Program",
          "skipFiles": ["<node_internals>/**"],
@@ -38,7 +70,7 @@
          "outFiles": ["${workspaceFolder}/build/**/*.js"]
       },
       {
-         "type": "node",
+         "type": "pwa-node",
          "request": "launch",
          "name": "Basic Tester",
          "skipFiles": ["<node_internals>/**"],
@@ -47,7 +79,7 @@
          "outFiles": ["${workspaceFolder}/build/**/*.js"]
       },
       {
-         "type": "node",
+         "type": "pwa-node",
          "request": "launch",
          "name": "Old Main Tester",
          "skipFiles": ["<node_internals>/**"],
@@ -56,7 +88,7 @@
          "outFiles": ["${workspaceFolder}/build/**/*.js"]
       },
       {
-         "type": "node",
+         "type": "pwa-node",
          "request": "launch",
          "name": "InToy3A",
          "skipFiles": ["<node_internals>/**"],
@@ -65,7 +97,7 @@
          "outFiles": ["${workspaceFolder}/build/**/*.js"]
       },
       {
-         "type": "node",
+         "type": "pwa-node",
          "request": "launch",
          "name": "InToy5",
          "skipFiles": ["<node_internals>/**"],
