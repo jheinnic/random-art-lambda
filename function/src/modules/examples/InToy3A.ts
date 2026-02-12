@@ -12,7 +12,7 @@ import {
    DynamicModule,
 } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
-import { SimpleDynamicModule } from "../di/SimpleDynamicModule.js"
+import { simpleDynamicModule } from "../di/SimpleDynamicModule.js"
 import { IDynamicModuleBuilder } from "../index.js"
 
 const theBoxApp: unique symbol = Symbol("TheAppBox")
@@ -129,10 +129,19 @@ const sharedProvidersOne: [Provider<Box>, Provider] = [
       useExisting: anotherBoxOne,
    },
 ]
-const anotherBoxConduit: DynamicModule = SimpleDynamicModule.registerModule(
+
+@Module({})
+export class AnotherBoxConduitModule extends simpleDynamicModule(
    "AnotherBoxConduitModule",
-   (x) => x.exportProviders(...sharedProvidersOne),
-)
+) {
+   public static register(): DynamicModule {
+      return this.registerModule((x: IDynamicModuleBuilder): void => {
+         x.exportProviders(...sharedProvidersOne)
+      })
+   }
+}
+
+const anotherBoxConduit: DynamicModule = AnotherBoxConduitModule.register()
 
 @Module({
    imports: [anotherBoxConduit],
@@ -174,10 +183,19 @@ const sharedProvidersApp: [Provider<Box>, Provider] = [
       useExisting: theBoxApp,
    },
 ]
-const theBoxConduit: DynamicModule = SimpleDynamicModule.registerModule(
+
+@Module({})
+export class TheBoxConduitModule extends simpleDynamicModule(
    "TheBoxConduitModule",
-   (x: IDynamicModuleBuilder) => x.exportProviders(...sharedProvidersApp),
-)
+) {
+   public static register(): DynamicModule {
+      return this.registerModule((director: IDynamicModuleBuilder): void => {
+         director.exportProviders(...sharedProvidersApp)
+      })
+   }
+}
+
+export const theBoxConduit = TheBoxConduitModule.register()
 
 @Module({
    imports: [
