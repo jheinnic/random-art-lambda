@@ -1,3 +1,4 @@
+// import { ScatterGatherTask } from "../../../messages/interface/ScatterGatherTask"
 import { Inject, Injectable } from "@nestjs/common"
 import { CID } from "multiformats"
 import { Canvas } from "canvas"
@@ -8,35 +9,31 @@ import fs from "fs"
 import type {
    IRegionMapRepository,
    IRegionMap,
-} from "../../plotting/interface/index.js"
-import { GenModelArtist } from "../../painting/artwork/components/GenModelArtist.js"
+} from "../../../plotting/interface/index.js"
+import { GenModelArtist } from "../../../painting/artwork/components/GenModelArtist.js"
 import {
    GenModel,
    newPicture,
-} from "../../painting/artwork/components/genjs6.js"
-import { GenJs6Model } from "../../painting/artwork/components/GenJs6Provider.js"
+} from "../../../painting/artwork/components/genjs6.js"
+import { GenJs6Model } from "../../../painting/artwork/components/GenJs6Provider.js"
 
 // SHELVED: Seeding extension system moved to attic/
-// import { SeedingModuleTypes } from "../../painting/seeding/di/Types.js"
-// import type { IPhraseSeed } from "../../painting/seeding/builtin/interface/index.js"
-// import { IGMSeedExtensionPoint } from "../../painting/seeding/interface/IGMSeedExtensionPoint.js"
-import { ProtobufPlottingModuleTypes } from "../../plotting/protobuf/di/Types.js"
-import { IpldPlottingModuleTypes } from "../../plotting/ipld/di/Types.js"
+// import { SeedingModuleTypes } from "../../../painting/seeding/di/Types.js"
+// import type { IPhraseSeed } from "../../../painting/seeding/builtin/interface/index.js"
+// import { IGMSeedExtensionPoint } from "../../../painting/seeding/interface/IGMSeedExtensionPoint.js"
+import { IpldPlottingModuleTypes } from "../../../plotting/ipld/di/Types.js"
+import { ProtobufPlottingModuleTypes } from "../../../plotting/protobuf/di/Types.js"
 
-import { PBufRegionMapFactory } from "../../plotting/protobuf/components/PBufRegionMapFactory.js"
-import { PBufRegionMap } from "../../plotting/protobuf/components/PBufRegionMap.js"
-import { CanvasPersister } from "../../painting/artwork/components/CanvasPersister.js"
-// import { RANDOM_ART_LOCAL_CALLS_CHANNEL } from "../di/Types._st"
-// import { IRxLocalCallChannel } from "../../channels/interface/IRxLocalCallChannel.js"
-// import { PartialPaintRequest } from "../../painting/messages/dto/PartialPaintRequest.js"
-// import { PartialPaintResult } from "../../painting/messages/dto/PartialPaintResult.js"
-import { QueuedPaintingTypes } from "../../painting/queue/di/Types.js"
-import { RandomArtFlowProducer } from "../../painting/queue/components/RandomArtFlowProducer.js"
-// import { PaintableSeed } from "../../painting/seeding/models/index.js"
+import { PBufRegionMapFactory } from "../../../plotting/protobuf/components/PBufRegionMapFactory.js"
+import { PBufRegionMap } from "../../../plotting/protobuf/components/PBufRegionMap.js"
+import { CanvasPersister } from "../../../painting/artwork/components/CanvasPersister.js"
+// import { RANDOM_ART_LOCAL_CALLS_CHANNEL } from "../../di/Types._st"
+// import { IRxLocalCallChannel } from "../../../channels/interface/IRxLocalCallChannel.js"
+import { QueuedPaintingTypes } from "../../../painting/queue/di/Types.js"
+import { RandomArtFlowProducer } from "../../../painting/queue/components/RandomArtFlowProducer.js"
+// import { PaintableSeed } from "../../../painting/seeding/models/index.js"
 // import { of } from "rxjs"  // SHELVED: was only used in useSeeder()
-// import { CIDUtil } from "../../painting/utility/CIDUtil.js"
-// import { StagedPaintRequest } from "../../painting/messages/dto/GatherPaintedPartsWorkerRequest.js"
-// import { StagedPaintResult } from "../../painting/messages/dto/GatherPaintedPartsResult.js"
+// import { ScatterGatherTaskImpl } from "../../../channels/components/ScatterGatherTaskImpl.js"
 
 interface Task {
    taskMessage: string
@@ -101,9 +98,10 @@ export class AppService {
    //       StagedPaintResult
    //    >({
    //       seedModel: {
-   //          seedType: ONE_PHRASE_SEED_MODEL_STRATEGY_STR,
+   //          seedType: TWO_PHRASE_SEED_MODEL_STRATEGY_STR,
    //          // phrase: "It went that way",
-   //          phrase: "You don't really want to mess",
+   //          prefix: "You don't really want to mess",
+   //          suffix: "You don't really want to mess",
    //          engineVersion: 1,
    //          regionMapRef: CIDUtil.parseCID(
    //             // "bafyreigktmlsvsl7t4nbpwcc7qb56vsfgynokrvlyadqcdl7ixibkaacpm",
@@ -125,56 +123,56 @@ export class AppService {
       setTimeout(() => {}, 60000 * 60 * 24 * 365 * 10)
    }
 
-   // public async dskds(): Promise<void> {
-   //    const { publicKey } = generateKeyPairSync("ec", {
-   //       namedCurve: "secp256k1", // Options
-   //       publicKeyEncoding: {
-   //          type: "spki",
-   //          format: "der",
-   //       },
-   //       privateKeyEncoding: {
-   //          type: "pkcs8",
-   //          format: "der",
-   //       },
-   //    })
-   //    // Convert public key to base64, then extract ASCII character slices
-   //    const keyAsBase64 = publicKey.toString("base64")
-   //    const prefixChars = keyAsBase64.slice(52, 68) // 16 printable ASCII chars
-   //    const suffixChars = keyAsBase64.slice(72, 90) // 18 printable ASCII chars
+   public async dskds(): Promise<void> {
+      const { publicKey } = generateKeyPairSync("ec", {
+         namedCurve: "secp256k1", // Options
+         publicKeyEncoding: {
+            type: "spki",
+            format: "der",
+         },
+         privateKeyEncoding: {
+            type: "pkcs8",
+            format: "der",
+         },
+      })
+      // Convert public key to base64, then extract ASCII character slices
+      const keyAsBase64 = publicKey.toString("base64")
+      const prefixChars = keyAsBase64.slice(52, 68) // 16 printable ASCII chars
+      const suffixChars = keyAsBase64.slice(72, 90) // 18 printable ASCII chars
 
-   //    // Encode those ASCII strings as UTF-8 bytes, then base64-encode for transport
-   //    const prefixBytes = Buffer.from(prefixChars, "utf8")
-   //    const suffixBytes = Buffer.from(suffixChars, "utf8")
+      // Encode those ASCII strings as UTF-8 bytes, then base64-encode for transport
+      const prefixBytes = Buffer.from(prefixChars, "utf8")
+      const suffixBytes = Buffer.from(suffixChars, "utf8")
 
-   //    const aJobSpec: ScatterGatherTask<
-   //       StagedPaintRequest,
-   //       PartialPaintRequest,
-   //       PartialPaintResult,
-   //       StagedPaintResult
-   //    > = ScatterGatherTaskImpl.wrap<
-   //       StagedPaintRequest,
-   //       PartialPaintRequest,
-   //       PartialPaintResult,
-   //       StagedPaintResult
-   //    >({
-   //       seedModel: {
-   //          prefix: prefixBytes.toString("base64"),
-   //          suffix: suffixBytes.toString("base64"),
-   //          engineVersion: 1,
-   //          regionMapRef: CIDUtil.parseCID(
-   //             "bafyreibtfvyutz3gs3xw7wuysvnpj2meaacvqg5lkzi3ylmx2liayktzt4",
-   //          ),
-   //       },
-   //       stageToPath:
-   //          "a/b/" +
-   //          prefixChars.replaceAll("/", "_").replaceAll("=", "") +
-   //          "-" +
-   //          suffixChars.replaceAll("/", "_").replaceAll("=", ""),
-   //       pixelWidth: 512,
-   //       pixelHeight: 512,
-   //    })
-   //    console.log(await this.flowProducer.launchIt(aJobSpec))
-   // }
+      // const aJobSpec: ScatterGatherTask<
+      //    StagedPaintRequest,
+      //    PartialPaintRequest,
+      //    PartialPaintResult,
+      //    StagedPaintResult
+      // > = ScatterGatherTaskImpl.wrap<
+      //    StagedPaintRequest,
+      //    PartialPaintRequest,
+      //    PartialPaintResult,
+      //    StagedPaintResult
+      // >({
+      //    seedModel: {
+      //       prefix: prefixBytes.toString("base64"),
+      //       suffix: suffixBytes.toString("base64"),
+      //       engineVersion: 1,
+      //       regionMapRef: CIDUtil.parseCID(
+      //          "bafyreibtfvyutz3gs3xw7wuysvnpj2meaacvqg5lkzi3ylmx2liayktzt4",
+      //       ),
+      //    },
+      //    stageToPath:
+      //       "a/b/" +
+      //       prefixChars.replaceAll("/", "_").replaceAll("=", "") +
+      //       "-" +
+      //       suffixChars.replaceAll("/", "_").replaceAll("=", ""),
+      //    pixelWidth: 512,
+      //    pixelHeight: 512,
+      // })
+      // console.log(await this.flowProducer.launchIt(aJobSpec))
+   }
 
    public async testRepo(cid: CID): Promise<IRegionMap | undefined> {
       if (!this.cidCache.has(cid)) {
@@ -209,7 +207,7 @@ export class AppService {
    }
 
    public async loadRepo(): Promise<void> {
-      const _voids = [
+      const kweje = [
          // "rdoc01",
          // "fdoc2",
          // "fdoc_big",
@@ -298,7 +296,7 @@ export class AppService {
 
    public getAWorkList(): Task[] {
       const workList: Array<{ phrase: string }> = JSON.parse(
-         fs.readFileSync("source5B.list").toString(),
+         fs.readFileSync("ticketManifest.json").toString(),
       )
       return workList.map((task: { phrase: string }): Task => {
          // Hash the phrase with SHA-256 to get deterministic 32 bytes
@@ -399,6 +397,6 @@ export class AppService {
          const sidecarFile = fileName.replace("png", "json")
          fs.writeFileSync(sidecarFile, taskMessage)
       }
-      console.log(await persister.finish())
+      await persister.finish()
    }
 }

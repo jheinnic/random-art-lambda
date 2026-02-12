@@ -13,12 +13,12 @@ export class AppController {
 
    @Get()
    @Render("index.hbs")
-   root() {
+   root(): { message: string } {
       return { message: "Hello world" }
    }
 
-   @Get()
-   paintAndDownload() {
-      StreamableFile
-   }
+   // @Get()
+   // paintAndDownload(): StreamableFile {
+   //    StreamableFile
+   // }
 }

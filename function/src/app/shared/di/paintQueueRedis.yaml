@@ -1,0 +1,4 @@
+redis:
+   host: "localhost"
+   port: 6379
+   jobDataSizeLimit: 8 * 1024 ^ 2
