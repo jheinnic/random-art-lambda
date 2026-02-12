@@ -1,0 +1,22 @@
+{
+   "projectId": "bagua-gallery-001",
+   "name": "Bagua Multi-Resolution Gallery",
+   "regionMapCatalog": {
+     "thumbnail": { "cid": "bafyreiexe6npphnaou2tz7jdbwtgh2wnfdbsnbti22smksport4sqr7bgu", "description": "240x240 preview" },
+     "detail": { "cid": "bafyreibtfvyutz3gs3xw7wuysvnpj2meaacvqg5lkzi3ylmx2liayktzt4", "description": "1024x1024 full size" },
+     "zoomed": { "cid": "bafyreihoosxzmftsiwnpe7volm25gylaxssl63h2g7flpstvjja76f5ppq", "description": "Zoomed to center region" }
+   },
+   "permutationSpecs": [
+      {
+         "expandType": "AllPairs",
+         "regionMapNames": ["detail"],
+         "sourceTrigrams": ["pominate", "quidonic", "ganular", "crashop", "luthian"],
+         "includeIdentity": false
+      }, {
+         "expandType": "PrefixSuffix",
+         "regionMapNames": ["zoomed", "thumbnail"],
+         "prefixTrigrams": ["pominate", "quidonic", "luthian"],
+	 "suffixTrigrams": [ "xenolog", "ganular", "crashop"]
+      }
+   ]
+ }
