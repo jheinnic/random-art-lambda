@@ -1,0 +1,8 @@
+export const PAINT_TASK_MESSAGE_EXTENSION_STRING = "PaintTaskMessages" as const
+export type PAINT_TASK_MESSAGE_EXTENSION =
+   typeof PAINT_TASK_MESSAGE_EXTENSION_STRING
+
+export const CID_MAP_RULE_STRING = "forCid"
+export type CID_MAP_RULE = typeof CID_MAP_RULE_STRING
+export const UINT32ARRAY_MAP_RULE_STRING = "forUint32Array"
+export type UINT32ARRAY_MAP_RULE = typeof UINT32ARRAY_MAP_RULE_STRING

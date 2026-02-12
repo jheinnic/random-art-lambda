@@ -1,0 +1,95 @@
+import Membrane, { ObjectGraphHandler } from "es-membrane"
+
+export class ToyThing {
+   private readonly hiveMembrane: any
+   private readonly onlineHandler: ObjectGraphHandler
+   private readonly marshalledHandler: ObjectGraphHandler
+   private readonly serializationHandler: ObjectGraphHandler
+
+   constructor() {
+      // Establish the Membrane.
+      this.hiveMembrane = new Membrane({})
+
+      // Establish "online" ObjectGraphHandler.
+      this.onlineHandler = this.hiveMembrane.getHandlerByName("online", {
+         mustCreate: true,
+      })
+
+      // Establish "marshalled" ObjectGraphHandler.
+      this.marshalledHandler = this.hiveMembrane.getHandlerByName(
+         "marshalled",
+         {
+            mustCreate: true,
+         },
+      )
+
+      this.serializationHandler =
+         this.hiveMembrane.modifyRules.createChainHandler(
+            this.marshalledHandler,
+         )
+
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      const hive = this
+      this.serializationHandler.get = function getHandler(
+         target: any,
+         prop: string,
+         receiver: unknown,
+      ) {
+         // Trap the .toJSON() method call
+         if (prop === "toJSON") {
+            // 1. Compile-Time Dispatch (Informed by T's type):
+            const realTarget = hive.unwrap(receiver)
+            const ruleName = findRuleForObject(realTarget) // Logic derived from RuleNameIfMappedBy
+            console.log("Rule for", realTarget.constructor.name, "is", ruleName)
+            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+            if (ruleName) {
+               const handler = HANDLER_REGISTRY[ruleName]
+               return () => {
+                  // 2. Handler Dispatch (Prune the graph):
+                  const pojo = handler.transform(realTarget)
+
+                  // 3. Store Deserialization Metadata:
+                  pojo[".wra.net.rule"] = ruleName
+
+                  // target POJO is returned to JSON.stringify, terminating traversal here.
+                  return pojo
+               }
+            }
+
+            // 2. NO Rule Found: Return a function that performs structural traversal
+            return () => receiver
+         }
+
+         // Default behavior for other properties
+         return this.nextHandler.get(target, prop, receiver)
+      }
+
+      this.marshalledHandler.addProxyListener((callback: any) => {
+         // Conceptual Proxy Logic for Serialization
+         callback.handler = this.serializationHandler
+         callback.rebuildProxy()
+      })
+   }
+
+   public adapt(onlineDocument: any): any {
+      // Establish "online" view of an object.
+      // Get a "marshalled" view of the same object.
+      var marshalledDocument = this.hiveMembrane.convertArgumentToProxy(
+         this.onlineHandler,
+         this.serializationHandler,
+         onlineDocument,
+      )
+
+      // marshalledDocument is a Proxy whose target is onlineDocument, and whose handler is marshalledHandler.
+      // Return "top-level" document proxy.
+      return marshalledDocument
+   }
+
+   public unwrap(marshalledDocument: any): any {
+      return this.hiveMembrane.convertArgumentToProxy(
+         this.serializationHandler,
+         this.onlineHandler,
+         marshalledDocument,
+      )
+   }
+}

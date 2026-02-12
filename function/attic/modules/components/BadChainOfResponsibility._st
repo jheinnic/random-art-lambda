@@ -1,0 +1,248 @@
+import { DynamicModule, Injectable, OnModuleInit } from "@nestjs/common"
+import { Nominal } from "../messages/index.js"
+import { AssertEqual } from "zod/v4/core/util"
+
+const ChainArtifactType: unique symbol = Symbol("ChainArtifactName")
+type ChainArtifactName<Names extends string = string> = Nominal<
+   Names,
+   typeof ChainArtifactType
+>
+
+type ChainArtifact<
+   Contract extends (...args: any[]) => any,
+   Names extends string,
+   ElementName extends ChainArtifactName<Names> = ChainArtifactName<Names>,
+> = {
+   [Name in ElementName]: Contract
+}
+
+type ChainArtifactMap<
+   Contract extends (...args: any[]) => any,
+   Names extends string = string,
+   ActualNames extends ChainArtifactName<Names> = ChainArtifactName<Names>,
+> = {
+   [Name in ActualNames]: ChainArtifact<Contract, Names, Name>
+}
+
+type ResponsibilityChain<
+   Contract extends (...args: any[]) => any,
+   Names extends string = string,
+   ActualNames extends ChainArtifactName<Names> = ChainArtifactName<Names>,
+> = (...args: Parameters<Contract>) => {
+   [Name in ActualNames]: ReturnType<Contract>
+}
+
+type PartialNameOrder<Names extends string = string> =
+   AssertEqual<Names, never> extends false
+      ? _PartialNameOrder<Names, Names> | []
+      : []
+type _PartialNameOrder<
+   Names extends string,
+   Rest extends string,
+> = Names extends Names
+   ? AssertEqual<Exclude<Rest, Names>, never> extends true
+      ? [Names]
+      :
+           | [Names]
+           | [
+                Names,
+                ..._PartialNameOrder<
+                   Exclude<Rest, Names>,
+                   Exclude<Rest, Names>
+                >,
+             ]
+   : never
+
+// type TotalNameOrder<Names extends string = string> = _TotalNameOrder<
+//    Names,
+//    Names
+// >
+// type _TotalNameOrder<
+//    Names extends string,
+//    Rest extends string,
+// > = Names extends Names
+//    ? Exclude<Rest, Names> extends never
+//       ? [Names]
+//       : [Names, ..._TotalNameOrder<Exclude<Rest, Names>, Exclude<Rest, Names>>]
+//    : []
+
+// type MaxNames =
+//    | 0
+//    | 1
+//    | 2
+//    | 3
+//    | 4
+//    | 5
+//    | 6
+//    | 7
+//    | 8
+//    | 9
+//    | 10
+//    | 11
+//    | 12
+//    | 13
+//    | 14
+//    | 15
+//    | 16
+// type NameCount<Names extends string> =
+//    AssertEqual<Names, never> extends false ? _NameCount<Names, Names, 0> : 0
+// type PlusOne<Count extends MaxNames> = [
+//    1,
+//    2,
+//    3,
+//    4,
+//    5,
+//    6,
+//    7,
+//    8,
+//    9,
+//    10,
+//    11,
+//    12,
+//    13,
+//    14,
+//    15,
+//    16,
+//    never,
+// ][Count]
+// type _NameCount<
+//    Names extends string,
+//    Rest extends string,
+//    Count extends MaxNames,
+// > = Names extends Names
+//    ? AssertEqual<Exclude<Rest, Names>, never> extends true
+//       ? PlusOne<Count>
+//       : _NameCount<Exclude<Rest, Names>, Exclude<Rest, Names>, PlusOne<Count>>
+//    : never
+
+@Injectable()
+export class ChainOfResponsibility<
+   Contract extends (...args: any[]) => any,
+   Names extends string = string,
+> implements OnModuleInit
+{
+   private readonly promise: Promise<ResponsibilityChain<Contract, Names>>
+
+   private order: undefined | PartialNameOrder<ChainArtifactName<Names>> = []
+
+   private elements: undefined | ChainArtifactMap<Contract, Names, any> = {}
+
+   private resolve:
+      | undefined
+      | ((artifact: ResponsibilityChain<Contract, Names>) => void)
+
+   private postModuleInit: boolean = false
+
+   constructor() {
+      let resolveFn:
+         | undefined
+         | ((artifact: ResponsibilityChain<Contract, Names>) => void)
+      this.promise = new Promise(
+         (
+            resolve: (artifact: ResponsibilityChain<Contract, Names>) => void,
+            _reject: (error: any) => void,
+         ): void => {
+            resolveFn = resolve
+         },
+      )
+      this.resolve = resolveFn
+   }
+
+   static extendDynamicModule(
+      module: DynamicModule,
+      asProviderToken: symbol | string,
+      asSupplierToken: symbol | string,
+   ): DynamicModule {
+      return {
+         ...module,
+         providers: [
+            ...(module.providers ?? []),
+            {
+               provide: asSupplierToken,
+               useClass: ChainOfResponsibility,
+            },
+            {
+               provide: asProviderToken,
+               useExisting: asSupplierToken,
+            },
+         ],
+         exports: [
+            ...(module.exports ?? []),
+            {
+               provide: asSupplierToken,
+               useClass: ChainOfResponsibility,
+            },
+         ],
+      }
+   }
+
+   async provide(): Promise<ResponsibilityChain<Contract, Names>> {
+      if (!this.postModuleInit) {
+         throw new Error(
+            "Chains of Responsibility are only available during application bootstrap, after module initialization.",
+         )
+      }
+      if (this.order != null && this.elements != null && this.resolve != null) {
+         this.resolveProvider()
+      }
+      return await this.promise
+   }
+
+   private resolveProvider(): void {
+      if (this.order == null || this.elements == null || this.resolve == null) {
+         throw new Error("Provider may only be resolved one time")
+      }
+
+      const order: Array<ChainArtifactName<Names>> = this.order as Array<
+         ChainArtifactName<Names>
+      >
+      const elements: ChainArtifactMap<Contract, Names> = this.elements
+
+      const chainFn: ResponsibilityChain<Contract, Names> = (
+         ...args: Parameters<Contract>
+      ): {
+         [Name in ChainArtifactName<Names>]: ReturnType<Contract>
+      } => {
+         return Object.fromEntries(
+            order.map(
+               (
+                  name: ChainArtifactName<Names>,
+               ): [ChainArtifactName<string>, ReturnType<Contract>] => {
+                  return [name, elements[name][name](...args)]
+               },
+            ),
+         ) as {
+            [Name in ChainArtifactName<Names>]: ReturnType<Contract>
+         }
+      }
+      this.resolve(chainFn)
+
+      this.order = undefined
+      this.elements = undefined
+      this.resolve = undefined
+   }
+
+   satisfy<Name extends ChainArtifactName<Names>>(
+      name: Name,
+      artifact: ChainArtifact<Contract, Names, Name>,
+   ): object {
+      if (this.order == null || this.elements == null || this.resolve == null) {
+         throw new Error("Chain of responsibility has already been finalized")
+      }
+      const order: Array<ChainArtifactName<Names>> = this.order as Array<
+         ChainArtifactName<Names>
+      >
+      if (order.includes(name)) {
+         throw new Error(
+            `${name} is already present in chain of responsibility`,
+         )
+      }
+      order.push(name)
+      this.elements[name] = artifact
+      return {}
+   }
+
+   onModuleInit(): void {
+      this.postModuleInit = true
+   }
+}

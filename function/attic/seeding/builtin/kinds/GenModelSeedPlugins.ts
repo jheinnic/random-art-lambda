@@ -1,0 +1,24 @@
+import "../../kinds/GenModelSeedHooks.js"
+import { HexSeedExtension } from "../components/HexSeedExtension.js"
+import { PhraseSeedExtension } from "../components/PhraseSeedExtension.js"
+
+export {}
+
+declare module "../../kinds/GenModelSeedHooks.js" {
+   interface HooksForGMSeedExtensionClass {
+      readonly HexSeed: typeof HexSeedExtension
+      readonly PhraseSeed: typeof PhraseSeedExtension
+   }
+
+   // interface ToGMSeedExtModelKind {
+   //    readonly HexSeed: IHexSeed
+   //    readonly PhraseSeed: IPhraseSeed
+   // }
+}
+
+// declare module "../../kinds/SeedModelKind.js" {
+//    interface GenModelSeedURItoKind {
+//       HexSeed: IHexSeed
+//       PhraseSeed: IPhraseSeed
+//    }
+// }

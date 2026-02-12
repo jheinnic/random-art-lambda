@@ -1,0 +1,15 @@
+{
+   "extends": "../../tsconfig.json",
+   "compilerOptions": {
+      "outDir": "../dist",
+      "baseUrl": ".",
+      "composite": true,
+      "declaration": true,
+      "declarationMap": true,
+      "paths": {
+         "@jchptf/tupletypes": ["."]
+      }
+   },
+   "references": [],
+   "include": ["./**/*.ts"]
+}
