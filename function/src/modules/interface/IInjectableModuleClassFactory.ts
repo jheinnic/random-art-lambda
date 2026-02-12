@@ -1,29 +1,30 @@
 import {
-   InjectionToken,
    Type,
    DynamicModule,
    Provider,
    ForwardReference,
+   ClassProvider,
 } from "@nestjs/common"
 import { DefaultDirector } from "./IDynamicModuleBuilder.js"
 
 export interface FunctionInjectTokenArgument {
    token: string | symbol | Type
+   module?: Type | DynamicModule | Promise<DynamicModule> | ForwardReference
    optional?: boolean
 }
 
-export interface FunctionInjectProviderArgument {
-   provider: Provider
-   optional?: boolean
-}
+// export interface FunctionInjectProviderArgument {
+//    provider: Provider
+//    optional?: boolean
+// }
 
 export type FunctionInjectArgumentItem =
    | FunctionInjectTokenArgument
-   | FunctionInjectProviderArgument
+   // | FunctionInjectProviderArgument
    | string
    | symbol
    | Type
-export type FunctionInjectArgument = FunctionInjectArgumentItem[]
+export type FunctionInjectArgument = FunctionInjectTokenArgument[]
 
 export interface UseTokenForValueInjection {
    use: "token"
@@ -38,44 +39,55 @@ export interface UseTokenForFactoryInjection {
    token: string | symbol | Type
    module?: Type | DynamicModule | Promise<DynamicModule> | ForwardReference
    method: string
+   inject?: FunctionInjectArgument
 }
 
-export interface UseProviderForValueInjection {
-   use: "provider"
+export interface UseClassForValueInjection {
+   use: "class"
    for: "value"
-   provider: Provider
-   module?: Type | DynamicModule | Promise<DynamicModule> | ForwardReference
+   provider: Type | ClassProvider
 }
 
-export interface UseProviderForFactoryInjection {
-   use: "provider"
+export interface UseClassForFactoryInjection<T extends object> {
+   use: "class"
    for: "factory"
-   provider: Provider
-   module?: Type | DynamicModule | Promise<DynamicModule> | ForwardReference
-   method: string
+   provider: Type<T> | ClassProvider<T>
+   method: {
+      [K in keyof T]: T[K] extends (...args: any[]) => any ? K : never
+   }[keyof T]
+   inject?: FunctionInjectArgument
 }
 
 export interface UseFunctionInjection {
    use: "function"
    value: (arg: any[]) => {}
-   modules?: Array<
-      Type | DynamicModule | Promise<DynamicModule> | ForwardReference
-   >
    inject?: FunctionInjectArgument
 }
 
-export interface UseValueInjection {
+export interface UseValueInjection<T extends object> {
    use: "value"
-   value: any
+   value: T
 }
 
-export type ModuleDependenciesOption =
+export interface UseStringInjection {
+   use: "string"
+   value: string
+}
+
+export interface UseNumberInjection {
+   use: "number"
+   value: number
+}
+
+export type ModuleDependenciesOption<T extends object = any> =
    | UseTokenForValueInjection
    | UseTokenForFactoryInjection
-   | UseProviderForValueInjection
-   | UseProviderForFactoryInjection
+   | UseClassForValueInjection
+   | UseClassForFactoryInjection<T>
    | UseFunctionInjection
-   | UseValueInjection
+   | UseValueInjection<T>
+   | UseStringInjection
+   | UseNumberInjection
 
 /**
  * Conditional type that compares a proposed module dependencies type to the Config object it
@@ -109,19 +121,18 @@ export type FullModuleDirectorFactory<
    in ImportTokens extends ModuleDependencies<InternalConfig, ImportTokens>,
 > = (
    config: InternalConfig,
-   injection: InjectionConfig<NoInfer<ImportTokens>>,
+   injection: InjectionConfig<ImportTokens>,
 ) => DefaultDirector
 
-export type BasicModuleDirectorFactory<
-   in InternalConfig extends object,
-   in ImportTokens extends ModuleDependencies<InternalConfig, ImportTokens>,
-> = (config: InternalConfig) => DefaultDirector
+export type BasicModuleDirectorFactory<in InternalConfig extends object> = (
+   config: InternalConfig,
+) => DefaultDirector
 
 export type ModuleDirectorFactory<
    InternalConfig extends object,
    ImportTokens extends ModuleDependencies<InternalConfig, ImportTokens>,
 > =
-   | BasicModuleDirectorFactory<InternalConfig, ImportTokens>
+   | BasicModuleDirectorFactory<InternalConfig>
    | FullModuleDirectorFactory<InternalConfig, ImportTokens>
 
 /**
