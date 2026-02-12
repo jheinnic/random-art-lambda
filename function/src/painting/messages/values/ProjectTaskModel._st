@@ -1,0 +1,60 @@
+import { Canvas } from "canvas"
+import {
+   CIDString,
+   PaintGeometry,
+   PrefixString,
+   SuffixString,
+} from "../../../messages/index.js"
+import { IRegionMap } from "../../../plotting/index.js"
+import { GenModelSeed } from "./GenModelSeed.js"
+import { PaintTaskId } from "./PaintTaskId.js"
+import { PlotDataCIDRef } from "./PlotDataRef.js"
+import { PaintResolution } from "./PaintResolution.js"
+import { SpatialBoundary } from "./SpatialBoundary.js"
+
+/**
+ * Task model for project-based painting tasks.
+ * Contains all the context needed to paint a single task within a project.
+ */
+export class ProjectTaskModel {
+   public canvas?: Canvas
+
+   constructor(
+      public readonly taskId: PaintTaskId,
+      public readonly projectTaskIndex: number,
+      private readonly genModelSeed: GenModelSeed,
+      public readonly regionMap: IRegionMap,
+      private readonly plotDataRef: PlotDataCIDRef,
+      private readonly paintGeometry: PaintGeometry,
+   ) {}
+
+   get seedPrefix(): PrefixString {
+      return this.genModelSeed.seedPrefix
+   }
+
+   get seedSuffix(): SuffixString {
+      return this.genModelSeed.seedSuffix
+   }
+
+   get spatialBoundary(): SpatialBoundary {
+      return this.paintGeometry.boundary
+   }
+
+   get paintResolution(): PaintResolution {
+      return this.paintGeometry.imageSize
+   }
+
+   get regionMapName(): string {
+      return this.plotDataRef.regionMapName ?? this.plotDataRef.regionMapCID
+   }
+
+   get regionMapCID(): CIDString {
+      return this.plotDataRef.regionMapCID
+   }
+}
+
+export function isProjectTask(task: unknown): task is ProjectTaskModel {
+   return (
+      task !== null && typeof task === "object" && "projectTaskIndex" in task
+   )
+}

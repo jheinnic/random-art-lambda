@@ -1,0 +1,29 @@
+export interface GenModelConstants {
+   minFoci: number
+   maxFoci: number
+   minPallette: number
+   maxPallette: number
+   scalars: number
+   minN: number
+   maxN: number
+}
+
+export const defaults = {
+   minFoci: 5,
+   maxFoci: 20,
+   minPallette: 2,
+   maxPallette: 10,
+   scalars: 10,
+   minN: 120,
+   maxN: 200,
+}
+
+export const twiddled = {
+   minFoci: 4,
+   maxFoci: 25,
+   minPallette: 3,
+   maxPallette: 12,
+   scalars: 12,
+   minN: 110,
+   maxN: 185,
+}

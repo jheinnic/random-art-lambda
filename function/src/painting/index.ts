@@ -1,1 +1,1 @@
-export * from "./interface/index.js"
+export * from "./artwork/interface/index.js"
