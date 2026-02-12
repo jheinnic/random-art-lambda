@@ -1,6 +1,3 @@
-import { If, IsType } from "simplytyped"
-import { DefaultDirector } from "./IDynamicModuleBuilder.js"
-
 export type Director<T> = (builder: T) => void
 export type Identity<in out T> = (...args: [T]) => T
 

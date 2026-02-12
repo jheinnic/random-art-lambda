@@ -1,5 +1,6 @@
 import { DynamicModule, ForwardReference, Provider, Type } from "@nestjs/common"
 import { Director, Identity } from "./Utility.js"
+import { ModuleDependenciesOption } from "./IInjectableModuleClassFactory.js"
 
 export interface IBaseDynamicModuleBuilder<
    B extends IBaseDynamicModuleBuilder<B>,
@@ -17,6 +18,11 @@ export interface IBaseDynamicModuleBuilder<
    ) => B
    defineProviders: (...providers: Array<Type<any> | Provider<unknown>>) => B
    exportProviders: (...provider: Array<Type<any> | Provider<unknown>>) => B
+   importDependencies: (
+      ...dependencies: Array<
+         [string | symbol | Type<any>, ModuleDependenciesOption]
+      >
+   ) => B
    makeGlobal: () => B
 }
 

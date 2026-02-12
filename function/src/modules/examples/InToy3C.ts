@@ -5,7 +5,7 @@
 
 import { Module, Injectable, Inject, DynamicModule } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
-import { SimpleDynamicModule, IDynamicModuleBuilder } from "../index.js"
+import { simpleDynamicModule, IDynamicModuleBuilder } from "../index.js"
 
 const theBoxOne: unique symbol = Symbol("TheOneBox")
 const anotherBoxOne: unique symbol = Symbol("AnotherOneBox")
@@ -131,29 +131,40 @@ export class ModuleOne {
    }
 }
 
-const innerConduitModule: DynamicModule = SimpleDynamicModule.registerModule(
+@Module({})
+export class InnerConduitModule extends simpleDynamicModule(
    "InnerConduitModule",
-   (builder: IDynamicModuleBuilder): void => {
-      builder.exportProviders(
-         {
-            provide: theBox,
-            useFactory: () => {
-               console.log("Created the 100 box")
-               return new Box(100)
+) {
+   public static register(): DynamicModule {
+      return this.registerModule((builder: IDynamicModuleBuilder): void => {
+         builder.exportProviders(
+            {
+               provide: theBox,
+               useFactory: () => {
+                  console.log("Created the 100 box")
+                  return new Box(100)
+               },
             },
-         },
-         {
-            provide: anotherBox,
-            useFactory: () => {
-               console.log("Created the 150 box")
-               return new Box(150)
+            {
+               provide: anotherBox,
+               useFactory: () => {
+                  console.log("Created the 150 box")
+                  return new Box(150)
+               },
             },
-         },
-      )
-   },
-)
-const conduitModule = SimpleDynamicModule.registerModule(
+         )
+      })
+   }
+}
+
+const innerConduitModule: DynamicModule = InnerConduitModule.register()
+
+@Module({})
+export class OuterConduitModule extends simpleDynamicModule(
    "OuterConduitModule",
+) {}
+
+const conduitModule = OuterConduitModule.registerModule(
    (builder: IDynamicModuleBuilder): void => {
       builder
          .exportModules(
