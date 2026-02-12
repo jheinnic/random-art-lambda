@@ -2,18 +2,17 @@ import { ConfigurableModuleBuilder, Module } from "@nestjs/common"
 
 // import { PlottingModuleTypes } from "../../di/PlottingModuleTypes.js"
 import { ProtobufPlottingModuleTypes } from "./Types.js"
-import { PBufSourceConfiguration } from "../components/PBufSourceConfiguration.js"
+// import { PBufSourceConfiguration } from "../components/PBufSourceConfiguration._st"
 import { PBufRegionMapFactory } from "../components/PBufRegionMapFactory.js"
-import { PBufRegionMapRepository } from "../components/PBufRegionMapRepository.js"
-import { ProtobufPlottingModuleConfiguration } from "./Configuration.js"
+// import { PBufRegionMapRepository } from "../components/PBufRegionMapRepository._st"
+// import { ProtobufPlottingModuleConfiguration } from "./Configuration.js"
 import * as Providers from "./Providers.js"
 
-const dynamicHost =
-   new ConfigurableModuleBuilder<ProtobufPlottingModuleConfiguration>({
-      moduleName: "ProtobufPlottingModule",
-      optionsInjectionToken: ProtobufPlottingModuleTypes.ModuleConfiguration,
-      alwaysTransient: false,
-   }).build()
+const dynamicHost = new ConfigurableModuleBuilder<{}>({
+   moduleName: "ProtobufPlottingModule",
+   optionsInjectionToken: ProtobufPlottingModuleTypes.ModuleConfiguration,
+   alwaysTransient: false,
+}).build()
 
 export type ProtobufPlottingModuleAsyncOptions =
    typeof dynamicHost.ASYNC_OPTIONS_TYPE

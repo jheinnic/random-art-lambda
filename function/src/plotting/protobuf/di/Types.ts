@@ -1,18 +1,18 @@
 const PROTOBUF_REGION_MAP_FACTORY: unique symbol = Symbol(
    "Protobuf::Plotting::RegionMapFactory",
 )
-const PROTOBUF_REGION_MAP_REPOSITORY: unique symbol = Symbol(
-   "Protobuf::Plotting::RegionMapRepository",
-)
-const PROTOBUF_SOURCE_CONFIGURATION: unique symbol = Symbol(
-   "Protobuf::ISourceConfiguration",
-)
-const ENROLL_SOURCE_FILE_CALL_CHANNEL: unique symbol = Symbol(
-   "Protobuf::Plotting::Chan<EnrollSourceFileCall>",
-)
-const ENROLL_SOURCE_FILE_REPLY_CHANNEL: unique symbol = Symbol(
-   "Protobuf::Plotting::Chan<EnrollSourceFileReply>",
-)
+// const PROTOBUF_REGION_MAP_REPOSITORY: unique symbol = Symbol(
+//    "Protobuf::Plotting::RegionMapRepository",
+// )
+// const PROTOBUF_SOURCE_CONFIGURATION: unique symbol = Symbol(
+//    "Protobuf::ISourceConfiguration",
+// )
+// const ENROLL_SOURCE_FILE_CALL_CHANNEL: unique symbol = Symbol(
+//    "Protobuf::Plotting::Chan<EnrollSourceFileCall>",
+// )
+// const ENROLL_SOURCE_FILE_REPLY_CHANNEL: unique symbol = Symbol(
+//    "Protobuf::Plotting::Chan<EnrollSourceFileReply>",
+// )
 const PROTOBUF_PLOTTING_MODULE_CONFIGURATION: unique symbol = Symbol(
    "Protobuf::Plotting::ModuleConfiguration",
 )
@@ -33,9 +33,9 @@ const PROTOBUF_PLOTTING_MODULE_CONFIGURATION: unique symbol = Symbol(
  */
 export const ProtobufPlottingModuleTypes = {
    ProtobufRegionMapFactory: PROTOBUF_REGION_MAP_FACTORY,
-   ProtobufRegionMapRepository: PROTOBUF_REGION_MAP_REPOSITORY,
-   ProtobufSourceConfiguration: PROTOBUF_SOURCE_CONFIGURATION,
-   EnrollSourceFileCallChannel: ENROLL_SOURCE_FILE_CALL_CHANNEL,
-   EnrollSourceFileReplyChannel: ENROLL_SOURCE_FILE_REPLY_CHANNEL,
+   // ProtobufRegionMapRepository: PROTOBUF_REGION_MAP_REPOSITORY,
+   // ProtobufSourceConfiguration: PROTOBUF_SOURCE_CONFIGURATION,
+   // EnrollSourceFileCallChannel: ENROLL_SOURCE_FILE_CALL_CHANNEL,
+   // EnrollSourceFileReplyChannel: ENROLL_SOURCE_FILE_REPLY_CHANNEL,
    ModuleConfiguration: PROTOBUF_PLOTTING_MODULE_CONFIGURATION,
 } as const
