@@ -109,113 +109,128 @@ export class InjectableModuleClassFactory<
                ],
             )
 
-            Object.entries<ModuleDependenciesOption>(injectConfig).forEach(
-               ([tokenConfigKey, diConfig]): void => {
-                  const provideToToken: string | symbol | Type =
-                     importTokens[tokenConfigKey as keyof ImportTokens]
-                  switch (diConfig.use) {
-                     case "token": {
-                        if (diConfig.module !== undefined) {
-                           builder.importModules(diConfig.module)
-                        }
-                        const consumeFromToken = diConfig.token
-                        switch (diConfig.for) {
-                           case "factory": {
-                              builder.exportProviders({
-                                 provide: provideToToken,
-                                 useFactory: (x) => {
-                                    return x[diConfig.method]()
-                                 },
-                                 inject: [consumeFromToken],
-                              })
-                              break
-                           }
-                           case "value": {
-                              builder.exportProviders({
-                                 provide: provideToToken,
-                                 useExisting: consumeFromToken,
-                              })
-                              break
-                           }
-                        }
-                        break
-                     }
-                     case "provider": {
-                        if (diConfig.module !== undefined) {
-                           builder.importModules(diConfig.module)
-                        }
-                        builder.exportProviders(diConfig.provider)
-                        switch (diConfig.for) {
-                           case "factory": {
-                              builder.exportProviders({
-                                 provide: provideToToken,
-                                 useFactory: (x) => x[diConfig.method](),
-                                 inject: [
-                                    typeof diConfig.provider === "function"
-                                       ? diConfig.provider
-                                       : diConfig.provider.provide,
-                                 ],
-                              })
-                              break
-                           }
-                           case "value": {
-                              builder.exportProviders({
-                                 provide: provideToToken,
-                                 useExisting:
-                                    typeof diConfig.provider === "function"
-                                       ? diConfig.provider
-                                       : diConfig.provider.provide,
-                              })
-                              break
-                           }
-                        }
-                        break
-                     }
-                     case "function": {
-                        diConfig.modules?.forEach(
-                           (
-                              x:
-                                 | Type
-                                 | DynamicModule
-                                 | Promise<DynamicModule>
-                                 | ForwardReference,
-                           ) => {
-                              builder.importModules(x)
-                           },
-                        )
-                        builder.exportProviders({
-                           provide: provideToToken,
-                           useFactory: diConfig.value,
-                           inject: diConfig.inject?.map((x: any): any => {
-                              if (x.provider !== undefined) {
-                                 builder.exportProviders(x.provider)
-                                 return {
-                                    token:
-                                       typeof x.provider === "function"
-                                          ? x.provider
-                                          : x.provider.provide,
-                                    optional:
-                                       x.optional !== undefined
-                                          ? x.optional
-                                          : false,
-                                 }
-                              } else {
-                                 return x
-                              }
-                           }),
-                        })
-                        break
-                     }
-                     case "value": {
-                        builder.exportProviders({
-                           provide: provideToToken,
-                           useValue: diConfig.value,
-                        })
-                        break
-                     }
-                  }
-               },
+            builder.importDependencies(
+               ...Object.entries<ModuleDependenciesOption>(injectConfig).map(
+                  ([tokenConfigKey, diConfig]: [
+                     string,
+                     ModuleDependenciesOption,
+                  ]): [string | symbol | Type, ModuleDependenciesOption] => {
+                     const provideToToken: string | symbol | Type =
+                        importTokens[tokenConfigKey as keyof ImportTokens]
+                     return [provideToToken, diConfig]
+                  },
+               ),
             )
+            //       switch (diConfig.use) {
+            //          case "token": {
+            //             if (diConfig.module !== undefined) {
+            //                builder.importModules(diConfig.module)
+            //             }
+            //             const consumeFromToken = diConfig.token
+            //             switch (diConfig.for) {
+            //                case "factory": {
+            //                   builder.exportProviders({
+            //                      provide: provideToToken,
+            //                      useFactory: (x) => {
+            //                         return x[diConfig.method]()
+            //                      },
+            //                      inject: [consumeFromToken],
+            //                   })
+            //                   break
+            //                }
+            //                case "value": {
+            //                   builder.exportProviders({
+            //                      provide: provideToToken,
+            //                      useExisting: consumeFromToken,
+            //                   })
+            //                   break
+            //                }
+            //             }
+            //             break
+            //          }
+            //          case "provider": {
+            //             if (diConfig.module !== undefined) {
+            //                builder.importModules(diConfig.module)
+            //             }
+            //             builder.exportProviders(diConfig.provider)
+            //             switch (diConfig.for) {
+            //                case "factory": {
+            //                   builder.exportProviders({
+            //                      provide: provideToToken,
+            //                      useFactory: (x) => x[diConfig.method](),
+            //                      inject: [
+            //                         typeof diConfig.provider === "function"
+            //                            ? diConfig.provider
+            //                            : diConfig.provider.provide,
+            //                      ],
+            //                   })
+            //                   break
+            //                }
+            //                case "value": {
+            //                   builder.exportProviders({
+            //                      provide: provideToToken,
+            //                      useExisting:
+            //                         typeof diConfig.provider === "function"
+            //                            ? diConfig.provider
+            //                            : diConfig.provider.provide,
+            //                   })
+            //                   break
+            //                }
+            //             }
+            //             break
+            //          }
+            //          case "function": {
+            //             diConfig.modules?.forEach(
+            //                (
+            //                   x:
+            //                      | Type
+            //                      | DynamicModule
+            //                      | Promise<DynamicModule>
+            //                      | ForwardReference,
+            //                ) => {
+            //                   builder.importModules(x)
+            //                },
+            //             )
+            //             builder.exportProviders({
+            //                provide: provideToToken,
+            //                useFactory: diConfig.value,
+            //                inject: diConfig.inject?.map((x: any): any => {
+            //                   if (x.provider !== undefined) {
+            //                      builder.exportProviders(x.provider)
+            //                      return {
+            //                         token:
+            //                            typeof x.provider === "function"
+            //                               ? x.provider
+            //                               : x.provider.provide,
+            //                         optional:
+            //                            x.optional !== undefined
+            //                               ? x.optional
+            //                               : false,
+            //                      }
+            //                   } else {
+            //                      return x
+            //                   }
+            //                }),
+            //             })
+            //             break
+            //          }
+            //          case "value": {
+            //             builder.exportProviders({
+            //                provide: provideToToken,
+            //                useValue: diConfig.value,
+            //             })
+            //             break
+            //          }
+            //          default: {
+            //             // TODO: Replace this with an exhaustiveness check!
+            //             builder.exportProviders({
+            //                provide: provideToToken,
+            //                useValue: diConfig,
+            //             })
+            //          }
+            //       }
+            //    },
+            // )
 
             const director: DefaultDirector = moduleDefinition(
                internalConfig,
