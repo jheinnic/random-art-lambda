@@ -10,7 +10,7 @@
       "build": "tsc -p tsconfig.json; npm run copyJs",
       "clean": "rm -rf build",
       "cleanBuild": "npm run clean && npm run build",
-      "copyJs": "cp src/painting/artwork/components/genjs6.* dist/painting/artwork/components/ && cp src/plotting/protobuf/components/plot_mapping_pb* dist/plotting/protobuf/components/ && cp -r src/painting/artwork/components/randomart dist/painting/artwork/components/randomart && cp src/app/shared/*yaml dist/app/shared",
+      "copyJs": "cp src/painting/artwork/components/genjs6.* dist/painting/artwork/components/ && cp src/plotting/protobuf/components/plot_mapping_pb* dist/plotting/protobuf/components/ && cp -r src/painting/artwork/components/randomart dist/painting/artwork/components/randomart && cp src/app/shared/di/*yaml dist/app/shared/di",
       "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
       "runCli": "node -r tsconfig-paths/register ./dist/cli/main.js plot",
       "start": "nest start",
