@@ -1,8 +1,11 @@
+import NumberPrompt from "inquirer/lib/prompts/number.js"
 import {
    IRegionMap,
    IRegionMapBuilder,
    IRegionPlotter,
 } from "../interface/index.js"
+import { async } from "rxjs"
+import { number } from "zod"
 
 // import { TupleOfLength } from "@jchptf/tupletypes"
 
@@ -11,22 +14,39 @@ export abstract class AbstractRegionMap implements IRegionMap {
 
    abstract get pixelWidth(): number
 
+   abstract get pixelSize(): number
+
    abstract get columnOrderedXCoordinates(): readonly number[]
 
    abstract get columnOrderedYCoordinates(): readonly number[]
 
    abstract get isUniform(): boolean
 
+   abstract get regionBoundary(): {
+      top: number
+      bottom: number
+      left: number
+      right: number
+   }
+
    abstract directBuilder(builder: IRegionMapBuilder): void
 
-   public async directPlotter(plotter: IRegionPlotter): Promise<void> {
+   public async directPlotter(
+      plotter: IRegionPlotter,
+      fromY: number,
+      untilY: number,
+   ): Promise<void> {
       const xMax: number = this.pixelWidth
-      const yMax: number = this.pixelHeight
+      const yMax: number = Math.min(untilY, this.pixelHeight)
       const xCols: readonly number[] = this.columnOrderedXCoordinates
       const yCols: readonly number[] = this.columnOrderedYCoordinates
 
+      if (fromY >= untilY) {
+         console.warn("Nonsensical input: fromY >= untilY will plot 0 points!")
+      }
+
       if (this.isUniform) {
-         let nextY: number = -1
+         let nextY: number = fromY - 1
          while (++nextY < yMax) {
             let nextX: number = -1
             while (++nextX < xMax) {
@@ -34,7 +54,7 @@ export abstract class AbstractRegionMap implements IRegionMap {
             }
          }
       } else {
-         let ii: number = -1
+         let ii: number = xMax * fromY - 1
          // let nextY: number = -1
          const iMax = xMax * yMax
          while (++ii < iMax) {
