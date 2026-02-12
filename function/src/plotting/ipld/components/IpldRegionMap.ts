@@ -13,12 +13,14 @@ export class IpldRegionMap extends AbstractRegionMap {
    private readonly rowList: readonly number[]
    private readonly colList: readonly number[]
    private readonly pixelRef: RefPoint
+   private readonly regionBoundaryFractions: RegionBoundaryFractions
    constructor(
       private readonly regionMap: RegionMap,
       private readonly paletteBlocks: readonly DataBlock[],
       private readonly dataBlocks: readonly DataBlock[],
    ) {
       super()
+      this.regionBoundaryFractions = { ...regionMap.regionBoundary }
       const boundary: RegionBoundaryFractions = regionMap.regionBoundary
       const codings: DimensionCodings = regionMap.codings
 
@@ -68,6 +70,30 @@ export class IpldRegionMap extends AbstractRegionMap {
 
    public get pixelWidth(): number {
       return this.regionMap.imageSize.pixelWidth
+   }
+
+   public get pixelSize(): number {
+      return 1
+   }
+
+   public get regionBoundary(): Record<
+      "top" | "bottom" | "left" | "right",
+      number
+   > {
+      return {
+         top:
+            this.regionBoundaryFractions.topN /
+            this.regionBoundaryFractions.topD,
+         bottom:
+            this.regionBoundaryFractions.bottomN /
+            this.regionBoundaryFractions.bottomD,
+         left:
+            this.regionBoundaryFractions.leftN /
+            this.regionBoundaryFractions.leftD,
+         right:
+            this.regionBoundaryFractions.rightN /
+            this.regionBoundaryFractions.rightD,
+      }
    }
 
    public get isUniform(): boolean {
