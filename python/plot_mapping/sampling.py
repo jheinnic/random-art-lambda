@@ -197,8 +197,8 @@ def create_plot_maps(_width, _height, top, left, bottom, right, f_doc="fdoc.prot
     h_document.data.mapped_region.left = xmin
     h_document.data.mapped_region.right = xmax
     h_document.data.uniform = False
-    h_document.data.rows.extend(g[:, 0].reshape([width*height]))
-    h_document.data.columns.extend(g[:, 1].reshape([width*height]))
+    h_document.data.rows.extend(h[:, 0].reshape([width*height]))
+    h_document.data.columns.extend(h[:, 1].reshape([width*height]))
     file = open(h_doc, "wb")
     file.write(
         h_document.SerializeToString())
