@@ -14,9 +14,9 @@ while True:
     try:
         print("Received raw binary message {}".format(ex))
         parsed = CanvasSize.FromString(ex)
-        consumer.acknowledge(msg)
-        print("Deserialized protobuf messsage: {}".format(parsed))
+        print("Deserialized protobuf message: {}".format(parsed))
         # Acknowledge successful processing of the message
+        consumer.acknowledge(msg)
     except Exception as err:
         print("Error: {}".format(err))
         # Message failed to be processed
