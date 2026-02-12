@@ -1,0 +1,37 @@
+export interface ResultHandling {
+   readonly errorHandling: {
+      readonly retryCount: number
+      readonly paintTimeout: number
+      readonly messageTimeout: number
+      readonly retainTimeOnPass: number
+      readonly retainTimeOnFail: number
+   }
+   readonly staging?: {
+      readonly stageToPath: string
+      readonly cleanAfterPass: "ack" | number
+      readonly cleanAfterFail: number
+   }
+   readonly onComplete?: InjectedChannel | InjectedQueue
+   readonly onError?: InjectedChannel | InjectedQueue
+   readonly progress?: {
+      readonly markCount?: number
+      readonly chunkComplete: boolean
+   }
+}
+
+export interface RequestChannel {
+   readonly target: "request"
+   readonly awaitPromise: boolean
+}
+
+export interface InjectedChannel {
+   readonly target: "channel"
+   readonly channelName: string
+   readonly awaitPromise: boolean
+}
+
+export interface InjectedQueue {
+   readonly target: "queue"
+   readonly queueName: string
+   readonly ackOnQueue?: string
+}

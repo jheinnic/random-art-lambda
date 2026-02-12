@@ -1,0 +1,20 @@
+import { Inject, Injectable } from "@nestjs/common"
+import { TYPE_MAP_EXTENSION_POINT } from "../../../messages/kinds/Constants.js"
+import { PaintDtoTypes } from "../di/Types.js"
+import { IExtensionRegistrar } from "../../../extensions/interface/IExtensionRegistrar.js"
+import { PAINT_TASK_MESSAGE_EXTENSION_STRING } from "../kinds/Constants.js"
+import { PaintTaskMessageExtension } from "./PaintTaskMessageExtension.js"
+
+@Injectable()
+export class ModuleActivator {
+   constructor(
+      @Inject(PaintDtoTypes.TypeMapExtensionRegistry)
+      extensionRegistry: IExtensionRegistrar<TYPE_MAP_EXTENSION_POINT>,
+   ) {
+      extensionRegistry.registerExtension(
+         PAINT_TASK_MESSAGE_EXTENSION_STRING,
+         PaintTaskMessageExtension,
+         [["forCid", "forUint32Array"]],
+      )
+   }
+}
