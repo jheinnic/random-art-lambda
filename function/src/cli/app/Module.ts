@@ -1,20 +1,23 @@
 import { Module } from "@nestjs/common"
-import { SharedBlockstoresModule } from "../../app/di/SharedBlockstoresModule.js"
+import { SharedBlockstoresModule } from "../../app/shared/di/SharedBlockstoresModule.js"
 
-import { CliChannelsModuleTypes } from "../../channels/di/Types.js"
-import { PaintingModuleTypes } from "../../painting/di/Types.js"
-import { CliChannelsModule } from "../../channels/di/Module.js"
+import { PaintingModuleTypes } from "../../painting/artwork/di/Types.js"
 import { IpldPlottingModule } from "../../plotting/ipld/di/Module.js"
-import { PaintingModule } from "../../painting/di/Module.js"
+import { PaintingModule } from "../../painting/artwork/di/Module.js"
 import { CliMainModule } from "../main/di/Module.js"
 
-import { plottingModule, paintingModule, queueModule } from "./Imports.js"
+import {
+   // paintChannelModule,
+   plottingModule,
+   paintingModule,
+   queueModule,
+} from "./Imports.js"
 import { QueuedPaintingTypes } from "../../painting/queue/di/Types.js"
 
 @Module({
    imports: [
       SharedBlockstoresModule,
-      CliChannelsModule,
+      // paintChannelModule,
       plottingModule,
       paintingModule,
       queueModule,
@@ -38,23 +41,17 @@ import { QueuedPaintingTypes } from "../../painting/queue/di/Types.js"
          //    module: plottingModule,
          //    token: IpldPlottingModuleTypes.IpldRegionMapRepository,
          // },
-         taskCallChannel: {
-            use: "token",
-            for: "value",
-            module: CliChannelsModule,
-            token: CliChannelsModuleTypes.RandomArtTaskCallChannel,
-         },
-         taskReplyChannel: {
-            use: "token",
-            for: "value",
-            module: CliChannelsModule,
-            token: CliChannelsModuleTypes.RandomArtTaskReplyChannel,
-         },
+         // taskCallChannel: {
+         //    use: "token",
+         //    for: "value",
+         //    module: paintChannelModule,
+         //    token: PaintingModuleTypes.RandomArtTaskCallChannel,
+         // },
       }),
    ],
    providers: [],
    exports: [
-      CliChannelsModule,
+      // paintChannelModule,
       IpldPlottingModule,
       PaintingModule,
       CliMainModule,

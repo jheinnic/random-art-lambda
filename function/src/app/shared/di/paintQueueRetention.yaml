@@ -1,0 +1,6 @@
+retention:
+   keepLogs: 250,
+   removeOnComplete:
+      age: 120,
+   removeOnFail:
+      age: 300,

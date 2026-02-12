@@ -1,5 +1,5 @@
-import "../../seeding/builtin/kinds/Extension.js"
+import "../../painting/seeding/builtin/kinds/GenModelSeedPlugins.js"
 
-export { SharedBlockstoresModuleTypes } from "./SharedBlockstoresModuleTypes.js"
-export { SharedBlockstoresModule } from "./SharedBlockstoresModule.js"
+export { SharedBlockstoresModuleTypes } from "../shared/di/SharedBlockstoresModuleTypes.js"
+export { SharedBlockstoresModule } from "../shared/di/SharedBlockstoresModule.js"
 export { AppModule } from "./AppModule.js"

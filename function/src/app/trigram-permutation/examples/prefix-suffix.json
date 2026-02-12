@@ -1,0 +1,16 @@
+{
+  "projectId": "prefix-suffix-demo",
+  "name": "Prefix-Suffix Cartesian Product Demo",
+  "regionMapCatalog": {
+    "demo-region": {
+      "cid": "QmTestCID123456789",
+      "description": "Demo RegionMap for testing prefix/suffix expansion"
+    }
+  },
+  "permutation": {
+    "expandType": "permutePrefixSuffix",
+    "regionMapNames": ["demo-region"],
+    "prefixes": ["☰", "☱", "☲"],
+    "suffixes": ["☴", "☵", "☶"]
+  }
+}
