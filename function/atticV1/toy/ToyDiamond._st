@@ -1,0 +1,76 @@
+class Base {
+   public readonly name: string = this.constructor.name
+}
+
+interface IBase extends Base {}
+
+class ExtOne implements IBase {
+   public readonly _base: IBase
+
+   constructor(base: IBase) {
+      this._base = base
+   }
+
+   public get name(): string {
+      return this._base.name
+   }
+
+   foo(): number {
+      return 5
+   }
+}
+
+class ExtTwo implements IBase {
+   public readonly _base: IBase
+
+   constructor(base: IBase) {
+      this._base = base
+   }
+
+   public get name(): string {
+      return this._base.name
+   }
+
+   bar(): number {
+      return 3
+   }
+}
+
+interface IExtOne extends ExtOne {}
+
+interface IExtTwo extends ExtTwo {}
+
+class ExtThree implements IExtOne, IExtTwo {
+   // JavaScript doesn't support this!
+   public readonly _base: IBase
+   public readonly _extOne: IExtOne
+   public readonly _extTwo: IExtTwo
+
+   constructor(extOne: IExtOne, extTwo: IExtTwo) {
+      this._base = extOne._base
+      this._extOne = extOne
+      this._extTwo = extTwo
+   }
+
+   get name(): string {
+      return this._extOne.name
+   }
+
+   foo(): number {
+      return this._extOne.foo()
+   }
+
+   bar(): number {
+      return this._extTwo.bar()
+   }
+
+   biz(): number {
+      return this.foo() + this.bar()
+   }
+}
+
+const base = new Base()
+const extOne = new ExtOne(base)
+const extTwo = new ExtTwo(base)
+const obj = new ExtThree(extOne, extTwo)
+console.log(obj.biz())

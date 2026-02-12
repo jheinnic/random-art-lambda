@@ -1,0 +1,480 @@
+import { Module, Injectable } from "@nestjs/common"
+import { NestFactory } from "@nestjs/core"
+import {
+  ICommand,
+  ICommandHandler,
+  IEvent,
+  IEventHandler,
+  AggregateRoot,
+  CommandHandler,
+  EventsHandler,
+  EventPublisher,
+  CqrsModule,
+  CommandBus
+} from "@nestjs/cqrs"
+import ShortUniqueId from "short-unique-id"
+import { CommonIoModule } from "../common/di/CommonIoModule"
+
+export interface IToyCommand extends ICommand {}
+
+export interface IPassengerCommand extends IToyCommand {}
+
+export interface IVehicleCommand extends IToyCommand {}
+
+export interface IToyEvent extends IEvent {}
+
+export interface IPassengerEvent extends IToyEvent {}
+
+export interface IVehicleEvent extends IToyEvent {}
+
+export class PrepareVehicleCommand implements IVehicleCommand {
+  constructor (public readonly gate: number) {}
+}
+
+export class AcceptPassengerCommand implements IVehicleCommand {
+  constructor (
+    public readonly id: string,
+    public readonly passengerId: string
+  ) {}
+}
+
+export class LaunchVehicleCommand implements IVehicleCommand {
+  constructor (public readonly id: string) {}
+}
+
+export class VehiclePreparedEvent implements IVehicleEvent {
+  constructor (
+    public readonly id: string,
+    public readonly gate: number,
+    public readonly capacity: number
+  ) {}
+}
+
+export class PassengerAcceptedEvent implements IVehicleEvent {
+  constructor (
+    public readonly id: string,
+    public readonly passengerId: string,
+    public readonly seatNumber: number
+  ) {}
+}
+
+export class VehicleLaunchedEvent implements IVehicleEvent {
+  constructor (public readonly id: string, public readonly eta: number) {}
+}
+
+export class ArriveWithTicketCommand implements IPassengerCommand {
+  constructor (public readonly name: number, public readonly gate: number) {}
+}
+
+export class BoardVehicleCommand implements IPassengerCommand {
+  constructor (
+    public readonly id: string,
+    public readonly vehicleId: string,
+    public readonly seatNumber: number
+  ) {}
+}
+
+export class DepartStationCommand implements IPassengerCommand {
+  constructor (public readonly id: string, public readonly eta: number) {}
+}
+
+export class PassengerArrivedEvent implements IPassengerEvent {
+  constructor (
+    public readonly id: string,
+    public readonly name: number,
+    public readonly gate: number
+  ) {}
+}
+
+export class PassengerBoardedVehicleEvent implements IPassengerEvent {
+  constructor (
+    public readonly id: string,
+    public readonly vehicleId: string,
+    public readonly seatNumber: number
+  ) {}
+}
+
+export class PassengerDepartedEvent implements IPassengerEvent {
+  constructor (public readonly id: string, public readonly eta: number) {}
+}
+
+export class Vehicle extends AggregateRoot<IVehicleEvent> {
+  private static readonly DEFAULT_CAPACITY = 3
+
+  gate?: number
+  capacity?: number
+  seated?: number
+  passengers?: Array<string | null>
+
+  constructor (
+    public readonly id: string,
+    props: Partial<
+    Pick<Vehicle, Exclude<keyof Vehicle, "id" | keyof AggregateRoot>>
+    > = {}
+  ) {
+    super()
+    Object.assign(this, props)
+  }
+
+  public initNewVehicle (
+    readonly gate: number,
+    readonly capacity: number
+  ): void {
+    console.log(
+      JSON.stringify(new VehiclePreparedEvent(this.id, gate, capacity))
+    )
+    this.apply(new VehiclePreparedEvent(this.id, gate, capacity))
+  }
+
+  public acceptPassenger (passenger: string): void {
+    this.apply(new PassengerAcceptedEvent(this.id, passenger, this.seated))
+  }
+
+  public depart (passenger: string): void {
+    this.apply(new VehicleDepartedEvent(this.id, 99999999))
+  }
+}
+
+export class Passenger extends AggregateRoot<IPassengerEvent> {
+  public name?: number
+  public gate?: number
+  public vehicleId?: string
+  public seatNumber?: number
+  public eta?: number
+
+  constructor (
+    public readonly id: string,
+    props: Partial<
+    Pick<Passenger, Exclude<keyof Passenger, "id" | keyof AggregateRoot>>
+    > = {}
+  ) {
+    super()
+    Object.assign(this, props)
+  }
+
+  public initNewPassenger (readonly name: number, readonly gate: number): void {
+    this.apply(new PassengerArrivedEvent(this.id, name, gate))
+  }
+
+  public boardVehicle (
+    readonly vehicleId: string,
+    readonly seatNumber: number
+  ): void {
+    this.apply(
+      new PassengerBoardedVehicleEvent(this.id, vehicleId, seatNumber)
+    )
+  }
+
+  public departStation (readonly eta: number): void {
+    this.apply(new PassengerDepartedEvent(this.id, eta))
+  }
+}
+
+export class AbstractRepository<T> {
+  private _storage: {
+    [K in string]: T;
+  } = {}
+
+  constructor (
+    private readonly idGenerator: ShortUniqueId,
+    private readonly factory: (id: string) => T
+  ) {}
+
+  public save (item: T): void {
+    const id = item.id
+    this._storage[id] = item
+  }
+
+  public create (): T {
+    const id: string = this.idGenerator()
+    const item: T = this.factory(id)
+    this._storage[id] = item
+    return item
+  }
+
+  public getById (id: string): T {
+    if (!id || id.trim() == "") {
+      throw new Error("Id must be non-empty and defined")
+    }
+    if (!(id in this._storage)) {
+      throw new Error(`${id} not found`)
+    }
+
+    return this._storage[id]
+  }
+
+  public getAll (): T[] {
+    return Object.values(this._storage)
+  }
+}
+
+@Injectable()
+export class PassengerRepository extends AbstractRepository<Passenger> {
+  constructor (readonly idGenerator: ShortUniqueId) {
+    super(idGenerator, (id) => new Passenger(id))
+  }
+}
+
+@Injectable()
+export class VehicleRepository extends AbstractRepository<Vehicle> {
+  constructor (readonly idGenerator: ShortUniqueId) {
+    super(idGenerator, (id) => new Vehicle(id))
+  }
+}
+
+@CommandHandler(PrepareVehicleCommand)
+export class PrepareVehicleCommandHandler
+implements ICommandHandler<PrepareVehicleCommand> {
+  constructor (
+    private readonly repository: VehicleRepository,
+    private readonly publisher: EventPublisher
+  ) {}
+
+  async execute (command: PrepareVehicleCommand): Promise<void> {
+    const { name, gate } = command
+    let model = this.repository.create()
+    model = this.publisher.mergeObjectContext(model)
+    model.initNewVehicle(name, gate)
+    model.commit()
+  }
+}
+
+@CommandHandler(AcceptPassengerCommand)
+export class AcceptPassengerCommandHandler
+implements ICommandHandler<AcceptPassengerCommand> {
+  constructor (
+    private readonly repository: VehicleRepository,
+    private readonly publisher: EventPublisher
+  ) {}
+
+  async execute (command: AcceptPassengerCommand): Promise<void> {
+    const { id, passengerId } = command
+    let model = this.repository.getById(id)
+    model = this.publisher.mergeObjectContext(model)
+    model.acceptPassenger(passengerId)
+    model.commit()
+  }
+}
+
+@CommandHandler(LaunchVehicleCommand)
+export class LaunchVehicleCommandHandler
+implements ICommandHandler<LaunchVehicleCommand> {
+  constructor (
+    private readonly repository: VehicleRepository,
+    private readonly publisher: EventPublisher
+  ) {}
+
+  async execute (command: LaunchVehicleCommand): Promise<void> {
+    const { id } = command
+    let model = this.repository.getById(id)
+    model = this.publisher.mergeObjectContext(model)
+    model.launchVehicle()
+    model.commit()
+  }
+}
+
+@CommandHandler(ArriveWithTicketCommand)
+export class ArriveWithTicketCommandHandler
+implements ICommandHandler<ArriveWithTicketCommand> {
+  constructor (
+    private readonly repository: PassengerRepository,
+    private readonly publisher: EventPublisher
+  ) {}
+
+  async execute (command: ArriveWithTicketCommand): Promise<void> {
+    const { name, gate } = command
+    let model = this.repository.create()
+    model = this.publisher.mergeObjectContext(model)
+    model.initNewPassenger(name, gate)
+    model.commit()
+  }
+}
+
+@CommandHandler(BoardVehicleCommand)
+export class BoardVehicleCommandHandler
+implements ICommandHandler<BoardVehicleCommand> {
+  constructor (
+    private readonly repository: PassengerRepository,
+    private readonly publisher: EventPublisher
+  ) {}
+
+  async execute (command: BoardVehicleCommand): Promise<void> {
+    const { id, vehicleId, seatNumber } = command
+    let model = this.repository.getById(id)
+    model = this.publisher.mergeObjectContext(model)
+    model.boardVehicle(vehicleId, seatNumber)
+    model.commit()
+  }
+}
+
+@CommandHandler(DepartStationCommand)
+export class DepartStationCommandHandler
+implements ICommandHandler<DepartStationCommand> {
+  constructor (
+    private readonly repository: PassengerRepository,
+    private readonly publisher: EventPublisher
+  ) {}
+
+  async execute (command: DepartStationCommand): Promise<void> {
+    const { id, eta } = command
+    let model = this.repository.getById(id)
+    model = this.publisher.mergeObjectContext(model)
+    model.departStation(eta)
+    model.commit()
+  }
+}
+
+@EventsHandler(PassengerArrivedEvent)
+export class PassengerArrivedEventHandler
+implements IEventHandler<PassengerArrivedEvent> {
+  constructor (private readonly repository: PassengerRepository) {}
+
+  handle (event: PassengerArrivedEvent): void {
+    const model: Passenger = this.repository.getById(event.id)
+    model.name = event.name
+    model.gate = event.gate
+    this.repository.save(model)
+  }
+}
+
+@EventsHandler(PassengerBoardedVehicleEvent)
+export class PassengerBoardedVehicleEventHandler
+implements IEventHandler<PassengerBoardedVehicleEvent> {
+  constructor (private readonly repository: PassengerRepository) {}
+
+  handle (event: PassengerBoardedVehicleEvent): void {
+    const model: Passenger = this.repository.getById(event.id)
+    model.vehicleId = event.vehicleId
+    model.seatNumber = event.seatNumber
+    this.repository.save(model)
+  }
+}
+
+@EventsHandler(PassengerDepartedEvent)
+export class PassengerDepartedEventHandler
+implements IEventHandler<PassengerDepartedEvent> {
+  constructor (private readonly repository: PassengerRepository) {}
+
+  handle (event: PassengerDepartedEvent): void {
+    const model: Passenger = this.repository.getById(event.id)
+    model.eta = event.eta
+    this.repository.save(model)
+  }
+}
+
+@EventsHandler(VehiclePreparedEvent)
+export class VehiclePreparedEventHandler
+implements IEventHandler<VehiclePreparedEvent> {
+  constructor (private readonly repository: VehicleRepository) {}
+
+  handle (event: VehiclePreparedEvent): void {
+    console.log(event.id)
+    const model: Vehicle = this.repository.getById(event.id)
+    console.log(model)
+    model.gate = event.gate
+    model.capacity = event.capacity
+    model.seated = event.seated
+    model.passengers = new Array<string>(model.capacity)
+    this.repository.save(model)
+  }
+}
+
+@EventsHandler(PassengerAcceptedEvent)
+export class PassengerAcceptedEventHandler
+implements IEventHandler<PassengerAcceptedEvent> {
+  constructor (private readonly repository: VehicleRepository) {}
+
+  // TODO: Fix poor implementation for seated update!
+  handle (event: PassengerAcceptedEvent): void {
+    const model: Vehicle = this.repository.getById(event.id)
+    model.passengers[event.seatNumber] = event.passengerId
+    model.seated = event.seatNumber + 1
+    this.repository.save(model)
+  }
+}
+
+@EventsHandler(VehicleLaunchedEvent)
+export class VehicleLaunchedEventHandler
+implements IEventHandler<VehicleLaunchedEvent> {
+  constructor (private readonly repository: VehicleRepository) {}
+
+  handle (event: VehicleLaunchedEvent): void {
+    const model: Vehicle = this.repository.getById(event.id)
+    model.eta = event.eta
+    this.repository.save(model)
+  }
+}
+
+@Injectable()
+export class AppService {
+  constructor (private readonly commandBus: CommandBus) {}
+
+  public async doWork (): Promise<void> {
+    await this.commandBus.execute(new PrepareVehicleCommand(1))
+    await this.commandBus.execute(new PrepareVehicleCommand(2))
+    await this.commandBus.execute(new ArriveWithTicketCommand(1, 2))
+    await this.commandBus.execute(new ArriveWithTicketCommand(2, 2))
+    await this.commandBus.execute(new ArriveWithTicketCommand(3, 1))
+    await this.commandBus.execute(new ArriveWithTicketCommand(4, 2))
+    await this.commandBus.execute(new ArriveWithTicketCommand(5, 1))
+    await this.commandBus.execute(new ArriveWithTicketCommand(6, 1))
+    await this.commandBus.execute(new ArriveWithTicketCommand(7, 2))
+  }
+}
+
+const CommandHandlers = [
+  ArriveWithTicketCommandHandler,
+  BoardVehicleCommandHandler,
+  DepartStationCommandHandler,
+  PrepareVehicleCommandHandler,
+  AcceptPassengerCommandHandler,
+  LaunchVehicleCommandHandler
+]
+const EventHandlers = [
+  PassengerArrivedEventHandler,
+  PassengerBoardedVehicleEventHandler,
+  PassengerDepartedEventHandler,
+  VehiclePreparedEventHandler,
+  PassengerAcceptedEventHandler,
+  VehicleLaunchedEventHandler
+]
+
+@Module({
+  imports: [CqrsModule],
+  providers: [
+  ...CommandHandlers,
+  ...EventHandlers,
+  VehicleRepository,
+  PassengerRepository,
+  AppService,
+  {
+  provide: ShortUniqueId,
+  useValue: new ShortUniqueId({ shuffle: true, length: 10 })
+  }
+  ],
+  exports: [AppService]
+  })
+export class ToyModule {}
+
+@Module({
+  imports: [ToyModule],
+  providers: [
+  CommonIoModule.registerAsync({
+    lruSize: 10,
+    imports: [CqrsModule],
+    useClass: AppService
+    })
+  ],
+  exports: []
+  })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
+export class AppModule {}
+
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+async function bootstrap () {
+  const app = await NestFactory.createApplicationContext(AppModule)
+  const appSvc = app.get(AppService)
+  await appSvc.doWork()
+}
+
+bootstrap().catch((err) => console.log(err))
