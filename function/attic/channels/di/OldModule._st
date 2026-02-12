@@ -1,0 +1,41 @@
+import { Module } from "@nestjs/common"
+import { Chan, chan } from "medium"
+import { Subject } from "rxjs"
+import { ChannelsModuleTypes } from "./Types.js"
+
+@Module({
+   imports: [],
+   providers: [
+      {
+         provide: ChannelsModuleTypes.RandomArtTaskCallChannel,
+         // useFactory: (): Chan => chan(1),
+         useFactory: (): { unwrap: () => Chan } => {
+            const channel: Chan = chan(1)
+            return { unwrap: () => channel }
+         },
+      },
+      {
+         provide: ChannelsModuleTypes.RandomArtTaskReplyChannel,
+         // useFactory: (): Chan => chan(1),
+         useFactory: (): { unwrap: () => Chan } => {
+            const channel: Chan = chan(1)
+            return { unwrap: () => channel }
+         },
+      },
+      {
+         provide: ChannelsModuleTypes.EnrollSourceFileCallChannel,
+         useClass: Subject,
+      },
+      {
+         provide: ChannelsModuleTypes.EnrollSourceFileReplyChannel,
+         useClass: Subject,
+      },
+   ],
+   exports: [
+      ChannelsModuleTypes.RandomArtTaskCallChannel,
+      ChannelsModuleTypes.RandomArtTaskReplyChannel,
+      ChannelsModuleTypes.EnrollSourceFileCallChannel,
+      ChannelsModuleTypes.EnrollSourceFileReplyChannel,
+   ],
+})
+export class CliChannelsModule {}

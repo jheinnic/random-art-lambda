@@ -1,0 +1,7 @@
+import "./Extension.js"
+import { KnownExtensionIds } from "../../../extensions/kinds/index.js"
+
+export const foo: KnownExtensionIds<"GenModelSeed"> = "HexSeed"
+// export const bar: KnownExtensionIds<"GenModelSeedType"> = "NOlkko"
+// export const baz: KnownExtensionIds<"FauxExtensionPoint"> = "GenericExtension"
+export const fko: KnownExtensionIds<"Examples"> = "ui-component"

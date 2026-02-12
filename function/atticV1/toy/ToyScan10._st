@@ -1,0 +1,198 @@
+import {
+  interval,
+  Subject,
+  BehaviorSubject,
+  OperatorFunction,
+  ReplaySubject,
+  queueScheduler,
+  withLatestFrom,
+  subscribeOn,
+  tap,
+  map,
+  asyncScheduler,
+  range,
+  mergeAll,
+  switchScan,
+  share,
+  take,
+  fromEvent,
+  Observable,
+  delay,
+  partition,
+  groupBy,
+  delayWhen,
+  timer,
+  of,
+  from
+} from "rxjs"
+import { chan, put, close, sleep, CLOSED } from "medium"
+import { ICommand, IEvent } from "@nestjs/cqrs"
+
+class Arrival implements IEvent {
+  constructor (
+    readonly value: number,
+    readonly order: number,
+    readonly group: number
+  ) {}
+}
+
+class Departure implements IEvent {
+  constructor (readonly value: number, readonly group: number)
+}
+
+class Launch implements ICommand {
+  constructor (readonly group: number, readonly passengers: Set<number>) {}
+}
+
+interface Tracker {
+  arrivals: number
+  departures: number
+  inFlight: number
+  manifest: Set<number>
+}
+
+function makeTerminal (
+  terminalIndex: number
+): ActorBehavior<Tracker, Arrival, Launch> {
+  // OperatorFunction<[Arrival, Tracker], [Ticket, Tracker]> {
+  console.warn(`!!! Called for index ${terminalIndex}`)
+  if (terminalIndex === 3) {
+    return (source: Observable<[Arrival, Tracker]>) => {
+      console.log("Time to end it!")
+      return source.pipe(take(0))
+    }
+  }
+
+  function deboardPassenger (
+    ticket: Arrival,
+    tracker: Tracker
+  ): [Arrival, Tracker] {
+    // console.log("Deboard: " + JSON.stringify(ticket));
+    let retVal = tracker
+    if (tracker.manifest.has(ticket.value)) {
+      const manifest = new Set(tracker.manifest)
+      manifest.delete(ticket.value)
+      const inFlight = tracker.inFlight - 1
+      const departures = tracker.departures + 1
+      retVal = { ...tracker, manifest, inFlight, departures }
+      console.info(
+        `Passenger with ticket ${ticket.value} (group=${ticket.group}; order=${ticket.order}) has de-boarded explicitly!  Manifest shows ${retVal.inFlight} of ${retVal.arrivals} arrivals are in flight, and ${retVal.departures} have departed.`
+      )
+    }
+    return [ticket, retVal]
+  }
+
+  function boardPassenger (
+    ticket: Arrival,
+    tracker: Tracker
+  ): [Arrival, Tracker] {
+    const manifest = new Set(tracker.manifest)
+    manifest.add(ticket.value)
+    const arrivals = tracker.arrivals + 1
+    const inFlight = tracker.inFlight + 1
+    const retVal = { ...tracker, arrivals, inFlight, manifest }
+    console.log(
+      `Passenger ${ticket.value} arriving at terminal ${terminalIndex}!  Manifest shows ${retVal.inFlight} of ${retVal.arrivals} arrivals are in flight, and ${retVal.departures} have departed.`
+    )
+    return [ticket, retVal]
+  }
+
+  function pipelineOne (
+    source: Observable<[Arrival, Tracker]>
+  ): Observable<
+    [Tracker, Iterable<Launch>, ActorBehavior<Tracker, Arrival, Launch>]
+    > {
+    return source.pipe(
+      map((pair, index) => boardPassenger(...pair)),
+      delayWhen((ticket) =>
+        timer(Math.max(0, Math.ceil(Math.random() * 1000) - 500))
+      ),
+      groupBy((pair) => pair[0].group),
+      mergeAll(),
+      map((pair, index) => deboardPassenger(...pair))
+    )
+  }
+
+  return pipelineOne
+}
+
+// const source = interval(2).pipe(
+// interface ActorBehavior<State, Event extends IEvent = IEvent, Command extends ICommand = ICommand>  {
+// readonly nextState: State
+// readonly executions: Observable<Command>
+// readonly nextBehavior: ActorBehaviorFunction<State, Event, Command>;  // OperatorFunction<[Event, State], ActorBehavior<State, Event, Command>>
+// }
+
+type ActorBehavior<S, E, C> = OperatorFunction<
+[E, S],
+[S, Iterable<C>, ActorBehavior<S, E, C>]
+>
+
+// function preserveBehavior<State, Event extends IEvent = IEvent, Command extends ICommand = ICommand>()
+//     readonly eventHandler: OperatorFunction<[Event, State], ActorBehavior<State, Event, Command>>
+//     constructor(
+//         lastBehavior: ActorBehavior<State, Event, Command>,
+//         readonly nextState: State = lastBehavior.nextState,
+//         readonly executions: Observable<Command> = EMPTY
+//     ) {
+//        this.eventHandler = lastBehavior.eventHandler;
+//     }
+// }
+
+const events: Observable<Arrival> = range(0, 100).pipe(
+  map<number, Arrival>((value, order) => {
+    return { value, order, group: Math.ceil(Math.random() * 8) }
+  })
+)
+
+const nextChan: number = chan(1)
+const singleEvents: Observable<Arrival> = events.pipe(
+  delayWhen((x) => from(put(nextChan, x))),
+  share({
+    resetOnError: false,
+    resetOnComplete: false,
+    resetOnRefCountZero: false
+  })
+)
+
+const state = new BehaviorSubject<Tracker>({
+  arrivals: 0,
+  departures: 0,
+  inFlight: 0,
+  manifest: new Set()
+})
+const behaviors = new BehaviorSubject<>(makeTerminal(0))
+const commands = new Subject<ICommand>()
+const source = behaviors.pipe(
+  distinctUntilChanged(),
+  switchScan((acc, behavior, index) => {
+    singleEvents.pipe(withLatestFrom(state.asObservable()), behavior)
+  }, undefined)
+)
+
+let loopCounter = 0
+let terminalCounter = 1
+
+// const trials = from([makeTerminal(0), makeTerminal(1), makeTerminal(2), makeTerminal(3)]).pipe(
+const trials = behaviors
+  .pipe(
+    switchScan((acc, value, index) => {
+      console.warn(`!! Time for terminal ${index}`)
+      console.warn(`Last was ${JSON.stringify(acc)}`)
+      console.log(value)
+      return source.pipe(value)
+    }, undefined)
+  )
+  .subscribe({
+    next: (results) => {
+      console.log(`RESULT: ${JSON.stringify(results)}`)
+      if (loopCounter++ >= 20) {
+        loopCounter = 0
+        behavior.next(makeTerminal(terminalCounter++))
+      }
+      get(nextChan).then()
+    },
+    error: (err) => {
+      console.error(err)
+    }
+  })

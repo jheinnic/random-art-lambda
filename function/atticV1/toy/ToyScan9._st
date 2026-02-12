@@ -1,0 +1,125 @@
+import {
+  interval,
+  Subject,
+  BehaviorSubject,
+  ReplaySubject,
+  queueScheduler,
+  subscribeOn,
+  tap,
+  map,
+  asyncScheduler,
+  range,
+  mergeAll,
+  switchScan,
+  share,
+  take,
+  fromEvent,
+  Observable,
+  delay,
+  partition,
+  groupBy,
+  delayWhen,
+  timer,
+  of,
+  from
+} from "rxjs"
+import { chan, put, close, sleep, CLOSED, take as get } from "medium"
+
+const nextChan = chan(1)
+
+function makeTerminal (terminalIndex: number) {
+  console.warn(`!!! Called for index ${terminalIndex}`)
+  if (terminalIndex == 3) {
+    return (source: Observable<any>) => {
+      console.log("Time to end it!")
+      return source.pipe(take(0))
+    }
+  }
+  function pipelineOne (source: Observable<any>) {
+    const tracker = {
+      arrivals: 0,
+      departures: 0,
+      inFlight: 0,
+      manifest: new Set()
+    }
+
+    function deboardPassenger (ticket): void {
+      // console.log("Deboard: " + JSON.stringify(ticket));
+      if (tracker.manifest.has(ticket.value)) {
+        tracker.manifest.delete(ticket.value)
+        tracker.inFlight -= 1
+        tracker.departures += 1
+        console.info(
+          `Passenger with ticket ${ticket.value} (group=${ticket.group}; order=${ticket.order}) has de-boarded explicitly!  Manifest shows ${tracker.inFlight} of ${tracker.arrivals} arrivals are in flight, and ${tracker.departures} have deboarded.`
+        )
+      }
+    }
+
+    function boardPassenger (ticket) {
+      tracker.arrivals++
+      tracker.inFlight++
+      tracker.manifest.add(ticket.value)
+      console.log(
+        `Passenger ${ticket.value} arriving at terminal ${terminalIndex}!  Manifest shows ${tracker.inFlight} of ${tracker.arrivals} arrivals are in flight, and ${tracker.departures} have deboarded.`
+      )
+    }
+
+    return source.pipe(
+      subscribeOn(queueScheduler),
+      tap({ next: boardPassenger }),
+      delayWhen((ticket) =>
+        timer(Math.max(0, Math.ceil(Math.random() * 1000) - 500))
+      ),
+      map((ticket, idx) => ({
+        ...ticket,
+        order: idx,
+        group: Math.ceil(Math.random() * 8)
+      })),
+      groupBy((ticket) => ticket.group),
+      mergeAll(),
+      tap({ next: deboardPassenger })
+    )
+  }
+
+  return pipelineOne
+}
+
+// const source = interval(2).pipe(
+const source = range(0, 100).pipe(
+  map((ii) => {
+    return { value: ii, order: -1, group: -1 }
+  }),
+  delayWhen((x) => from(put(nextChan, x))),
+  share({
+    resetOnError: false,
+    resetOnComplete: false,
+    resetOnRefCountZero: false
+  })
+)
+
+const behavior = new BehaviorSubject(makeTerminal(0))
+
+let loopCounter = 0
+let terminalCounter = 1
+
+// const trials = from([makeTerminal(0), makeTerminal(1), makeTerminal(2), makeTerminal(3)]).pipe(
+const trials = behavior
+  .pipe(
+    switchScan((acc, value, index) => {
+      console.warn(`!! Time for terminal ${index}`)
+      console.warn(`Last was ${JSON.stringify(acc)}`)
+      console.log(value)
+      return source.pipe(value)
+    }, undefined)
+  )
+  .subscribe({
+    next: (results): void => {
+      console.log(`RESULT: ${JSON.stringify(results)}`)
+      if (loopCounter++ >= 20) {
+        loopCounter = 0
+        behavior.next(makeTerminal(terminalCounter++))
+      }
+      get(nextChan).then(console.log).catch(console.error)
+    },
+    error: console.error
+  })

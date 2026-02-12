@@ -1,0 +1,27 @@
+function maybe (n: number): void {
+  console.log(n)
+  //   if (n % 2 === 0) {
+  // return false
+  //   }
+  return undefined
+}
+
+const mm: (n: number) => void = maybe
+const foody = maybe(4)
+const moody = mm(5)
+const goody = mm(6)
+console.log(foody)
+console.log(moody)
+console.log(goody)
+
+type NotFalse<T> = false extends T ? never : T extends false ? never : T
+
+export type SRT<Take = unknown, Seed = unknown> = (
+  take: Take,
+  seed: NotFalse<Seed>
+) => Seed | false
+
+const look: SRT<number, false> = (n: number, x: false): false => {
+  return x && n % 2 === 0
+}
+look(3, false)
