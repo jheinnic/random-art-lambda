@@ -7,7 +7,8 @@ import { CID } from "multiformats"
 import { base58btc } from "multiformats/bases/base58"
 
 import { mkdir, readFile, stat, unlink, writeFile } from "fs/promises"
-import { mkdirSync, statSync, Stats } from "fs"
+import { closeSync, openSync, mkdirSync, statSync, Stats } from "fs"
+import { flockSync } from "fs-ext"
 import { dirname, join } from "path"
 
 import { FsBlockstoreConfiguration, IpfsModuleTypes } from "../di/index.js"
@@ -27,7 +28,8 @@ export class FsBlockstore extends BaseBlockstore {
       FsBlockstore.NO_OP_RELEASE
 
    private readonly rootPath: string
-   private readonly openState: OpenState = OpenState.CLOSED
+   private openState: OpenState = OpenState.CLOSED
+   private readonly readLockFd: number
 
    constructor(
       @Inject(IpfsModuleTypes.FsBlockstoreConfiguration)
@@ -54,9 +56,17 @@ export class FsBlockstore extends BaseBlockstore {
             `Root path, ${this.rootPath}, must be a directory to open FsBlockStore!`,
          )
       }
-      lockfile.lockSync(this.rootPath, {
-         lockfilePath: join(this.rootPath, ".lock"),
-      })
+
+      const readLock = join(this.rootPath, ".readLock")
+      this.readLockFd = openSync(readLock, "r")
+      if (config.readOnly) {
+         flockSync(this.readLockFd, "shnb")
+      } else {
+         flockSync(this.readLockFd, "exnb")
+         lockfile.lockSync(this.rootPath, {
+            lockfilePath: join(this.rootPath, ".lock"),
+         })
+      }
       console.log("Lock acquired!")
       this.openState = OpenState.OPEN
    }
@@ -93,23 +103,25 @@ export class FsBlockstore extends BaseBlockstore {
    /**
     * @returns {Promise<void>}
     */
-   // async close(): Promise<void> {
-   //   if ( this.openState === OpenState.CLOSED ) {
-   //     return
-   //   }
-   //   if ( this.openState !== OpenState.OPEN ) {
-   //     throw Error( `${ this.openState } transition in progress` )
-   //   }
-   //   this.openState = OpenState.CLOSING
-   //   const releaseHandle = await this.lockRelease()
-   //   console.log( "Repository lock release initiated" )
-   //   const released = await releaseHandle
-   //   console.log( released )
-   //   console.log( releaseHandle )
-   //   console.log( "Repository lock released" )
-   //   this.lockRelease = FsBlockstore.NO_OP_RELEASE
-   //   this.openState = OpenState.CLOSED
-   // }
+   async close(): Promise<void> {
+      if (this.openState === OpenState.CLOSED) {
+         return
+      }
+      if (this.openState !== OpenState.OPEN) {
+         throw Error(`${this.openState} transition in progress`)
+      }
+      flockSync(this.readLockFd, "un")
+      closeSync(this.readLockFd)
+      //   this.openState = OpenState.CLOSING
+      //   const releaseHandle = await this.lockRelease()
+      //   console.log( "Repository lock release initiated" )
+      //   const released = await releaseHandle
+      //   console.log( released )
+      //   console.log( releaseHandle )
+      //   console.log( "Repository lock released" )
+      // this.lockRelease = FsBlockstore.NO_OP_RELEASE
+      this.openState = OpenState.CLOSED
+   }
 
    /**
     * @param {CID} key

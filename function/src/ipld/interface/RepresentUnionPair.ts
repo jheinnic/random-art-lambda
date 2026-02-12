@@ -1,4 +1,3 @@
-import { UnionizeProperties } from "simplytyped"
 import {
    DomainModelOf,
    RepresentationOf,
@@ -36,14 +35,10 @@ export type UnionAsDomainModel<
    T extends MaybeUnionDefinition<N>,
 > =
    T extends UnionDefinition<N, T>
-      ? UnionizeProperties<{
-           [K in N]: { [P in SchemaNameOf<T[K]>]: DomainModelOf<T[K]> }
-        }>
+      ? N extends N
+         ? { [P in SchemaNameOf<T[N]>]: DomainModelOf<T[N]> }
+         : never
       : never
-
-// export type UnionAsDomainModel<T extends UnionDefinition> = UnionizeProperties<{
-//     [ K in keyof T ]: T[ K ][ 1 ] extends infer I ? I : never
-// }>
 
 // This should be an object with two keys, version and model.  Version is a union of the keys from UnionDefinition,
 // and model is a union of the element 0 representation types from RepDomainPair.
@@ -54,16 +49,13 @@ export type UnionAsRepresentation<
    Model extends string = "model",
 > =
    T extends UnionDefinition<N, T>
-      ? UnionizeProperties<{
-           [K in N as SchemaNameOf<T[K]>]: {
-              //   ? K extends K // RepresentationOf<T[K]> extends infer I
+      ? N extends N
+         ? {
               [D in Discriminant | Model]: D extends Discriminant
-                 ? K
-                 : RepresentationOf<T[K]>
+                 ? SchemaNameOf<T[N]>
+                 : RepresentationOf<T[N]>
            }
-           //   : never
-           //   : never
-        }>
+         : never
       : never
 
 export type RepresentUnionPair<
