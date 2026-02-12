@@ -1,7 +1,7 @@
 // <reference path="./plot_mapping_pb.d.ts"/>
 import { AbstractRegionMap } from "../../components/AbstractRegionMap.js"
 import { IRegionMapBuilder } from "../../interface/IRegionMapBuilder.js"
-import { PointPlotData } from "./plot_mapping_pb.js"
+import { PointPlotData, RegionBoundary } from "./plot_mapping_pb.js"
 
 type PR = "Center" | "TopLeft"
 const PIXEL_REF_MAP: PR[] = ["Center", "TopLeft"]
@@ -33,6 +33,21 @@ export class PBufRegionMap extends AbstractRegionMap {
          throw new Error("Image resolution must be defined")
       }
       return data?.getPixelwidth() ?? this._data.getColumnsList().length
+   }
+
+   public get pixelSize(): number {
+      return 1
+   }
+
+   public get regionBoundary(): Record<
+      "top" | "bottom" | "left" | "right",
+      number
+   > {
+      const data: RegionBoundary | undefined = this._data.getMappedRegion()
+      if (data == null) {
+         throw new Error("Region boundary data missing@")
+      }
+      return data.toObject()
    }
 
    public get isUniform(): boolean {
