@@ -1,0 +1,3 @@
+import { ULIDString } from "../../../messages/interface/index.js"
+
+export type PaintTaskId = ULIDString
