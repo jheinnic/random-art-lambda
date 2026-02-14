@@ -4,7 +4,7 @@ import sys
 from PIL import Image
 from io import BytesIO
 import numpy as np 
-from skimage.io import imread
+from skimage.io import imread, imsave
 
 # The values of alpha and beta weigh the blend to one source or the other
 alpha = 0.5  
@@ -549,6 +549,8 @@ inner_4way_region["merge_to"] = [[
     for x in range(1, row_count)]
 quad_region_spec(inner_4way_region, imgs_prep, merged)
 
+colorFixed = cv2.cvtColor(merged, cv2.COLOR_BGR2RGB)
+imsave("output.pnga", colorFixed)
 
 plt.figure(figsize=(3, 3))
 plt.subplot(1, 1, 1)
