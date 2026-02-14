@@ -9,10 +9,7 @@ import {
    IDynamicModuleBuilder,
    simpleDynamicModule,
 } from "../../../modules/index.js"
-// SHELVED: import { BuiltInGenModelSeedingModule } from "../../../painting/seeding/builtin/di/Module.js"
-// SHELVED: import { SeedingModule } from "../../../painting/seeding/di/Module.js"
-import { ProtobufPlottingModule } from "../../../plotting/protobuf/di/Module.js"
-// import { paintChannelModule } from "../../di/AppModule2.js"
+// import { ProtobufPlottingModule } from "../../../plotting/protobuf/di/Module.js"
 import { SharedBlockstoresModule } from "../../di/index.js"
 import { AppService } from "../components/TicketArtService.js"
 
@@ -26,19 +23,13 @@ TicketingAppModule.registerModule((builder: IDynamicModuleBuilder) => {
       imports: [
          SharedBlockstoresModule,
          plottingModule,
-         ProtobufPlottingModule,
-         // paintChannelModule,
+         // ProtobufPlottingModule,
          paintingModule,
          queueModule,
-         // SHELVED: SeedingModule, BuiltInGenModelSeedingModule
       ],
       providers: [AppService],
       exports: [
          AppService,
-         // RxLocalChannelModule,
-         // IpldPlottingModule,
-         // paintChannelModule,
-         // paintingModule,
          queueModule,
       ],
    }
