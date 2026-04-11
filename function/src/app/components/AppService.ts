@@ -143,26 +143,6 @@ export class AppService {
    //       PartialPaintRequest,
    //       PartialPaintResult,
    //       StagedPaintResult
-   //    >({
-   //       seedModel: {
-   //          prefix: prefixBytes.toString("base64"),
-   //          suffix: suffixBytes.toString("base64"),
-   //          engineVersion: 1,
-   //          regionMapRef: CIDUtil.parseCID(
-   //             "bafyreibtfvyutz3gs3xw7wuysvnpj2meaacvqg5lkzi3ylmx2liayktzt4",
-   //          ),
-   //       },
-   //       stageToPath:
-   //          "a/b/" +
-   //          prefixChars.replaceAll("/", "_").replaceAll("=", "") +
-   //          "-" +
-   //          suffixChars.replaceAll("/", "_").replaceAll("=", ""),
-   //       pixelWidth: 512,
-   //       pixelHeight: 512,
-   //    })
-   //    console.log(await this.flowProducer.launchIt(aJobSpec))
-   // }
-
    public async testRepo(cid: CID): Promise<IRegionMap | undefined> {
       if (!this.cidCache.has(cid)) {
          await this.mapRepo.load(cid).then((loadedMap) => {
@@ -246,8 +226,8 @@ export class AppService {
          hashBuf = await hasher.encode(hashBuf)
          const prefix: Uint8Array = hashBuf.slice(0, 16)
          const suffix: Uint8Array = hashBuf.slice(16)
-         const prefixStr = Buffer.from(prefix).toString("hex")
-         const suffixStr = Buffer.from(suffix).toString("hex")
+         const prefixStr = Buffer.from(prefix).toString("base64url")
+         const suffixStr = Buffer.from(suffix).toString("base64url")
          const fileName = `./${prefixStr}_${suffixStr}.png`
          const genModel: GenModel = newPicture(prefix, suffix)
          await this.doOne(genModel, regionMap, fileName)
@@ -261,9 +241,17 @@ export class AppService {
       const taskList: Task[] = workList.map(
          (task: { prefix: string; suffix: string }) => {
             let buf: Buffer = Buffer.from(task.prefix, "hex")
-            const prefix: Uint8ClampedArray = Uint8ClampedArray.from(buf)
+            const prefix: Uint8ClampedArray = new Uint8ClampedArray(
+               buf.buffer,
+               buf.byteOffset,
+               buf.byteLength,
+            )
             buf = Buffer.from(task.suffix, "hex")
-            const suffix: Uint8ClampedArray = Uint8ClampedArray.from(buf)
+            const suffix: Uint8ClampedArray = new Uint8ClampedArray(
+               buf.buffer,
+               buf.byteOffset,
+               buf.byteLength,
+            )
             return {
                taskMessage: JSON.stringify(task),
                genModel: newPicture(prefix, suffix),

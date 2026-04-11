@@ -90,10 +90,9 @@ export class AppService {
    //       StagedPaintResult
    //    >({
    //       seedModel: {
-   //          seedType: TWO_PHRASE_SEED_MODEL_STRATEGY_STR,
+   //          seedType: ONE_PHRASE_SEED_MODEL_STRATEGY_STR,
    //          // phrase: "It went that way",
-   //          prefix: "You don't really want to mess",
-   //          suffix: "You don't really want to mess",
+   //          phrase: "You don't really want to mess",
    //          engineVersion: 1,
    //          regionMapRef: CIDUtil.parseCID(
    //             // "bafyreigktmlsvsl7t4nbpwcc7qb56vsfgynokrvlyadqcdl7ixibkaacpm",
@@ -115,57 +114,37 @@ export class AppService {
       setTimeout(() => {}, 60000 * 60 * 24 * 365 * 10)
    }
 
-   public async dskds(): Promise<void> {
-      const { publicKey } = generateKeyPairSync("ec", {
-         namedCurve: "secp256k1", // Options
-         publicKeyEncoding: {
-            type: "spki",
-            format: "der",
-         },
-         privateKeyEncoding: {
-            type: "pkcs8",
-            format: "der",
-         },
-      })
-      // Convert public key to base64, then extract ASCII character slices
-      const keyAsBase64 = publicKey.toString("base64")
-      const prefixChars = keyAsBase64.slice(52, 68) // 16 printable ASCII chars
-      const suffixChars = keyAsBase64.slice(72, 90) // 18 printable ASCII chars
+   // public async dskds(): Promise<void> {
+   //    const { publicKey } = generateKeyPairSync("ec", {
+   //       namedCurve: "secp256k1", // Options
+   //       publicKeyEncoding: {
+   //          type: "spki",
+   //          format: "der",
+   //       },
+   //       privateKeyEncoding: {
+   //          type: "pkcs8",
+   //          format: "der",
+   //       },
+   //    })
+   //    // Convert public key to base64, then extract ASCII character slices
+   //    const keyAsBase64 = publicKey.toString("base64")
+   //    const prefixChars = keyAsBase64.slice(52, 68) // 16 printable ASCII chars
+   //    const suffixChars = keyAsBase64.slice(72, 90) // 18 printable ASCII chars
 
-      // Encode those ASCII strings as UTF-8 bytes, then base64-encode for transport
-      const prefixBytes = Buffer.from(prefixChars, "utf8")
-      const suffixBytes = Buffer.from(suffixChars, "utf8")
+   //    // Encode those ASCII strings as UTF-8 bytes, then base64-encode for transport
+   //    const prefixBytes = Buffer.from(prefixChars, "utf8")
+   //    const suffixBytes = Buffer.from(suffixChars, "utf8")
 
-      // const aJobSpec: ScatterGatherTask<
-      //    StagedPaintRequest,
-      //    PartialPaintRequest,
-      //    PartialPaintResult,
-      //    StagedPaintResult
-      // > = ScatterGatherTaskImpl.wrap<
-      //    StagedPaintRequest,
-      //    PartialPaintRequest,
-      //    PartialPaintResult,
-      //    StagedPaintResult
-      // >({
-      //    seedModel: {
-      //       prefix: prefixBytes.toString("base64"),
-      //       suffix: suffixBytes.toString("base64"),
-      //       engineVersion: 1,
-      //       regionMapRef: CIDUtil.parseCID(
-      //          "bafyreibtfvyutz3gs3xw7wuysvnpj2meaacvqg5lkzi3ylmx2liayktzt4",
-      //       ),
-      //    },
-      //    stageToPath:
-      //       "a/b/" +
-      //       prefixChars.replaceAll("/", "_").replaceAll("=", "") +
-      //       "-" +
-      //       suffixChars.replaceAll("/", "_").replaceAll("=", ""),
-      //    pixelWidth: 512,
-      //    pixelHeight: 512,
-      // })
-      // console.log(await this.flowProducer.launchIt(aJobSpec))
-   }
-
+   //    const aJobSpec: ScatterGatherTask<
+   //       StagedPaintRequest,
+   //       PartialPaintRequest,
+   //       PartialPaintResult,
+   //       StagedPaintResult
+   //    > = ScatterGatherTaskImpl.wrap<
+   //       StagedPaintRequest,
+   //       PartialPaintRequest,
+   //       PartialPaintResult,
+   //       StagedPaintResult
    public async testRepo(cid: CID): Promise<IRegionMap | undefined> {
       if (!this.cidCache.has(cid)) {
          await this.mapRepo.load(cid).then((loadedMap) => {
@@ -199,7 +178,7 @@ export class AppService {
    }
 
    public async loadRepo(): Promise<void> {
-      const kweje = [
+      const _voids = [
          // "rdoc01",
          // "fdoc2",
          // "fdoc_big",
