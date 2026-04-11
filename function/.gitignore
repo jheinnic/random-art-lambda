@@ -9,3 +9,6 @@ qdoc2_proto/
 qdoc2_idlp/
 *.png
 *.jpg
+src/painting/artwork/components/bad/
+src/painting/artwork/components/*genjs*
+a/
