@@ -4,7 +4,7 @@ import { TrigramProjectSubmitter } from "../components/TrigramProjectSubmitter.j
 import { TrigramModuleTypes } from "./Types.js"
 import {
    InjectableModuleClassFactory,
-   DefaultDirector,
+   IDynamicModuleDirector,
    IDynamicModuleBuilder,
    ModuleDependencies,
    ModuleDependenciesOption,
@@ -30,23 +30,26 @@ const injectModuleTokens = {
 const moduleHost = InjectableModuleClassFactory.create<
    TrigramModuleOptions,
    typeof injectModuleTokens
->(injectModuleTokens, (options: TrigramModuleOptions): DefaultDirector => {
-   return (builder: IDynamicModuleBuilder): void => {
-      console.log(JSON.stringify(options))
-      if (options.role === "submitter" || options.role === "both") {
-         builder.exportProviders(
-            {
-               useClass: PermutationExpander,
-               provide: TrigramModuleTypes.PermutationExpander,
-            },
-            {
-               useClass: TrigramProjectSubmitter,
-               provide: TrigramModuleTypes.ProjectSubmitter,
-            },
-         )
+>(
+   injectModuleTokens,
+   (options: TrigramModuleOptions): IDynamicModuleDirector => {
+      return (builder: IDynamicModuleBuilder): void => {
+         console.log(JSON.stringify(options))
+         if (options.role === "submitter" || options.role === "both") {
+            builder.exportProviders(
+               {
+                  useClass: PermutationExpander,
+                  provide: TrigramModuleTypes.PermutationExpander,
+               },
+               {
+                  useClass: TrigramProjectSubmitter,
+                  provide: TrigramModuleTypes.ProjectSubmitter,
+               },
+            )
+         }
       }
-   }
-})
+   },
+)
 
 export type TrigramModuleConfiguration = typeof moduleHost.externalConfig
 

@@ -10,7 +10,7 @@ import {
    ModuleDirectorFactory,
 } from "../interface/IInjectableModuleClassFactory.js"
 import {
-   DefaultDirector,
+   IDynamicModuleDirector,
    IDynamicModuleBlueprint,
 } from "../interface/IDynamicModuleBuilder.js"
 import { DynamicModuleBlueprint } from "./DynamicModuleBlueprint.js"
@@ -232,7 +232,7 @@ export class InjectableModuleClassFactory<
             //    },
             // )
 
-            const director: DefaultDirector = moduleDefinition(
+            const director: IDynamicModuleDirector = moduleDefinition(
                internalConfig,
                injectConfig,
             )

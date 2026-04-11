@@ -1,30 +1,31 @@
 /* eslint-disable @typescript-eslint/no-extraneous-class */
 import { DynamicModule } from "@nestjs/common"
 import { DynamicModuleBlueprint } from "./DynamicModuleBlueprint.js"
+import { Identity } from "../interface/Utility.js"
+import type { IDynamicModuleDirector } from "../interface/IDynamicModuleBuilder.js"
 import type {
    Context,
    IModuleBaseClassBlueprint,
 } from "../interface/IModuleClassBlueprint.js"
 import {
-   DefaultDirector,
-   DefaultIdentity,
-   DefaultParams,
    FeatureConduitModule,
    RootAndFeatureConduitModule,
    RootConduitModule,
-} from "../index.js"
+} from "../interface/IConduitModule.js"
+
+type ModuleDirectorExtension = Identity<IDynamicModuleDirector>
 
 /**
- * This obsolete Class creational pattern has a very different style to creating Module classes than
- * its successor, the InjectableModuleClassFactory.  Both use the DynamicModuleBlueprint for the DynamicModule
+ * This obsolete Class creation pattern has a very different style to creating Module classes than its
+ * successor, the InjectableModuleClassFactory.  Both use the DynamicModuleBlueprint for the DynamicModule
  * metadata work, but have different ideas about how to create reusable Classes.
  *
  * The Root to Feature sharing concept attempted here does not seem to work, beware.  This will be removed when its
  * last consumer has been migrated away!
  */
 export class ModuleClassBlueprint<
-   RootParams extends unknown[] = DefaultParams,
-   FeatureParams extends unknown[] = DefaultParams,
+   RootParams extends unknown[] = [IDynamicModuleDirector],
+   FeatureParams extends unknown[] = [IDynamicModuleDirector],
    RootMethodName extends string = "forRoot",
    FeatureMethodName extends string = "forFeature",
 > implements
@@ -36,19 +37,21 @@ export class ModuleClassBlueprint<
 
    private useFeatureRootImport: boolean = false
 
-   private rootFactoryImpl?: (...args: RootParams) => DefaultDirector
-   private featureFactoryImpl?: (...args: FeatureParams) => DefaultDirector
+   private rootFactoryImpl?: (...args: RootParams) => IDynamicModuleDirector
+   private featureFactoryImpl?: (
+      ...args: FeatureParams
+   ) => IDynamicModuleDirector
 
-   private readonly defaultRootProto: DefaultIdentity = (
-      director: DefaultDirector,
-   ): DefaultDirector => director
+   private readonly defaultRootProto: ModuleDirectorExtension = (
+      director: IDynamicModuleDirector,
+   ): IDynamicModuleDirector => director
 
-   private readonly defaultFeatureProto: DefaultIdentity = (
-      director: DefaultDirector,
-   ): DefaultDirector => director
+   private readonly defaultFeatureProto: ModuleDirectorExtension = (
+      director: IDynamicModuleDirector,
+   ): IDynamicModuleDirector => director
 
    implementRootMethod(
-      body?: (...args: RootParams) => DefaultDirector,
+      body?: (...args: RootParams) => IDynamicModuleDirector,
    ): ModuleClassBlueprint<
       RootParams,
       FeatureParams,
@@ -61,10 +64,10 @@ export class ModuleClassBlueprint<
          // eslint-disable-next-line no-constant-condition
          if (false) {
             this.rootFactoryImpl = ((
-               director: DefaultDirector,
-            ): DefaultDirector => director) as unknown as (
+               director: IDynamicModuleDirector,
+            ): IDynamicModuleDirector => director) as unknown as (
                ...args: RootParams
-            ) => DefaultDirector
+            ) => IDynamicModuleDirector
          } else {
             throw new Error(
                "With non-default root signature, a body is required to enable root generation",
@@ -78,7 +81,7 @@ export class ModuleClassBlueprint<
    }
 
    implementFeatureMethod(
-      body?: (...args: FeatureParams) => DefaultDirector,
+      body?: (...args: FeatureParams) => IDynamicModuleDirector,
    ): ModuleClassBlueprint<
       RootParams,
       FeatureParams,
@@ -91,10 +94,10 @@ export class ModuleClassBlueprint<
          // eslint-disable-next-line no-constant-condition
          if (true) {
             this.featureFactoryImpl = ((
-               director: DefaultDirector,
-            ): DefaultDirector => director) as unknown as (
+               director: IDynamicModuleDirector,
+            ): IDynamicModuleDirector => director) as unknown as (
                ...arg: FeatureParams
-            ) => DefaultDirector
+            ) => IDynamicModuleDirector
          } else {
             throw new Error(
                "With non-default feature signature, a body is required to enable feature generation",
@@ -150,10 +153,10 @@ export class ModuleClassBlueprint<
          throw new Error("Cannot build conduit module with no dynamic behavior")
       }
       const featureFactoryImpl:
-         | ((...args: FeatureParams) => DefaultDirector)
+         | ((...args: FeatureParams) => IDynamicModuleDirector)
          | undefined = this.featureFactoryImpl
       const rootFactoryImpl:
-         | ((...args: RootParams) => DefaultDirector)
+         | ((...args: RootParams) => IDynamicModuleDirector)
          | undefined = this.rootFactoryImpl
       const useFeatureRootImport = this.useFeatureRootImport
       let resolveRootModule: (value: DynamicModule) => void
@@ -207,7 +210,9 @@ export class ModuleClassBlueprint<
                   new DynamicModuleBlueprint(this)
 
                if (rootFactoryImpl !== undefined) {
-                  const director: DefaultDirector = rootFactoryImpl(...args)
+                  const director: IDynamicModuleDirector = rootFactoryImpl(
+                     ...args,
+                  )
 
                   if (director !== undefined) {
                      director(builder)

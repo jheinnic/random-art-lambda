@@ -1,5 +1,5 @@
 import { DynamicModule, ForwardReference, Provider, Type } from "@nestjs/common"
-import { Director, Identity } from "./Utility.js"
+import { Director } from "./Utility.js"
 import { ModuleDependenciesOption } from "./IInjectableModuleClassFactory.js"
 
 export interface IBaseDynamicModuleBuilder<
@@ -34,10 +34,6 @@ export interface IDynamicModuleBlueprint
    build: () => DynamicModule
 }
 
-export type DefaultDirector<
+export type IDynamicModuleDirector<
    B extends IBaseDynamicModuleBuilder<B> = IDynamicModuleBuilder,
 > = Director<B>
-
-export type DefaultIdentity = Identity<DefaultDirector>
-
-export type DefaultParams = [DefaultDirector]

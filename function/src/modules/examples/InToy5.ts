@@ -3,7 +3,7 @@ import { NestFactory } from "@nestjs/core"
 import {
    simpleDynamicModule,
    IDynamicModuleBuilder,
-   DefaultDirector,
+   IDynamicModuleDirector,
    InjectionConfig,
 } from "../index.js"
 import { InjectableModuleClassFactory } from "../di/InjectableModuleClassFactory.js"
@@ -53,7 +53,7 @@ const importTokens = {
 } as const
 const moduleThreeHost = InjectableModuleClassFactory.create(
    importTokens,
-   (_config: ConfigOne): DefaultDirector => {
+   (_config: ConfigOne): IDynamicModuleDirector => {
       return (builder: IDynamicModuleBuilder) => {
          builder
             .exportProviders(Crate)
@@ -83,7 +83,7 @@ const hostFour = InjectableModuleClassFactory.create(
    (
       _config: ConfigOne,
       injectConfig: InjectionConfig<typeof importTokens>,
-   ): DefaultDirector => {
+   ): IDynamicModuleDirector => {
       return (builder: IDynamicModuleBuilder) => {
          builder.exportModules(
             ModuleThree.forRoot({
@@ -110,7 +110,7 @@ const injectionTwo = {
 }
 const hostTwo = InjectableModuleClassFactory.create(
    injectionTwo,
-   (_config: ConfigOne): DefaultDirector => {
+   (_config: ConfigOne): IDynamicModuleDirector => {
       return (builder: IDynamicModuleBuilder) => {
          builder.exportProviders({
             provide: anotherBoxOne,
@@ -134,7 +134,7 @@ const injectionOne = {
 }
 const hostOne = InjectableModuleClassFactory.create(
    injectionOne,
-   (_config: ConfigOne): DefaultDirector => {
+   (_config: ConfigOne): IDynamicModuleDirector => {
       return (builder: IDynamicModuleBuilder) => {
          builder.exportProviders({
             provide: theBoxTwo,
@@ -172,7 +172,7 @@ const innerConduitModule: DynamicModule = InnerConduitModule.registerModule(
 @Module({})
 class ModuleZero extends InjectableModuleClassFactory.create(
    {},
-   (_config: ConfigOne): DefaultDirector => {
+   (_config: ConfigOne): IDynamicModuleDirector => {
       return (builder: IDynamicModuleBuilder): void => {
          builder.exportProviders({
             provide: anotherBox,

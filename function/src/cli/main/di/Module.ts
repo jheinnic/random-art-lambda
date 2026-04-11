@@ -2,7 +2,7 @@ import { DynamicModule, Module } from "@nestjs/common"
 
 import { CliMainModuleTypes } from "./Types.js"
 import {
-   DefaultDirector,
+   IDynamicModuleDirector,
    IDynamicModuleBuilder,
    InjectableModuleClassFactory,
 } from "../../../modules/index.js"
@@ -22,7 +22,7 @@ interface ModuleDataConfig {
 
 const moduleHost = InjectableModuleClassFactory.create(
    injectModuleTokens,
-   (_config: ModuleDataConfig): DefaultDirector => {
+   (_config: ModuleDataConfig): IDynamicModuleDirector => {
       return (builder: IDynamicModuleBuilder): void => {
          builder.exportProviders(GenericService)
       }

@@ -4,7 +4,7 @@ import {
    RootAndFeatureConduitModule,
    RootConduitModule,
 } from "./IConduitModule.js"
-import { DefaultDirector } from "./IDynamicModuleBuilder.js"
+import { IDynamicModuleDirector } from "./IDynamicModuleBuilder.js"
 
 export interface Context<
    RootParams extends unknown[] = unknown[],
@@ -18,37 +18,27 @@ export interface Context<
    featureMethodName: FeatureMethodName
 }
 
-type RootParams<C extends Context> = C extends { rootParams: infer Params }
-   ? Params
-   : never
+type RootParams<C extends Context> =
+   C extends Context<infer Params, any, any, any> ? Params : never
 
-type RootMethodName<C extends Context> = C extends {
-   rootMethodName: infer Name
-}
-   ? Name
-   : never
+type RootMethodName<C extends Context> =
+   C extends Context<any, any, infer Name, any> ? Name : never
 
-type FeatureParams<C extends Context> = C extends {
-   featureParams: infer Params
-}
-   ? Params
-   : never
+type FeatureParams<C extends Context> =
+   C extends Context<any, infer Params, any, any> ? Params : never
 
-type FeatureMethodName<C extends Context> = C extends {
-   featureMethodName: infer Name
-}
-   ? Name
-   : never
+type FeatureMethodName<C extends Context> =
+   C extends Context<any, any, any, infer Name> ? Name : never
 
 type Variations<
    Initial extends {} = {},
-   Root extends {} = {},
-   Feature extends {} = {},
-   Shared extends {} = {},
-   RootFeature extends {} = {},
-   RootShared extends {} = {},
-   FeatureShared extends {} = {},
-   RootFeatureShared extends {} = {},
+   Root extends {} = Initial,
+   Feature extends {} = Initial,
+   Shared extends {} = Initial,
+   RootFeature extends {} = Root & Feature,
+   RootShared extends {} = Root & Shared,
+   FeatureShared extends {} = Feature & Shared,
+   RootFeatureShared extends {} = Root & Feature & Shared,
 > = SharingVariations<
    RootVariations<
       FeatureVariations<Initial, Feature>,
@@ -75,8 +65,11 @@ type Selection<
    HasRoot extends Bool,
    HasFeature extends Bool,
    HasSharing extends Bool,
-   Options extends Variations,
-> = Options[IfSharing<HasSharing>][IfRoot<HasRoot>][IfFeature<HasFeature>]
+   BuilderVariations extends Variations,
+   FactoryVariations extends Variations,
+> = {
+   build: () => FactoryVariations[IfSharing<HasSharing>][IfRoot<HasRoot>][IfFeature<HasFeature>]
+} & BuilderVariations[IfSharing<HasSharing>][IfRoot<HasRoot>][IfFeature<HasFeature>]
 
 interface SharingVariations<
    NoSharing extends {} = {},
@@ -100,62 +93,63 @@ interface RootVariations<NoRoot extends {} = {}, HasRoot extends {} = {}> {
 }
 
 type IBlueprint<
-   C extends Context,
    HasRoot extends Bool,
    HasFeature extends Bool,
    HasSharing extends Bool,
-   Assembler extends Variations,
-> = If<HasRoot, {}, ForRootBuilder<C, HasFeature, HasSharing, Assembler>> &
-   If<HasFeature, {}, ForFeatureBuilder<C, HasRoot, HasSharing, Assembler>> &
-   If<HasSharing, {}, ForSharingBuilder<C, HasRoot, HasFeature, Assembler>> &
-   Selection<HasRoot, HasFeature, HasSharing, Assembler>
+   BuilderVariations extends Variations,
+   FactoryVariations extends Variations,
+> = Selection<
+   HasRoot,
+   HasFeature,
+   HasSharing,
+   BuilderVariations,
+   FactoryVariations
+>
 
 interface ForRootBuilder<
    C extends Context,
    HasFeature extends Bool,
    HasSharing extends Bool,
-   Assembler extends Variations,
 > {
    implementRootMethod: (
-      body?: (...args: RootParams<C>) => DefaultDirector,
-   ) => IBlueprint<C, True, HasFeature, HasSharing, Assembler>
+      body?: (...args: RootParams<C>) => IDynamicModuleDirector,
+   ) => IModuleBaseClassBlueprint<C, True, HasFeature, HasSharing>
 }
 
 interface ForFeatureBuilder<
    C extends Context,
    HasRoot extends Bool,
    HasSharing extends Bool,
-   Assembler extends Variations,
 > {
    implementFeatureMethod: (
-      body?: (...args: FeatureParams<C>) => DefaultDirector,
-   ) => IBlueprint<C, HasRoot, True, HasSharing, Assembler>
+      body?: (...args: FeatureParams<C>) => IDynamicModuleDirector,
+   ) => IModuleBaseClassBlueprint<C, HasRoot, True, HasSharing>
 }
 
 interface ForSharingBuilder<
    C extends Context,
    HasRoot extends Bool,
    HasFeature extends Bool,
-   Assembler extends Variations,
 > {
-   implementFeatureRootImport: () => IBlueprint<
+   implementFeatureRootImport: () => IModuleBaseClassBlueprint<
       C,
       HasRoot,
       HasFeature,
-      True,
-      Assembler
+      True
    >
 }
 
-type BuildVariations<C extends Context> = Variations<
+type BuilderVariations<C extends Context> = Variations<
    {},
-   BuildRoot<C>,
-   BuildFeature<C>,
-   {},
-   BuildBoth<C>,
-   BuildBoth<C>,
-   BuildFeature<C>,
-   BuildBoth<C>
+   ForRootBuilder<C, False, False>,
+   ForFeatureBuilder<C, False, False>,
+   ForSharingBuilder<C, False, False>,
+   ForRootBuilder<C, True, False> & ForFeatureBuilder<C, True, False>,
+   ForRootBuilder<C, False, True> & ForSharingBuilder<C, True, False>,
+   ForFeatureBuilder<C, False, True> & ForSharingBuilder<C, False, True>,
+   ForRootBuilder<C, True, True> &
+      ForFeatureBuilder<C, True, True> &
+      ForSharingBuilder<C, True, True>
 >
 
 interface BuildRoot<C extends Context> {
@@ -175,10 +169,26 @@ interface BuildBoth<C extends Context> {
    >
 }
 
-export type IModuleBaseClassBlueprint<C extends Context> = IBlueprint<
-   C,
-   False,
-   False,
-   False,
-   BuildVariations<C>
+type FactoryVariations<C extends Context> = Variations<
+   {},
+   BuildRoot<C>,
+   BuildFeature<C>,
+   {},
+   BuildBoth<C>,
+   BuildBoth<C>,
+   BuildFeature<C>,
+   BuildBoth<C>
+>
+
+export type IModuleBaseClassBlueprint<
+   C extends Context,
+   HasRoot extends Bool = False,
+   HasFeature extends Bool = False,
+   HasShared extends Bool = False,
+> = IBlueprint<
+   HasRoot,
+   HasFeature,
+   HasShared,
+   BuilderVariations<C>,
+   FactoryVariations<C>
 >

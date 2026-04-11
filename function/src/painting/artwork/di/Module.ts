@@ -1,6 +1,6 @@
 import { DynamicModule, Module } from "@nestjs/common"
 import {
-   DefaultDirector,
+   IDynamicModuleDirector,
    IDynamicModuleBuilder,
    InjectableModuleClassFactory,
 } from "../../../modules/index.js"
@@ -17,7 +17,7 @@ const injectModuleTokens = {
 
 const moduleHost = InjectableModuleClassFactory.create(
    injectModuleTokens,
-   (_config: object): DefaultDirector => {
+   (_config: object): IDynamicModuleDirector => {
       return (builder: IDynamicModuleBuilder): void => {
          builder.exportProviders({
             provide: PaintingModuleTypes.IRandomArtTaskEngine,

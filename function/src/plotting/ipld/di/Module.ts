@@ -9,7 +9,7 @@ import { PlottingModuleTypes } from "../../di/Types.js"
 import { ISerdesModuleBuilder } from "../../../ipld/index.js"
 import {
    InjectableModuleClassFactory,
-   DefaultDirector,
+   IDynamicModuleDirector,
    IDynamicModuleBuilder,
 } from "../../../modules/index.js"
 
@@ -19,7 +19,7 @@ const injectModuleTokens = {
 
 const moduleHost = InjectableModuleClassFactory.create(
    injectModuleTokens,
-   (_config: object): DefaultDirector => {
+   (_config: object): IDynamicModuleDirector => {
       return (builder: IDynamicModuleBuilder): void => {
          builder.exportModules(
             IpldModule.register(

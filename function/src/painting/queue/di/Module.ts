@@ -8,13 +8,14 @@ import { RandomArtStoreWorker } from "../components/RandomArtStoreWorker.js"
 import { RandomArtStoreEventListener } from "../components/RandomArtStoreEventListener.js"
 
 import {
-   DefaultDirector,
+   IDynamicModuleDirector,
    IDynamicModuleBuilder,
    InjectableModuleClassFactory,
 } from "../../../modules/index.js"
 import { ReturnQueueRoutingProcessor as ReplyQueueRoutingProcessor } from "../components/ReturnQueueRoutingProcessor.js"
 import { ModuleConfigData } from "./Configuration.js"
 import { RandomArtGatheringWorker } from "../components/RandomArtGatheringWorker.js"
+import { RandomArtProjectGatheringWorker } from "../components/RandomArtProjectGatheringWorker.js"
 import { FlowConfiguration } from "../components/FlowConfiguration.js"
 
 const injectModuleTokens = {
@@ -25,7 +26,7 @@ const injectModuleTokens = {
 
 const moduleHost = InjectableModuleClassFactory.create(
    injectModuleTokens,
-   (config: ModuleConfigData): DefaultDirector => {
+   (config: ModuleConfigData): IDynamicModuleDirector => {
       return (builder: IDynamicModuleBuilder): void => {
          builder.importModules(
             BullModule.forRoot({

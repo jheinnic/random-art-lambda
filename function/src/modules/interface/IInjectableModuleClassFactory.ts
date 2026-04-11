@@ -5,7 +5,7 @@ import {
    ForwardReference,
    ClassProvider,
 } from "@nestjs/common"
-import { DefaultDirector } from "./IDynamicModuleBuilder.js"
+import { IDynamicModuleDirector } from "./IDynamicModuleBuilder.js"
 
 export interface FunctionInjectTokenArgument {
    token: string | symbol | Type
@@ -122,11 +122,11 @@ export type FullModuleDirectorFactory<
 > = (
    config: InternalConfig,
    injection: InjectionConfig<ImportTokens>,
-) => DefaultDirector
+) => IDynamicModuleDirector
 
 export type BasicModuleDirectorFactory<in InternalConfig extends object> = (
    config: InternalConfig,
-) => DefaultDirector
+) => IDynamicModuleDirector
 
 export type ModuleDirectorFactory<
    InternalConfig extends object,
