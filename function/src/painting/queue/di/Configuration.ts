@@ -1,3 +1,5 @@
+import type { ModuleDependenciesOption } from "../../../modules/index.js"
+
 export interface ModuleConfigData {
    redis: {
       host: string
@@ -40,5 +42,13 @@ export interface ModuleConfigData {
       /** Concurrency for gather/staging workers */
       gather?: number
    }
-   roles: Array<"paintWorker" | "mainApp" | "stageWorker" | "jobDoneWorker">
+   roles: Array<"paintWorker" | "mainApp" | "stageWorker" | "projectGatherer" | "jobDoneWorker">
+
+   /**
+    * File store dependency for the project gathering worker.
+    * Required when the "projectGatherer" role is active.
+    * Uses the same ModuleDependenciesOption format as injectModuleTokens.
+    * Set to undefined when no projectGatherer role is configured.
+    */
+   fileStore: ModuleDependenciesOption | undefined
 }

@@ -109,4 +109,5 @@ export const queueModule: DynamicModule = QueueingPaintModule.forRoot({
       module: stagingModule,
       token: StagingModuleTypes.IImageStager,
    },
+   fileStore: undefined,
 })

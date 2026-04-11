@@ -1,15 +1,13 @@
-import { CID } from "multiformats"
 import {
    PrefixString,
    SuffixString,
-   CIDString,
 } from "../../../messages/interface/NamedValues.js"
 
 /**
  * Seed data used to initialize a GenModel artwork space.
  *
- * The prefix and suffix are each arbitrary length binary seeds encoded as base64 strings.
- * The regionMapRef CID identifies the coordinate mapping/dimensions.
+ * The prefix and suffix are each arbitrary length binary seeds encoded as base64 strings, or
+ * Uint8ClampedArray representations of a binary byte sequence.
  *
  * Callers who want to use phrase-based or string-based seeds should preprocess
  * them into utf8-encoded binary arrays to get equivalent behavior.
@@ -23,6 +21,6 @@ export interface GenModelSeed {
    /**
     * A base64 encoding of the content prefix used to seed this piece's GenModel
     */
-   readonly seedPrefix: PrefixString // base64-encoded 16-byte binary seed
-   readonly seedSuffix: SuffixString // base64-encoded 16-byte binary seed
+   readonly seedPrefix: PrefixString | Uint8ClampedArray<ArrayBufferLike> // base64-encoded binary seed
+   readonly seedSuffix: SuffixString | Uint8ClampedArray<ArrayBufferLike> // base64-encoded binary seed
 }

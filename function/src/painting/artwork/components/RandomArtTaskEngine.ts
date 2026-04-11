@@ -1,9 +1,4 @@
-import {
-   Inject,
-   Injectable,
-   Logger,
-   OnApplicationShutdown,
-} from "@nestjs/common"
+import { Inject, Injectable, Logger } from "@nestjs/common"
 
 import { PaintingModuleTypes } from "../di/Types.js"
 import type {
@@ -38,7 +33,7 @@ function decodeBase64ToBytes(base64: string): Uint8ClampedArray {
 }
 
 @Injectable()
-export class RandomArtTaskEngine implements OnApplicationShutdown {
+export class RandomArtTaskEngine {
    private readonly logger: Logger = new Logger("RandomArtTaskEngine")
 
    public constructor(
@@ -50,8 +45,8 @@ export class RandomArtTaskEngine implements OnApplicationShutdown {
 
    /**
     * Force the service to complete by closing the Channel with its input requests.
-    */
    public async onApplicationShutdown(): Promise<void> {}
+    */
 
    public async performPaintTask(
       nextTask: PartialPaintRequest,
@@ -66,8 +61,12 @@ export class RandomArtTaskEngine implements OnApplicationShutdown {
 
       // Decode base64 seeds to binary and create model via provider
       const genModel = this.genModelProvider.createModel(
-         decodeBase64ToBytes(seedStrategy.seedPrefix),
-         decodeBase64ToBytes(seedStrategy.seedSuffix),
+         typeof seedStrategy.seedPrefix === "string"
+            ? decodeBase64ToBytes(seedStrategy.seedPrefix)
+            : seedStrategy.seedPrefix,
+         typeof seedStrategy.seedSuffix === "string"
+            ? decodeBase64ToBytes(seedStrategy.seedSuffix)
+            : seedStrategy.seedSuffix,
       )
       try {
          // Parse the CID now that we have passed the point of serialization!

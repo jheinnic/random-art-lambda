@@ -1,4 +1,4 @@
-import type { JobDisposition } from "../../middleware/types/JobDisposition.js"
+import type { JobDisposition } from "./JobDisposition.js"
 
 export interface CollectionResult<T> {
    results: Array<T | ErrorMarker | null>

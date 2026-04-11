@@ -146,10 +146,14 @@ export class RandomArtGatheringWorker extends WorkerHost<
                     taskId,
                     projectId: request.projectId,
                     result,
+                    domainExtension: request.paintTask.domainExtension,
+                    regionMapName: request.paintTask.plotDataRef.regionMapName,
                  }
                : {
                     taskId,
                     result,
+                    domainExtension: request.paintTask.domainExtension,
+                    regionMapName: request.paintTask.plotDataRef.regionMapName,
                  }
          },
       )

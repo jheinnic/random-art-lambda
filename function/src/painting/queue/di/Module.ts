@@ -95,7 +95,28 @@ const moduleHost = InjectableModuleClassFactory.create(
                provide: QueuedPaintingTypes.StagingWorker,
                useClass: RandomArtGatheringWorker,
             })
-         } else if ("jobCompleteWorker" in config.roles) {
+         }
+         if (config.roles.includes("projectGatherer")) {
+            if (config.fileStore == null) {
+               throw new Error(
+                  "fileStore config is required when projectGatherer role is active",
+               )
+            }
+            // Apply @Processor decorator dynamically with configured queue name
+            Processor(config.queueNames.toGatherTasks)(
+               RandomArtProjectGatheringWorker,
+            )
+            // Wire up the IFileStore dependency for the project gathering worker
+            builder.importDependencies([
+               QueuedPaintingTypes.InjectedFileStore,
+               config.fileStore,
+            ])
+            builder.defineProviders({
+               provide: QueuedPaintingTypes.ProjectGatheringWorker,
+               useClass: RandomArtProjectGatheringWorker,
+            })
+         }
+         if ("jobCompleteWorker" in config.roles) {
             builder.defineProviders(
                {
                   provide: QueuedPaintingTypes.StoreWorker,
