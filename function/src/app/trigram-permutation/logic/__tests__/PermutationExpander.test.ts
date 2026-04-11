@@ -49,6 +49,7 @@ describe("PermutationExpander", () => {
             regionMapNames: ["test-region"],
             prefixTrigrams: ["☰", "☱"],
             suffixTrigrams: ["☰", "☱"],
+            fileNameExpression: undefined,
          }
 
          const result = pairPrefixSuffixSource(spec)
@@ -68,6 +69,7 @@ describe("PermutationExpander", () => {
             regionMapNames: ["test-region"],
             prefixTrigrams: ["☰"],
             suffixTrigrams: ["☰"],
+            fileNameExpression: undefined,
          }
 
          const result = pairPrefixSuffixSource(spec)
@@ -85,6 +87,7 @@ describe("PermutationExpander", () => {
             expandType: PermutationSpecType.AllPairs,
             regionMapNames: ["test-region"],
             sourceTrigrams: ["☰", "☱", "☲"],
+            fileNameExpression: undefined,
          }
 
          const result = pairAllPairsSource(spec)
@@ -112,6 +115,7 @@ describe("PermutationExpander", () => {
             regionMapNames: ["test-region"],
             sourceTrigrams: ["☰", "☱", "☲"],
             includeIdentity: true,
+            fileNameExpression: undefined,
          }
 
          const result = pairAllPairsSource(spec)
@@ -139,6 +143,7 @@ describe("PermutationExpander", () => {
             regionMapNames: ["test-region"],
             sourceTrigrams: ["☰", "☱"],
             includeIdentity: true,
+            fileNameExpression: undefined,
          }
 
          const result = pairAllPairsSource(spec)
@@ -157,6 +162,7 @@ describe("PermutationExpander", () => {
             regionMapNames: ["test-region"],
             prefixTrigrams: ["A"],
             suffixTrigrams: ["B"],
+            fileNameExpression: undefined,
          }
 
          const result = expandTermPairs(spec)
@@ -172,6 +178,7 @@ describe("PermutationExpander", () => {
             expandType: PermutationSpecType.AllPairs,
             regionMapNames: ["test-region"],
             sourceTrigrams: ["A", "B"],
+            fileNameExpression: undefined,
          }
 
          const result = expandTermPairs(spec)

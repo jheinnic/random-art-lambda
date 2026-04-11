@@ -28,6 +28,18 @@ import { TrigramPaintTask } from "../models/paint/TrigramPaintTask.js"
 import { TermPairSource } from "../models/paint/TermPairSource.js"
 import { TermPairSourceType } from "../models/paint/TermPairSourceType.js"
 import { SeedEncodingUtil } from "../../../messages/components/SeedEncodingUtil.js"
+import {
+   resolveFileNameExpression,
+   type FileNameExpressionConfig,
+} from "../../../painting/messages/expression/FileNameExpressionConfig.js"
+import type { ExpressionVisibility } from "../../../painting/messages/expression/ExpressionVisibility.js"
+
+const TRIGRAM_EXPRESSION_CONFIG: FileNameExpressionConfig = {
+   defaultExpression: "${_methods.prefixAndSuffixHash()}.png",
+   moduleLevel: "optional",
+   projectLevel: "optional",
+   permutationLevel: "optional",
+}
 
 interface TermPairing {
    prefixTrigram: string
@@ -48,12 +60,13 @@ interface TermPairing {
  */
 export function pairPrefixSuffixSource(spec: PrefixSuffixSpec): TermPairing[] {
    const { prefixTrigrams, suffixTrigrams } = spec
+   const encoding: BufferEncoding = spec.inputEncoding ?? "utf-8"
 
    const seedSuffixes: Array<[string, SuffixString]> = suffixTrigrams.map(
       (suffixTrigram: string): [string, SuffixString] => {
          return [
             suffixTrigram,
-            SeedEncodingUtil.fromEncodedSuffix(suffixTrigram, "utf-8"),
+            SeedEncodingUtil.fromEncodedSuffix(suffixTrigram, encoding),
          ]
       },
    )
@@ -63,7 +76,7 @@ export function pairPrefixSuffixSource(spec: PrefixSuffixSpec): TermPairing[] {
       (prefixTrigram: string, prefixIndex: number): TermPairing[] => {
          const seedPrefix: PrefixString = SeedEncodingUtil.fromEncodedPrefix(
             prefixTrigram,
-            "utf-8",
+            encoding,
          )
          return seedSuffixes.map(
             (
@@ -99,16 +112,14 @@ export function pairPrefixSuffixSource(spec: PrefixSuffixSpec): TermPairing[] {
  */
 export function pairAllPairsSource(spec: AllPairsSpec): TermPairing[] {
    const { sourceTrigrams, includeIdentity = false } = spec
-   // const pairCount = includeIdentity
-   //    ? sourceTrigrams.length * sourceTrigrams.length
-   //    : sourceTrigrams.length * (sourceTrigrams.length - 1)
+   const encoding: BufferEncoding = spec.inputEncoding ?? "utf-8"
 
    const seedSources: Array<[string, PrefixString & SuffixString]> =
       sourceTrigrams.map(
          (sourceTrigram: string): [string, PrefixString & SuffixString] => {
             const seedPrefix: PrefixString = SeedEncodingUtil.fromEncodedPrefix(
                sourceTrigram,
-               "utf-8",
+               encoding,
             )
             return [sourceTrigram, SeedEncodingUtil.reuseTerm(seedPrefix)]
          },
@@ -211,6 +222,11 @@ function validateRegionMapNames(
  */
 export function expandToMultiTaskRequest(
    projectSpec: TrigramProjectSpec,
+   expressionConfig?: FileNameExpressionConfig<
+      ExpressionVisibility,
+      ExpressionVisibility,
+      ExpressionVisibility
+   >,
 ): MultiTaskRequestModel<TrigramPaintTask, TrigramPaintProject> {
    const { regionMapCatalog, permutationSpecs } = projectSpec
 
@@ -249,6 +265,20 @@ export function expandToMultiTaskRequest(
          TermPairSource,
          Array<PaintingTask<TrigramPaintTask, PlotDataNameRef>>,
       ] => {
+         // Resolve filename expression for this permutation spec
+         const resolvedFileNameExpression: string | undefined =
+            expressionConfig != null
+               ? resolveFileNameExpression(
+                    expressionConfig,
+                    undefined,
+                    projectSpec.fileNameExpression,
+                    permutationSpec.fileNameExpression,
+                 )
+               : undefined
+
+         const inputEncoding: BufferEncoding | undefined =
+            permutationSpec.inputEncoding
+
          const retval: [
             TermPairSource,
             Array<PaintingTask<TrigramPaintTask, PlotDataNameRef>>,
@@ -258,6 +288,8 @@ export function expandToMultiTaskRequest(
             termPairsList,
             termPairSourceIndex,
             nextPaintProjectTaskIndex,
+            resolvedFileNameExpression,
+            inputEncoding,
          )
          nextPaintProjectTaskIndex =
             nextPaintProjectTaskIndex + termPairsList.length
@@ -300,6 +332,8 @@ function expandRegionMaps(
    termPairsList: TermPairing[],
    termPairSourceIndex: number,
    nextPaintProjectTaskIndex: number,
+   resolvedFileNameExpression?: string,
+   inputEncoding?: BufferEncoding,
 ): [TermPairSource, Array<PaintingTask<TrigramPaintTask, PlotDataNameRef>>] {
    let termPairSource: TermPairSource
    let termPairSourceType: TermPairSourceType
@@ -380,6 +414,8 @@ function expandRegionMaps(
                      prefixIndex,
                      suffixTrigram,
                      suffixIndex,
+                     resolvedFileNameExpression,
+                     inputEncoding,
                   },
                }
             },
@@ -406,12 +442,15 @@ export class PermutationExpander {
    /**
     * Expands a TrigramProjectSpec into a MultiTaskRequestModel.
     *
+    * Uses TRIGRAM_EXPRESSION_CONFIG to resolve filename expressions
+    * through the precedence chain (default → project → permutation).
+    *
     * @param projectSpec - Complete project specification
     * @returns MultiTaskRequestModel ready for painting framework
     */
    expandToMultiTaskRequest(
       projectSpec: TrigramProjectSpec,
    ): MultiTaskRequestModel<TrigramPaintTask, TrigramPaintProject> {
-      return expandToMultiTaskRequest(projectSpec)
+      return expandToMultiTaskRequest(projectSpec, TRIGRAM_EXPRESSION_CONFIG)
    }
 }

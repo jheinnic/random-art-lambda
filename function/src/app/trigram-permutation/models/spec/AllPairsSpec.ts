@@ -1,8 +1,12 @@
+import type { PermutationInputSpec } from "./PermutationInputSpec.js"
 import { PermutationSpecType } from "./PermutationSpecType.js"
 
 /**
  * All-Pairs permutation spec
  * Generates ordered pairs from a single source list × regionMaps
+ *
+ * Extends PermutationInputSpec to inherit inputEncoding and fileNameExpression
+ * from the mid-tier permutation framework.
  *
  * This expander produces the Cartesian product of sources × sources × regionMaps,
  * optionally excluding identity pairs where both elements are the same.
@@ -27,7 +31,7 @@ import { PermutationSpecType } from "./PermutationSpecType.js"
  *
  * With multiple regionMaps (r=2), each pair count is doubled.
  */
-export interface AllPairsSpec {
+export interface AllPairsSpec extends PermutationInputSpec {
    expandType: PermutationSpecType.AllPairs
 
    /**

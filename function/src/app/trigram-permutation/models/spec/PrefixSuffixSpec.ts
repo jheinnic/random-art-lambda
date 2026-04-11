@@ -1,8 +1,12 @@
+import type { PermutationInputSpec } from "./PermutationInputSpec.js"
 import { PermutationSpecType } from "./PermutationSpecType.js"
 
 /**
  * Prefix-Suffix permutation spec
  * Generates Cartesian product of prefixes × suffixes × regionMaps
+ *
+ * Extends PermutationInputSpec to inherit inputEncoding and fileNameExpression
+ * from the mid-tier permutation framework.
  *
  * For p prefixes, s suffixes, and r regionMaps:
  * Total tasks = p × s × r
@@ -27,7 +31,7 @@ import { PermutationSpecType } from "./PermutationSpecType.js"
  *
  * The regionMapNames reference keys in the project-level regionMapCatalog.
  */
-export interface PrefixSuffixSpec {
+export interface PrefixSuffixSpec extends PermutationInputSpec {
    expandType: PermutationSpecType.PrefixSuffix
 
    /**

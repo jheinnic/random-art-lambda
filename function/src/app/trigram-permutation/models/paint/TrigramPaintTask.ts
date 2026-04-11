@@ -1,40 +1,43 @@
+import type { PermutationPaintTask } from "../spec/PermutationInputSpec.js"
 import { TermPairSourceType } from "./TermPairSourceType.js"
 
-/*
+/**
  * Task-level domain model for individual trigram rendering
+ *
+ * Extends PermutationPaintTask to inherit resolvedFileNameExpression
+ * and inputEncoding from the mid-tier permutation framework.
  */
-export interface TrigramPaintTask {
-   termPairSourceType: TermPairSourceType
-
+export interface TrigramPaintTask extends PermutationPaintTask {
    /**
-    * This value should be in the model that the RandomArt framework maintains, but
-    * it is presently excluded because the PaintingTask model is being reused in
-    * multiple contexts, and they don't always occur in a context that would require
-    * or even define an original project-scoped index of occurence.   The simplest
-    * counter-example is the project-less single-painting task request.
+    * Flat ordinal of this task within the project.
     *
-    * RA should reconcile this with what it does for Pipeline Context composition,
-    * where it would compose a model providing master collection index retention on
-    * a suitably named abstraction with the core abstraction for a painting task.
-    *
-    * This is a TODO note to eventually return to relying on the framework context
-    * contribution to model this property instead of letting it live here ad infinitum.
+    * This property is the wire serialization form of ProjectPositionPart's
+    * `paintProjectTaskIndex`. The framework context part provides the
+    * canonical worker-side access path; this property remains for wire
+    * transport and manifest persistence.
     */
    paintProjectTaskIndex: number
+
+   /**
+    * Which region map reference in that term pair source contributed this
+    * task's region map.
+    *
+    * This property is the wire serialization form of ProjectPositionPart's
+    * `regionMapIndex`. The framework context part provides the canonical
+    * worker-side access path; this property remains for wire transport
+    * and manifest persistence.
+    */
+   regionMapIndex: number
 
    /**
     * Which Term Pair Source contributed this task
     */
    termPairSourceIndex: number
 
-   /**
-    * Which region map reference in that term pair source contributed this tasks's
-    * region map.
-    */
-   regionMapIndex: number
+   termPairSourceType: TermPairSourceType
 
    /**
-    * Which expanded term pair in that term pair source controbuted this task's
+    * Which expanded term pair in that term pair source contributed this task's
     * prefix/suffix pairing.
     */
    termPairIndex: number

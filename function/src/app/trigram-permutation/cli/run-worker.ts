@@ -32,6 +32,7 @@ import { resolve } from "path"
 import { homedir } from "os"
 import { NestFactory } from "@nestjs/core"
 import { Module, DynamicModule, OnModuleInit, Logger } from "@nestjs/common"
+import { ConfigService } from "@nestjs/config"
 
 import {
    StagingModule,
@@ -50,6 +51,11 @@ import {
 import { RandomArtProvider } from "../../../painting/artwork/components/RandomArtProvider.js"
 import { GenJs6Provider } from "../../../painting/artwork/components/GenJs6Provider.js"
 import type { IGenModelProvider } from "../../../painting/artwork/interface/IGenModelProvider.js"
+import { AppConfigModule } from "../../shared/di/AppConfigModule.js"
+import { LocalStorageModule } from "../../../storage/di/LocalStorageModule.js"
+import { AwsS3StorageModule } from "../../../storage/di/AwsS3StorageModule.js"
+import { WORKER_FILE_STORE } from "../../../storage/tokens.js"
+import { TrigramPipelineModule } from "../di/TrigramPipelineModule.js"
 
 type WorkerRole = "paint" | "gather" | "both"
 type ArtProvider = "randomart" | "genjs6"
@@ -116,7 +122,10 @@ class TrigramWorkerAppModule implements OnModuleInit {
       this.logger.log("Worker module initialized and ready to process jobs")
    }
 
-   static forRoot(options: WorkerCliOptions): DynamicModule {
+   static forRoot(
+      options: WorkerCliOptions,
+      pipelineModule: DynamicModule | undefined,
+   ): DynamicModule {
       // Build the module dependency chain
 
       // 1. IpfsModule - creates and manages FsBlockstore
@@ -224,11 +233,14 @@ class TrigramWorkerAppModule implements OnModuleInit {
             module: stagingModule,
             token: StagingModuleTypes.IImageStager,
          },
+         fileStore: undefined,
       })
 
       return {
          module: TrigramWorkerAppModule,
-         imports: [queueModule],
+         imports: pipelineModule != null
+            ? [queueModule, pipelineModule]
+            : [queueModule],
       }
    }
 }
@@ -415,9 +427,29 @@ async function main(): Promise<void> {
       process.exit(1)
    }
 
-   // Bootstrap NestJS application
+   // Phase 1: mini-bootstrap to get ConfigService for the assembly function
+   const configContext = await NestFactory.createApplicationContext(
+      await AppConfigModule.forRoot(),
+      { logger: ["error", "warn"] },
+   )
+   const configSvc = configContext.get(ConfigService)
+   await configContext.close()
+
+   const storageModule =
+      options.stagerType === "s3"
+         ? AwsS3StorageModule.forRoot({
+              exportToken: WORKER_FILE_STORE,
+              s3Bucket: options.s3Bucket,
+              s3Region: options.awsRegion,
+           })
+         : LocalStorageModule.forRoot({ exportToken: WORKER_FILE_STORE })
+
+   // Assembly Function: wire the pipeline with config-driven defaults
+   const pipelineModule = TrigramPipelineModule.assemble(configSvc, storageModule)
+
+   // Phase 2: full application bootstrap
    const app = await NestFactory.createApplicationContext(
-      TrigramWorkerAppModule.forRoot(options),
+      TrigramWorkerAppModule.forRoot(options, pipelineModule),
       {
          logger: ["log", "error", "warn"],
       },
