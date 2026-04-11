@@ -14,6 +14,11 @@ import {
    type ExpressionContext,
    type MiddlewareContextConstructor,
 } from "../index.js"
+import {
+   resolveFileNameExpression,
+   type FileNameExpressionConfig,
+   type ExpressionVisibility,
+} from "../../expression/index.js"
 
 // ============================================================================
 // Abstract Contract
@@ -175,4 +180,54 @@ export function createPathPartFromTemplate(
       .named(name)
       .expr("pathName", template)
       .build<{ pathName: string }>()
+}
+
+// ============================================================================
+// Resolved Expression Path Part
+// ============================================================================
+
+/**
+ * Create a path naming part from a resolved expression precedence chain.
+ *
+ * Resolves the expression from highest to lowest precedence:
+ *   permutation > project > module > config default
+ *
+ * Works with ANY expression functions available in the context --
+ * not coupled to term functions or any specific context part.
+ *
+ * @param name - Part name for registration
+ * @param config - Expression configuration with default and visibility settings
+ * @param moduleExpression - Level 1: from module config (optional)
+ * @param projectExpression - Level 2: from project spec (optional)
+ * @param permutationExpression - Level 3: from permutation spec (optional)
+ * @returns A MiddlewareContextConstructor for the path part
+ *
+ * @example
+ * ```typescript
+ * const pathPart = createResolvedPathPart(
+ *    "MyResolvedPath",
+ *    expressionConfig,
+ *    undefined,                                    // no module expression
+ *    "${_methods.prefixTerm()}_${_methods.suffixTerm()}.png",  // project expression
+ * )
+ * ```
+ */
+export function createResolvedPathPart(
+   name: string,
+   config: FileNameExpressionConfig<
+      ExpressionVisibility,
+      ExpressionVisibility,
+      ExpressionVisibility
+   >,
+   moduleExpression?: string,
+   projectExpression?: string,
+   permutationExpression?: string,
+): MiddlewareContextConstructor<{ pathName: string }, object> {
+   const expression = resolveFileNameExpression(
+      config,
+      moduleExpression,
+      projectExpression,
+      permutationExpression,
+   )
+   return createPathPartFromTemplate(name, expression)
 }

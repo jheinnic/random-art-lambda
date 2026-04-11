@@ -1,6 +1,6 @@
 import { DynamicModule, Module } from "@nestjs/common"
-import type { FileStore } from "@aztec/stdlib/dest/file-store/interface.js"
-import { createFileStore } from "@aztec/stdlib/dest/file-store/factory.js"
+import type { FileStore } from "@aztec/stdlib/file-store"
+import { createFileStore } from "@aztec/stdlib/file-store"
 import { S3ResultStore } from "../components/S3ResultStore.js"
 
 export interface S3StorageModuleConfig {

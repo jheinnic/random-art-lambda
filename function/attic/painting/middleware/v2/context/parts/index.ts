@@ -107,4 +107,57 @@ export {
    // Factories
    createPathPart,
    createPathPartFromTemplate,
+   createResolvedPathPart,
 } from "./PathNamingPart.js"
+
+// ============================================================================
+// Project Position Part
+// ============================================================================
+
+export {
+   // Abstract contract
+   HasProjectPosition,
+   // Concrete provider
+   ProjectPositionPart,
+   // Types
+   type ProjectPositionProperties,
+} from "./ProjectPositionPart.js"
+
+// ============================================================================
+// Task Group Position Part
+// ============================================================================
+
+export {
+   // Abstract contract
+   HasTaskGroupPosition,
+   // Concrete provider
+   TaskGroupPositionPart,
+   // Types
+   type TaskGroupPositionProperties,
+} from "./TaskGroupPositionPart.js"
+
+// ============================================================================
+// Term Group Position Part
+// ============================================================================
+
+export {
+   // Abstract contract
+   HasTermGroupPosition,
+   // Concrete provider
+   TermGroupPositionPart,
+   // Types
+   type TermGroupPositionProperties,
+} from "./TermGroupPositionPart.js"
+
+// ============================================================================
+// Term Position Part
+// ============================================================================
+
+export {
+   // Abstract contract
+   HasTermPosition,
+   // Concrete provider
+   TermPositionPart,
+   // Types
+   type TermPositionProperties,
+} from "./TermPositionPart.js"

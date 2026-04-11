@@ -258,4 +258,20 @@ export {
    ProjectPathPart,
    createPathPart,
    createPathPartFromTemplate,
+   // Project Position
+   HasProjectPosition,
+   ProjectPositionPart,
+   type ProjectPositionProperties,
+   // Task Group Position
+   HasTaskGroupPosition,
+   TaskGroupPositionPart,
+   type TaskGroupPositionProperties,
+   // Term Group Position
+   HasTermGroupPosition,
+   TermGroupPositionPart,
+   type TermGroupPositionProperties,
+   // Term Position
+   HasTermPosition,
+   TermPositionPart,
+   type TermPositionProperties,
 } from "./parts/index.js"

@@ -92,12 +92,14 @@ export interface IContextFactory<
     * @param initialState - Initial values for the context
     * @returns A fully assembled middleware context
     */
-   create(initialState: Partial<TContext>): MiddlewareContext<TContext, TDeps>
+   create: (
+      initialState: Partial<TContext>,
+   ) => MiddlewareContext<TContext, TDeps>
 
    /**
     * Get the dependency graph used for assembly
     */
-   getDependencyGraph(): DependencyGraph
+   getDependencyGraph: () => DependencyGraph
 }
 
 /**
@@ -193,6 +195,7 @@ export class MiddlewareContextModuleBuilder {
       PartInjectionToken,
       InjectionToken | Provider
    > = new Map()
+
    private moduleName: string = "MiddlewareContextModule"
    private isGlobal: boolean = false
    private registry: ContextPartRegistry = globalContextPartRegistry
@@ -325,7 +328,8 @@ export class MiddlewareContextModuleBuilder {
                   injectionRequirements.push({
                      part,
                      partName: meta?.name ?? part.name,
-                     requirements: InjectionResolver.getInjectionRequirements(part),
+                     requirements:
+                        InjectionResolver.getInjectionRequirements(part),
                   })
                }
             }
@@ -351,8 +355,9 @@ export class MiddlewareContextModuleBuilder {
                   const tokenToService = new Map<string | symbol, unknown>()
                   injectTokens.slice(1).forEach((token, index) => {
                      // Store using a string/symbol key for lookup
-                     const key = typeof token === "function" ? token.name : token
-                     tokenToService.set(key as string | symbol, injectedServices[index])
+                     const key =
+                        typeof token === "function" ? token.name : token
+                     tokenToService.set(key, injectedServices[index])
                   })
 
                   // Build resolved injections map
@@ -361,7 +366,9 @@ export class MiddlewareContextModuleBuilder {
                      const resolved: Record<string, unknown> = {}
                      for (const dep of req.requirements) {
                         // Lookup using the same key format
-                        resolved[dep.propertyName] = tokenToService.get(dep.token)
+                        resolved[dep.propertyName] = tokenToService.get(
+                           dep.token,
+                        )
                      }
                      resolvedInjections.set(req.partName, resolved as object)
                   }
@@ -453,9 +460,8 @@ export function createContextModule(
       dependencies?: Map<PartInjectionToken, InjectionToken | Provider>
    },
 ): { forRoot: () => DynamicModule } {
-   const builder = MiddlewareContextModuleBuilder.create(moduleName).addParts(
-      parts,
-   )
+   const builder =
+      MiddlewareContextModuleBuilder.create(moduleName).addParts(parts)
 
    if (options?.global === true) {
       builder.global()

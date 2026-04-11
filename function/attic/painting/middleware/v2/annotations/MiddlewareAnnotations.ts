@@ -13,11 +13,9 @@ export const MIDDLEWARE_CONTEXT_FIELD_KEY = Symbol("middleware:context-field")
  * Registry of all middleware steps discovered at decoration time.
  * This is the "filing cabinet" that allows iteration over all steps.
  */
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class MiddlewareRegistry {
-   private static readonly steps = new Map<
-      Function,
-      MiddlewareStepMetadata
-   >()
+   private static readonly steps = new Map<Function, MiddlewareStepMetadata>()
 
    static register(
       constructor: Function,
@@ -26,7 +24,9 @@ export class MiddlewareRegistry {
       this.steps.set(constructor, metadata)
    }
 
-   static getMetadata(constructor: Function): MiddlewareStepMetadata | undefined {
+   static getMetadata(
+      constructor: Function,
+   ): MiddlewareStepMetadata | undefined {
       return this.steps.get(constructor)
    }
 
@@ -148,8 +148,10 @@ export function MiddlewareStep(options: MiddlewareStepOptions) {
 
       // Get any context field metadata already registered by @FromContext
       const contextFields: Map<string, ContextFieldMetadata> =
-         Reflect.getOwnMetadata(MIDDLEWARE_CONTEXT_FIELD_KEY, constructor.prototype) ||
-         new Map()
+         Reflect.getOwnMetadata(
+            MIDDLEWARE_CONTEXT_FIELD_KEY,
+            constructor.prototype,
+         ) || new Map()
 
       const metadata: MiddlewareStepMetadata = {
          name: options.name || constructor.name,
@@ -181,11 +183,16 @@ export function MiddlewareStep(options: MiddlewareStepOptions) {
 export function FromContext(contextFieldName: string) {
    return function (target: object, propertyKey: string): void {
       // Get the field's type from design:type
-      const expectedType = Reflect.getMetadata("design:type", target, propertyKey)
+      const expectedType = Reflect.getMetadata(
+         "design:type",
+         target,
+         propertyKey,
+      )
 
       // Get or create the context fields map
       const contextFields: Map<string, ContextFieldMetadata> =
-         Reflect.getOwnMetadata(MIDDLEWARE_CONTEXT_FIELD_KEY, target) || new Map()
+         Reflect.getOwnMetadata(MIDDLEWARE_CONTEXT_FIELD_KEY, target) ||
+         new Map()
 
       contextFields.set(propertyKey, {
          propertyKey,
@@ -194,7 +201,11 @@ export function FromContext(contextFieldName: string) {
       })
 
       // Store back on the prototype
-      Reflect.defineMetadata(MIDDLEWARE_CONTEXT_FIELD_KEY, contextFields, target)
+      Reflect.defineMetadata(
+         MIDDLEWARE_CONTEXT_FIELD_KEY,
+         contextFields,
+         target,
+      )
    }
 }
 

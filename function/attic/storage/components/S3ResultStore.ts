@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common"
-import type { FileStore } from "@aztec/stdlib/dest/file-store/interface.js"
+import type { FileStore } from "@aztec/stdlib/file-store"
 import { IResultStore } from "../interface/IResultStore.js"
 import { IFileStore, FileMetadata } from "../interface/IFileStore.js"
 import { Readable } from "stream"
