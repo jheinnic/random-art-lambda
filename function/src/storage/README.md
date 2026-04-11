@@ -2,122 +2,101 @@
 
 General-purpose storage abstraction supporting local filesystem and S3.
 
-## Features
+## Interfaces
 
-- **Buffer-based API** for writing arbitrary data
-- **Local filesystem** support with automatic directory creation
-- **S3 support** via @aztec/stdlib FileStore
-- **Custom injection tokens** for multiple independent instances
-- **Single responsibility** - each module does one thing
+### IFileStore
 
-## Usage
+```typescript
+interface IFileStore {
+  write(path: string, data: Buffer, metadata?: FileMetadata): Promise<string>
+  read(path: string): Promise<Buffer>
+  delete(path: string): Promise<void>
+  exists(path: string): Promise<boolean>
+  getBaseUri(): string
+}
 
-### Local-Only Storage
+interface FileMetadata {
+  contentType?: string
+  tags?: Record<string, string>
+  cacheControl?: string
+  contentEncoding?: string
+}
+```
+
+`write()` returns the full URI to the stored file (`file://...` for local, `s3://...` for S3).
+
+## Modules
+
+### LocalStorageModule
+
+Writes to the local filesystem. Automatic directory creation. No external dependencies.
 
 ```typescript
 import { LocalStorageModule } from "./storage/index.js"
+import { IFileStore } from "./storage/interface/IFileStore.js"
 
-const PAINT_RESULT_STORE = Symbol("PaintResultStore")
+const IMAGE_STORE = Symbol("ImageStore")
 
 @Module({
   imports: [
     LocalStorageModule.forRoot({
-      exportToken: PAINT_RESULT_STORE,
+      exportToken: IMAGE_STORE,
+      baseDirectory: "/tmp/output", // optional, defaults to process.cwd()
     }),
   ],
 })
 export class MyModule {
   constructor(
-    @Inject(PAINT_RESULT_STORE)
-    private readonly storage: IResultStore,
+    @Inject(IMAGE_STORE)
+    private readonly store: IFileStore,
   ) {}
 
-  async saveImageBuffer(data: Buffer) {
-    // Write buffer to local filesystem
-    await this.storage.write("./output/image.png", data, "image/png")
-  }
-
-  async saveImageStream(canvas: Canvas) {
-    // Write stream directly - efficient for local files
-    const stream = canvas.createPNGStream()
-    await this.storage.writeStream("./output/image.png", stream, "image/png")
+  async save(data: Buffer) {
+    const uri = await this.store.write("images/result.png", data, {
+      contentType: "image/png",
+    })
+    // uri === "file:///tmp/output/images/result.png"
   }
 }
 ```
 
-### S3-Only Storage (AWS SDK v3 - Recommended)
+### AwsS3StorageModule
+
+Writes to S3 using AWS SDK v3 directly (`@aws-sdk/client-s3`). No third-party
+file-store abstraction layer.
 
 ```typescript
 import { AwsS3StorageModule } from "./storage/index.js"
+import { IFileStore } from "./storage/interface/IFileStore.js"
 
-const ARTIFACT_STORE = Symbol("ArtifactStore")
+const IMAGE_STORE = Symbol("ImageStore")
 
 @Module({
   imports: [
     AwsS3StorageModule.forRoot({
-      exportToken: ARTIFACT_STORE,
-      s3Bucket: "my-artifacts-bucket",
-      s3Region: "us-east-1",
-      s3Prefix: "artifacts/", // optional
-      s3PartSize: 10 * 1024 * 1024, // optional, 10MB chunks for multipart
+      exportToken: IMAGE_STORE,
+      s3Bucket: "my-images-bucket",
+      s3Region: "us-east-1",   // optional, defaults to AWS_REGION env var
+      s3Prefix: "trigram/",    // optional
     }),
   ],
 })
 export class MyModule {
   constructor(
-    @Inject(ARTIFACT_STORE)
-    private readonly storage: IResultStore,
+    @Inject(IMAGE_STORE)
+    private readonly store: IFileStore,
   ) {}
 
-  async saveToS3(data: Buffer) {
-    // Writes to S3 - no s3:// prefix needed
-    await this.storage.write("results/image.png", data, "image/png")
-  }
-
-  async saveStreamToS3(canvas: Canvas) {
-    // True streaming with automatic multipart upload for large files
-    const stream = canvas.createPNGStream()
-    await this.storage.writeStream("results/image.png", stream, "image/png")
+  async save(data: Buffer) {
+    const uri = await this.store.write("images/result.png", data, {
+      contentType: "image/png",
+    })
+    // uri === "s3://my-images-bucket/trigram/images/result.png"
   }
 }
 ```
 
-### S3-Only Storage (Legacy @aztec/stdlib)
-
-```typescript
-import { S3StorageModule } from "./storage/index.js"
-
-const ARTIFACT_STORE = Symbol("ArtifactStore")
-
-@Module({
-  imports: [
-    S3StorageModule.forRoot({
-      exportToken: ARTIFACT_STORE,
-      s3Bucket: "my-artifacts-bucket",
-      s3Region: "us-east-1",
-    }),
-  ],
-})
-export class MyModule {
-  constructor(
-    @Inject(ARTIFACT_STORE)
-    private readonly storage: IResultStore,
-  ) {}
-
-  async saveToS3(data: Buffer) {
-    // Writes to S3 - no s3:// prefix needed
-    await this.storage.write("results/image.png", data, "image/png")
-  }
-
-  async saveStreamToS3(canvas: Canvas) {
-    // Note: Stream will be buffered in memory before upload (FileStore limitation)
-    const stream = canvas.createPNGStream()
-    await this.storage.writeStream("results/image.png", stream, "image/png")
-  }
-}
-```
-
-### Multiple Independent Instances
+### Multiple independent instances
 
 ```typescript
 const CACHE_STORE = Symbol("CacheStore")
@@ -125,66 +104,44 @@ const RESULT_STORE = Symbol("ResultStore")
 
 @Module({
   imports: [
-    // Local storage for cache
-    LocalStorageModule.forRoot({
-      exportToken: CACHE_STORE,
-    }),
-    // AWS S3 storage for results
+    LocalStorageModule.forRoot({ exportToken: CACHE_STORE }),
     AwsS3StorageModule.forRoot({
       exportToken: RESULT_STORE,
       s3Bucket: "results-bucket",
-      s3Region: "us-east-1",
     }),
   ],
 })
 export class MyModule {
   constructor(
-    @Inject(CACHE_STORE) private readonly cache: IResultStore,
-    @Inject(RESULT_STORE) private readonly results: IResultStore,
+    @Inject(CACHE_STORE) private readonly cache: IFileStore,
+    @Inject(RESULT_STORE) private readonly results: IFileStore,
   ) {}
 }
 ```
 
-## Design Principles
+## Pipeline integration
 
-- **Single Responsibility**: LocalStorageModule handles local files, AwsS3StorageModule/S3StorageModule handle S3 - no overlap
-- **No Magic Prefixes**: Paths are interpreted in context of the module type
-- **Custom Tokens**: Explicit injection tokens prevent conflicts when using multiple instances
-
-## Implementation Comparison
-
-### AwsS3StorageModule (Recommended)
-- **Streaming**: True streaming uploads via @aws-sdk/lib-storage Upload
-- **Multipart**: Automatic multipart uploads for large files
-- **Chunk Size**: Configurable via s3PartSize option
-- **Memory**: Efficient - no buffering required
-- **Dependencies**: @aws-sdk/client-s3, @aws-sdk/lib-storage
-
-### S3StorageModule (Legacy)
-- **Streaming**: Buffers entire stream in memory
-- **Multipart**: Not supported
-- **Chunk Size**: N/A
-- **Memory**: High for large files
-- **Dependencies**: @aztec/stdlib
-
-### LocalStorageModule
-- **Streaming**: True streaming via Node.js pipeline
-- **Memory**: Efficient
-- **Dependencies**: Node.js built-ins only
-
-## API
-
-### IResultStore
+`FileStorePipelineModule` bridges any storage module into the pipeline by
+re-exporting its store under the `WORKER_FILE_STORE` token:
 
 ```typescript
-interface IResultStore {
-  write(path: string, data: Buffer, contentType?: string): Promise<string>
-  writeStream(path: string, stream: Readable, contentType?: string): Promise<string>
-  exists(path: string): Promise<boolean>
-}
+import { FileStorePipelineModule } from "./storage/pipeline/di/index.js"
+import { WORKER_FILE_STORE } from "./storage/tokens.js"
+
+const storageModule = AwsS3StorageModule.forRoot({
+  exportToken: WORKER_FILE_STORE,
+  s3Bucket: "my-bucket",
+})
+
+const pipelineModule = TrigramPipelineModule.assemble(configSvc, storageModule)
 ```
 
-**Note on `writeStream()`:**
-- **LocalResultStore**: True streaming via Node.js pipeline (efficient)
-- **AwsS3ResultStore**: True streaming via AWS SDK Upload with automatic multipart (efficient)
-- **S3ResultStore** (legacy): Buffers entire stream in memory first (FileStore limitation)
+## Error handling
+
+Both implementations throw typed `StorageError` subclasses rather than raw SDK
+errors. Each subclass implements `isRetryable()` for upstream retry logic.
+
+- **Local**: `FilesystemInvalidPathError`, `FilesystemPermissionError`,
+  `FilesystemNoSpaceError`, `FilesystemResourceBusyError` (retryable)
+- **S3**: `S3InvalidInputError`, `S3BucketNotFoundError`, `S3PermissionError`,
+  `S3NetworkError` (retryable)

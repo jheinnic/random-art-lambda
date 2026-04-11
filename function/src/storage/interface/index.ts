@@ -1,1 +1,1 @@
-export * from "./IResultStore.js"
+export * from "./IFileStore.js"
