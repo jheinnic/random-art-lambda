@@ -17,23 +17,15 @@ import {
 } from "../../../painting/artwork/components/genjs6.js"
 import { GenJs6Model } from "../../../painting/artwork/components/GenJs6Provider.js"
 
-// SHELVED: Seeding extension system moved to attic/
-// import { SeedingModuleTypes } from "../../../painting/seeding/di/Types.js"
-// import type { IPhraseSeed } from "../../../painting/seeding/builtin/interface/index.js"
-// import { IGMSeedExtensionPoint } from "../../../painting/seeding/interface/IGMSeedExtensionPoint.js"
 import { IpldPlottingModuleTypes } from "../../../plotting/ipld/di/Types.js"
 import { ProtobufPlottingModuleTypes } from "../../../plotting/protobuf/di/Types.js"
 
 import { PBufRegionMapFactory } from "../../../plotting/protobuf/components/PBufRegionMapFactory.js"
 import { PBufRegionMap } from "../../../plotting/protobuf/components/PBufRegionMap.js"
 import { CanvasPersister } from "../../../painting/artwork/components/CanvasPersister.js"
-// import { RANDOM_ART_LOCAL_CALLS_CHANNEL } from "../../di/Types._st"
-// import { IRxLocalCallChannel } from "../../../channels/interface/IRxLocalCallChannel.js"
 import { QueuedPaintingTypes } from "../../../painting/queue/di/Types.js"
 import { RandomArtFlowProducer } from "../../../painting/queue/components/RandomArtFlowProducer.js"
-// import { PaintableSeed } from "../../../painting/seeding/models/index.js"
-// import { of } from "rxjs"  // SHELVED: was only used in useSeeder()
-// import { ScatterGatherTaskImpl } from "../../../channels/components/ScatterGatherTaskImpl.js"
+
 
 interface Task {
    taskMessage: string
