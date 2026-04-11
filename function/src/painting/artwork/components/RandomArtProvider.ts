@@ -13,7 +13,10 @@ import type {
    IGenModelProvider,
 } from "../interface/IGenModelProvider.js"
 import { generate } from "./randomart/randomart.js"
-import { getEvaluator, type EvaluatorFunction } from "./randomart/randomart-eval.js"
+import {
+   getEvaluator,
+   type EvaluatorFunction,
+} from "./randomart/randomart-eval.js"
 
 /**
  * Wrapper around randomart evaluator that implements IGenModel.

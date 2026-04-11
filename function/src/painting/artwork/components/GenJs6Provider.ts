@@ -16,12 +16,24 @@ import type {
    IGenModel,
    IGenModelProvider,
 } from "../interface/IGenModelProvider.js"
-import {
-   computePixel,
-   newPicture,
-   oldPicture,
-   type GenModel,
-} from "./genjs6.js"
+
+type GenModel = object
+let computePixel: (
+   arg0: GenModel,
+   arg1: number,
+   arg2: number,
+) => [number, number, number]
+let newPicture: (
+   arg0: Uint8ClampedArray<ArrayBufferLike> | Uint8Array<ArrayBufferLike>,
+   arg1: Uint8ClampedArray<ArrayBufferLike> | Uint8Array<ArrayBufferLike>,
+) => any
+let oldPicture: (arg0: string) => any
+
+try {
+   ;({ computePixel, newPicture, oldPicture } = await import("./genjs6.js"))
+} catch (err) {
+   throw new Error("genjs6 not available", { cause: err })
+}
 
 /**
  * Wrapper around genjs6 GenModel that implements IGenModel.

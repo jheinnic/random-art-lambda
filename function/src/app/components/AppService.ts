@@ -10,11 +10,8 @@ import type {
    IRegionMap,
 } from "../../plotting/interface/index.js"
 import { GenModelArtist } from "../../painting/artwork/components/GenModelArtist.js"
-import {
-   GenModel,
-   newPicture,
-} from "../../painting/artwork/components/genjs6.js"
-import { GenJs6Model } from "../../painting/artwork/components/GenJs6Provider.js"
+import { GenJs6Provider } from "../../painting/artwork/components/GenJs6Provider.js"
+import { RandomArtProvider } from "../../painting/artwork/components/RandomArtProvider.js"
 
 import { ProtobufPlottingModuleTypes } from "../../plotting/protobuf/di/Types.js"
 import { IpldPlottingModuleTypes } from "../../plotting/ipld/di/Types.js"
@@ -24,10 +21,11 @@ import { PBufRegionMap } from "../../plotting/protobuf/components/PBufRegionMap.
 import { CanvasPersister } from "../../painting/artwork/components/CanvasPersister.js"
 import { QueuedPaintingTypes } from "../../painting/queue/di/Types.js"
 import { RandomArtFlowProducer } from "../../painting/queue/components/RandomArtFlowProducer.js"
+import { IGenModel, IGenModelProvider } from "../../painting/index.js"
 
 interface Task {
    taskMessage: string
-   genModel: GenModel
+   genModel: IGenModel
    fileName: string
 }
 interface Region {
@@ -212,6 +210,16 @@ export class AppService {
          })
    }
 
+   public getGenModelProvider(): IGenModelProvider {
+      try {
+         const retval: IGenModelProvider = new GenJs6Provider()
+         return retval
+      } catch (err) {
+         console.error(err)
+      }
+      return new RandomArtProvider()
+   }
+
    public async testRun0(): Promise<void> {
       const beginString: string = "Happy Thanksgiving Burger"
       const beginBuf: Buffer = Buffer.from(beginString)
@@ -220,6 +228,7 @@ export class AppService {
       const adapter: PBufRegionMap =
          this.regionMapFactory.adapt("./qdoc2.proto")
       const regionMap: IRegionMap = adapter
+      const genModelProvider: IGenModelProvider = this.getGenModelProvider()
 
       let hashBuf = beginArray
       while (true) {
@@ -229,7 +238,10 @@ export class AppService {
          const prefixStr = Buffer.from(prefix).toString("base64url")
          const suffixStr = Buffer.from(suffix).toString("base64url")
          const fileName = `./${prefixStr}_${suffixStr}.png`
-         const genModel: GenModel = newPicture(prefix, suffix)
+         const genModel: IGenModel = genModelProvider.createModel(
+            prefix,
+            suffix,
+         )
          await this.doOne(genModel, regionMap, fileName)
       }
    }
@@ -238,6 +250,7 @@ export class AppService {
       const workList: Array<{ prefix: string; suffix: string }> = JSON.parse(
          fs.readFileSync("source.list").toString(),
       )
+      const provider: IGenModelProvider = this.getGenModelProvider()
       const taskList: Task[] = workList.map(
          (task: { prefix: string; suffix: string }) => {
             let buf: Buffer = Buffer.from(task.prefix, "hex")
@@ -254,7 +267,7 @@ export class AppService {
             )
             return {
                taskMessage: JSON.stringify(task),
-               genModel: newPicture(prefix, suffix),
+               genModel: provider.createModel(prefix, suffix),
                fileName: `${task.prefix}_${task.suffix}.png`,
             }
          },
@@ -275,6 +288,7 @@ export class AppService {
       const workList: Array<{ phrase: string }> = JSON.parse(
          fs.readFileSync("source5B.list").toString(),
       )
+      const provider: IGenModelProvider = this.getGenModelProvider()
       return workList.map((task: { phrase: string }): Task => {
          // Hash the phrase with SHA-256 to get deterministic 32 bytes
          const hash = createHash("sha256").update(task.phrase).digest()
@@ -289,8 +303,19 @@ export class AppService {
 
          return {
             taskMessage: JSON.stringify(task),
-            genModel: newPicture(prefix, suffix),
-            fileName: `${fileName}.png`,
+            genModel: provider.createModel(
+               new Uint8ClampedArray(
+                  prefix.buffer,
+                  prefix.byteOffset,
+                  prefix.byteLength,
+               ),
+               new Uint8ClampedArray(
+                  suffix.buffer,
+                  suffix.byteOffset,
+                  suffix.byteLength,
+               ),
+            ),
+            fileName,
          }
       })
    }
@@ -335,7 +360,7 @@ export class AppService {
    }
 
    private async doOne(
-      genModel: GenModel,
+      genModel: IGenModel,
       regionMap: IRegionMap,
       fileName: string,
       taskMessage: string = "",
@@ -349,7 +374,7 @@ export class AppService {
          regionMap.pixelHeight * regionMap.pixelWidth,
       )
       const artist: GenModelArtist = new GenModelArtist(
-         new GenJs6Model(genModel),
+         genModel,
          pixelData,
          regionMap.pixelWidth,
          0,
