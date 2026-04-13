@@ -28,8 +28,6 @@
  *   tsx run-worker.ts --role both
  */
 
-import { resolve } from "path"
-import { homedir } from "os"
 import { NestFactory } from "@nestjs/core"
 import { Module, DynamicModule, OnModuleInit, Logger } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
@@ -47,6 +45,11 @@ import { IpfsModule } from "../../../ipfs/di/Module.js"
 import {
    paintQueueNames,
    type PaintQueueNamesEnvironment,
+   type IpfsEnvironment,
+   type StagingEnvironment,
+   type PaintingEnvironment,
+   type PaintQueueRedisEnvironment,
+   type PaintQueueRetentionEnvironment,
 } from "../../shared/di/Loaders.js"
 import { RandomArtProvider } from "../../../painting/artwork/components/RandomArtProvider.js"
 import { GenJs6Provider } from "../../../painting/artwork/components/GenJs6Provider.js"
@@ -54,35 +57,17 @@ import type { IGenModelProvider } from "../../../painting/artwork/interface/IGen
 import { AppConfigModule } from "../../shared/di/AppConfigModule.js"
 import { LocalStorageModule } from "../../../storage/di/LocalStorageModule.js"
 import { AwsS3StorageModule } from "../../../storage/di/AwsS3StorageModule.js"
-import { WORKER_FILE_STORE } from "../../../storage/tokens.js"
+import { TrigramModuleTypes } from "../di/Types.js"
 import { TrigramPipelineModule } from "../di/TrigramPipelineModule.js"
 
 type WorkerRole = "paint" | "gather" | "both"
-type ArtProvider = "randomart" | "genjs6"
 
-interface CommonWorkerCliOptions {
+interface WorkerCliOptions {
    role: WorkerRole
-   redisUrl: string
-   blockstorePath: string
-   rootPath: string
    stagerType: "local" | "s3"
    /** Number of concurrent jobs per worker (default: 1) */
    concurrency: number
-   /** Art generation provider (default: randomart) */
-   artProvider: ArtProvider
 }
-
-interface LocalWorkerCliOptions extends CommonWorkerCliOptions {
-   stagerType: "local"
-}
-
-interface S3WorkerCliOptions extends CommonWorkerCliOptions {
-   stagerType: "s3"
-   s3Bucket: string
-   awsRegion: string
-}
-
-type WorkerCliOptions = LocalWorkerCliOptions | S3WorkerCliOptions
 
 // Queue names loaded from configuration (paintQueueNames.yaml)
 // This ensures workers listen on the same queues that the submitter sends to
@@ -94,8 +79,10 @@ const WORKER_BLOCKSTORE = Symbol("WorkerBlockstore")
 /**
  * Create the appropriate IGenModelProvider based on configuration.
  */
-function createGenModelProvider(artProvider: ArtProvider): IGenModelProvider {
-   switch (artProvider) {
+function createGenModelProvider(
+   genModel: PaintingEnvironment["genModel"],
+): IGenModelProvider {
+   switch (genModel) {
       case "genjs6":
          return new GenJs6Provider()
       case "randomart":
@@ -124,13 +111,30 @@ class TrigramWorkerAppModule implements OnModuleInit {
 
    static forRoot(
       options: WorkerCliOptions,
+      configSvc: ConfigService,
       pipelineModule: DynamicModule | undefined,
    ): DynamicModule {
-      // Build the module dependency chain
+      const ipfsConfig = requireConfig<IpfsEnvironment>(configSvc, "ipfs")
+      const stagingConfig = requireConfig<StagingEnvironment>(
+         configSvc,
+         "staging",
+      )
+      const paintingConfig = requireConfig<PaintingEnvironment>(
+         configSvc,
+         "painting",
+      )
+      const redisConfig = requireConfig<PaintQueueRedisEnvironment>(
+         configSvc,
+         "paintQueueRedis",
+      )
+      const retentionConfig = requireConfig<PaintQueueRetentionEnvironment>(
+         configSvc,
+         "paintQueueRetention",
+      )
 
       // 1. IpfsModule - creates and manages FsBlockstore
       const ipfsModule: DynamicModule = IpfsModule.register({
-         rootPath: options.blockstorePath,
+         rootPath: ipfsConfig.blockstorePath,
          cacheSize: 4000,
          readOnly: true, // Workers only read RegionMaps
          injectToken: WORKER_BLOCKSTORE,
@@ -147,8 +151,7 @@ class TrigramWorkerAppModule implements OnModuleInit {
       })
 
       // 3. PaintingModule - provides IRandomArtTaskEngine
-      // Create the art generation provider based on configuration
-      const genModelProvider = createGenModelProvider(options.artProvider)
+      const genModelProvider = createGenModelProvider(paintingConfig.genModel)
 
       const paintingModule: DynamicModule = PaintingModule.forRoot({
          regionMapRepo: {
@@ -169,15 +172,15 @@ class TrigramWorkerAppModule implements OnModuleInit {
             ? {
                  stagerType: "s3",
                  s3Config: {
-                    bucketName: options.s3Bucket,
-                    region: options.awsRegion,
-                    keyPrefix: "trigram-art",
+                    bucketName: stagingConfig.s3Bucket ?? "",
+                    region: stagingConfig.s3Region,
+                    keyPrefix: stagingConfig.s3KeyPrefix,
                  },
               }
             : {
                  stagerType: "local",
                  localConfig: {
-                    rootPath: options.rootPath,
+                    rootPath: stagingConfig.localRootPath,
                  },
               },
       )
@@ -192,15 +195,14 @@ class TrigramWorkerAppModule implements OnModuleInit {
       }
 
       // 5. QueueingPaintModule - creates workers based on role config
-      // The module handles all the internal wiring via InjectableModuleClassFactory
       const queueModule: DynamicModule = QueueingPaintModule.forRoot({
-         redis: parseRedisUrl(options.redisUrl),
+         redis: redisConfig,
          retention: {
-            keepLogs: 250,
-            removeOnComplete: { age: 120 },
-            removeOnFail: { age: 300 },
+            keepLogs: retentionConfig.keepLogs,
+            removeOnComplete: retentionConfig.removeOnComplete,
+            removeOnFail: retentionConfig.removeOnFail,
          },
-         jobDataSizeLimit: 1024 ** 3,
+         jobDataSizeLimit: retentionConfig.jobDataSizeLimit,
          queueNames: {
             toPaintParts: queueNames.toPaintParts,
             toGatherParts: queueNames.toGatherParts,
@@ -238,33 +240,45 @@ class TrigramWorkerAppModule implements OnModuleInit {
 
       return {
          module: TrigramWorkerAppModule,
-         imports: pipelineModule != null
-            ? [queueModule, pipelineModule]
-            : [queueModule],
+         imports:
+            pipelineModule != null
+               ? [queueModule, pipelineModule]
+               : [queueModule],
       }
    }
 }
 
 /**
- * Parse a Redis URL into host/port config
+ * Retrieve a required config value — throws if the key is missing.
+ * Avoids non-null assertions while keeping call sites concise.
  */
-function parseRedisUrl(url: string): { host: string; port: number } {
-   try {
-      const parsed = new URL(url)
-      const port = parseInt(parsed.port, 10)
-      return {
-         host: parsed.hostname !== "" ? parsed.hostname : "localhost",
-         port: !Number.isNaN(port) && port !== 0 ? port : 6379,
-      }
-   } catch {
-      // Fallback for simple "host:port" format
-      const [host, portStr] = url.replace("redis://", "").split(":")
-      const port = parseInt(portStr, 10)
-      return {
-         host: host !== "" ? host : "localhost",
-         port: !Number.isNaN(port) && port !== 0 ? port : 6379,
-      }
+function requireConfig<T>(configSvc: ConfigService, key: string): T {
+   const value = configSvc.get<T>(key)
+   if (value === undefined) {
+      throw new Error(`Required configuration key "${key}" is missing`)
    }
+   return value
+}
+
+/**
+ * Write explicit CLI flag values into process.env so they participate in the
+ * ConfigService precedence chain (CLI flag > .env file > loader default).
+ * Only explicitly-provided flags are written — env vars already set are not
+ * overwritten, preserving the standard dotenv non-overwrite behaviour.
+ *
+ * Called before Phase 1 bootstrap so ConfigModule sees these values when it
+ * loads the registered loaders.
+ */
+function applyCliEnvOverrides(): void {
+   const args = process.argv.slice(2)
+   const blockstorePath = getArgValue(args, "--blockstore-path")
+   if (blockstorePath != null) process.env.RA_BLOCKSTORE_PATH = blockstorePath
+   const rootPath = getArgValue(args, "--root-path")
+   if (rootPath != null) process.env.RA_STAGING_ROOT = rootPath
+   const artProvider = getArgValue(args, "--art-provider")
+   if (artProvider != null) process.env.RA_GEN_MODEL = artProvider
+   const stagerType = getArgValue(args, "--stager-type")
+   if (stagerType != null) process.env.RA_STAGER_TYPE = stagerType
 }
 
 function parseArgs(): WorkerCliOptions {
@@ -287,58 +301,26 @@ function parseArgs(): WorkerCliOptions {
       role = roleArg as WorkerRole
    }
 
-   const stagerType = (process.env.STAGER_TYPE as "local" | "s3") ?? "local"
+   // stagerType is a topology decision — must be known before Phase 1 to select
+   // which storage module to import.  Read from env (which may have been set by
+   // applyCliEnvOverrides above, or from RA_STAGER_TYPE / STAGER_TYPE in .env).
+   const stagerType =
+      (process.env.RA_STAGER_TYPE as "local" | "s3") ??
+      (process.env.STAGER_TYPE as "local" | "s3") ??
+      "local"
 
    const concurrencyArg =
       getArgValue(args, "--concurrency") ?? process.env.WORKER_CONCURRENCY
-   const concurrency =
-      concurrencyArg != null ? parseInt(concurrencyArg, 10) : 1
-
-   // Art provider selection - defaults to randomart for open-source distribution
-   const artProviderArg =
-      getArgValue(args, "--art-provider") ?? process.env.ART_PROVIDER
-   let artProvider: ArtProvider = "randomart"
-   if (artProviderArg != null) {
-      if (!["randomart", "genjs6"].includes(artProviderArg)) {
-         console.error(
-            `Error: Invalid art provider "${artProviderArg}". Must be randomart or genjs6.`,
-         )
-         process.exit(1)
-      }
-      artProvider = artProviderArg as ArtProvider
-   }
+   const concurrency = concurrencyArg != null ? parseInt(concurrencyArg, 10) : 1
 
    const commonProps = {
       role,
-      redisUrl:
-         getArgValue(args, "--redis-url") ??
-         process.env.REDIS_URL ??
-         "redis://localhost:6379",
-      blockstorePath:
-         getArgValue(args, "--blockstore-path") ??
-         process.env.BLOCKSTORE_PATH ??
-         resolve(homedir(), ".random-art", "blockstore"),
-      rootPath:
-         getArgValue(args, "--root-path") ??
-         process.env.ROOT_PATH ??
-         "/tmp/trigram-output",
-      concurrency: Number.isNaN(concurrency) || concurrency < 1 ? 1 : concurrency,
-      artProvider,
+      stagerType,
+      concurrency:
+         Number.isNaN(concurrency) || concurrency < 1 ? 1 : concurrency,
    }
 
-   if (stagerType === "s3") {
-      return {
-         ...commonProps,
-         stagerType: "s3" as const,
-         s3Bucket: process.env.S3_BUCKET ?? "",
-         awsRegion: process.env.AWS_REGION ?? "us-east-1",
-      }
-   }
-
-   return {
-      ...commonProps,
-      stagerType: "local" as const,
-   }
+   return { ...commonProps, stagerType }
 }
 
 function getArgValue(args: string[], flag: string): string | undefined {
@@ -394,6 +376,10 @@ Example:
 }
 
 async function main(): Promise<void> {
+   // Write explicit CLI flags into process.env before Phase 1 so ConfigModule
+   // loaders see them in the precedence chain (CLI flag > .env > loader default).
+   applyCliEnvOverrides()
+
    const options = parseArgs()
 
    // Load queue names from configuration before building the module
@@ -404,30 +390,13 @@ async function main(): Promise<void> {
    console.log(`\nStarting Trigram Worker`)
    console.log(`  Role: ${options.role}`)
    console.log(`  Concurrency: ${options.concurrency}`)
-   console.log(`  Art Provider: ${options.artProvider}`)
-   console.log(`  Redis: ${options.redisUrl}`)
-   console.log(`  Blockstore: ${options.blockstorePath}`)
+   console.log(`  Stager: ${options.stagerType}`)
    console.log(`  Paint Queue: ${queueNames.toPaintParts}`)
    console.log(`  Gather Queue: ${queueNames.toGatherParts}`)
-   if (options.role === "gather" || options.role === "both") {
-      console.log(`  Staging: ${options.stagerType}`)
-      if (options.stagerType === "local") {
-         console.log(`  Output: ${options.rootPath}`)
-      } else {
-         console.log(`  S3 Bucket: ${options.s3Bucket}`)
-      }
-   }
    console.log()
 
-   // Validate S3 config if using S3 stager
-   if (options.stagerType === "s3" && options.s3Bucket === "") {
-      console.error(
-         "Error: S3_BUCKET environment variable required when STAGER_TYPE=s3",
-      )
-      process.exit(1)
-   }
-
-   // Phase 1: mini-bootstrap to get ConfigService for the assembly function
+   // Phase 1: mini-bootstrap to get ConfigService for the assembly function.
+   // CLI overrides are already in process.env, so loaders pick them up here.
    const configContext = await NestFactory.createApplicationContext(
       await AppConfigModule.forRoot(),
       { logger: ["error", "warn"] },
@@ -435,21 +404,67 @@ async function main(): Promise<void> {
    const configSvc = configContext.get(ConfigService)
    await configContext.close()
 
+   // Log resolved config values after Phase 1.
+   const ipfsConfig = requireConfig<IpfsEnvironment>(configSvc, "ipfs")
+   const stagingConfig = requireConfig<StagingEnvironment>(configSvc, "staging")
+   const paintingConfig = requireConfig<PaintingEnvironment>(
+      configSvc,
+      "painting",
+   )
+   const redisConfig = requireConfig<PaintQueueRedisEnvironment>(
+      configSvc,
+      "paintQueueRedis",
+   )
+   console.log(`  Art Provider: ${paintingConfig.genModel}`)
+   console.log(`  Redis: ${redisConfig.host}:${redisConfig.port}`)
+   console.log(`  Blockstore: ${ipfsConfig.blockstorePath}`)
+   if (options.role === "gather" || options.role === "both") {
+      if (options.stagerType === "local") {
+         console.log(`  Output: ${stagingConfig.localRootPath}`)
+      } else {
+         console.log(`  S3 Bucket: ${stagingConfig.s3Bucket ?? "(unset)"}`)
+      }
+   }
+   console.log()
+
+   // Validate S3 config if using S3 stager
+   if (
+      options.stagerType === "s3" &&
+      (stagingConfig.s3Bucket === undefined || stagingConfig.s3Bucket === "")
+   ) {
+      console.error(
+         "Error: S3 bucket is required when stager type is s3. " +
+            "Set RA_S3_BUCKET or S3_BUCKET.",
+      )
+      process.exit(1)
+   }
+
+   // Application-context boundary: the one place that knows both the storage
+   // module's export token and the consumer module's expected token shape.
+   const appFileStoreToken = TrigramModuleTypes.AppFileStore
    const storageModule =
       options.stagerType === "s3"
          ? AwsS3StorageModule.forRoot({
-              exportToken: WORKER_FILE_STORE,
-              s3Bucket: options.s3Bucket,
-              s3Region: options.awsRegion,
+              exportToken: appFileStoreToken,
+              s3Bucket: stagingConfig.s3Bucket ?? "",
+              s3Region: stagingConfig.s3Region,
            })
-         : LocalStorageModule.forRoot({ exportToken: WORKER_FILE_STORE })
+         : LocalStorageModule.forRoot({ exportToken: appFileStoreToken })
 
-   // Assembly Function: wire the pipeline with config-driven defaults
-   const pipelineModule = TrigramPipelineModule.assemble(configSvc, storageModule)
+   // Wire the pipeline module via forRoot() — the app-context boundary.
+   const pipelineModule = TrigramPipelineModule.forRoot({
+      configSvc,
+      fileStore: {
+         use: "token",
+         for: "value",
+         token: appFileStoreToken,
+         module: storageModule,
+      },
+   })
 
    // Phase 2: full application bootstrap
    const app = await NestFactory.createApplicationContext(
-      TrigramWorkerAppModule.forRoot(options, pipelineModule),
+      TrigramWorkerAppModule.forRoot(options, configSvc, pipelineModule),
       {
          logger: ["log", "error", "warn"],
       },

@@ -30,7 +30,9 @@ export class LocalImageStager implements IImageStager<LocalStagingReport> {
 
    constructor(private readonly config: LocalStagerConfig) {}
 
-   async stage(context: StagingContext): Promise<TaskResultRecord<LocalStagingReport>> {
+   async stage(
+      context: StagingContext,
+   ): Promise<TaskResultRecord<LocalStagingReport>> {
       const { imageData, taskId, projectId, genSeed, width, height } = context
 
       try {
@@ -69,14 +71,37 @@ export class LocalImageStager implements IImageStager<LocalStagingReport> {
       }
    }
 
-   private hashSeeds(prefix: string, suffix: string): string {
-      const combined = `${prefix}:${suffix}`
-      return createHash("sha256").update(combined).digest("hex").slice(0, 16)
+   private hashSeeds(
+      prefix: string | Uint8ClampedArray,
+      suffix: string | Uint8ClampedArray,
+   ): string {
+      return createHash("sha256")
+         .update(
+            typeof prefix === "string"
+               ? prefix
+               : Buffer.from(
+                    prefix.buffer,
+                    prefix.byteOffset,
+                    prefix.byteLength,
+                 ).toString("base64"),
+         )
+         .update(":")
+         .update(
+            typeof suffix === "string"
+               ? suffix
+               : Buffer.from(
+                    suffix.buffer,
+                    suffix.byteOffset,
+                    suffix.byteLength,
+                 ).toString("base64"),
+         )
+         .digest("hex")
+         .slice(0, 16)
    }
 
    private buildFilename(seedHash: string, projectId?: string): string {
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-")
-      if (projectId) {
+      if (projectId != null) {
          return `${projectId}/${seedHash}-${timestamp}.png`
       }
       return `${seedHash}-${timestamp}.png`

@@ -2,6 +2,22 @@
 // Type Utilities
 // =============================================================================
 
+/**
+ * Compute the InitialContext contribution from an extendInitial call.
+ *
+ * Fields covered by ExtraDefaults are Optional in the pipeline call signature
+ * (the defaults argument supplies them); fields in ExtraInitial but absent from
+ * ExtraDefaults are Mandatory (the caller must supply them).
+ *
+ * This lets a single extendInitial call declare both defaulted and mandatory
+ * fields; the separation is expressed by what is or is not included in the
+ * defaults object rather than by a separate method.
+ */
+export type InitialInput<
+   ExtraInitial extends object,
+   ExtraDefaults extends Partial<ExtraInitial>,
+> = Partial<ExtraDefaults> & Omit<ExtraInitial, keyof ExtraDefaults>
+
 /** Candidate is the literal type only if it is not already a key of Context. */
 export type UnusedKey<
    Context extends object,

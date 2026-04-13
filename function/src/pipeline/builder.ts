@@ -1,11 +1,39 @@
 import type {
    UnusedKey,
    CompatibleForMixin,
+   InitialInput,
    Mixin,
    WithProp,
    ContextKeysAndPairs,
    CallableParams,
 } from "./types.js"
+
+// =============================================================================
+// IBasePipelineBuilder — shared vocabulary for PipelineBuilder and SegmentBlueprint
+// =============================================================================
+
+/**
+ * Structural base interface shared by PipelineBuilder and SegmentBlueprint.
+ *
+ * Captures the common operation vocabulary (method names and loose parameter
+ * shapes) so that code handling either kind of builder can reference a single
+ * type.  Both concrete interfaces provide fully-typed method signatures that
+ * override these loose stubs.
+ *
+ * Uses method-shorthand syntax so TypeScript applies bivariance for parameter
+ * types, permitting concrete implementations to narrow the parameter types
+ * without triggering strictFunctionTypes violations.
+ */
+export interface IBasePipelineBuilder {
+   /* eslint-disable @typescript-eslint/method-signature-style */
+   extendInitial(defaults: object): IBasePipelineBuilder
+   addVirtualFeature(nameOut: string): IBasePipelineBuilder
+   addPublicFeature(nameOut: string, properties: object): IBasePipelineBuilder
+   addPrivateFeature(nameOut: string, properties: object): IBasePipelineBuilder
+   addStep(nameOut: string, implementation: object): IBasePipelineBuilder
+   addPrivateInjection(nameOut: string): IBasePipelineBuilder
+   /* eslint-enable @typescript-eslint/method-signature-style */
+}
 
 // =============================================================================
 // ContextualMethod
@@ -122,20 +150,35 @@ export interface PipelineBuilder<
    AllContext extends object = Mixin<StepContext, VirtualContext>,
 > {
    /**
-    * Extend the initial seed context with additional properties and defaults.
-    * Useful for DTO blackbox fields and per-application expression string defaults.
-    * Call-time `initial` values override these defaults.
+    * Extend the initial seed context with additional properties.
+    *
+    * ExtraInitial is the full shape added to ExprContext and StepContext —
+    * must be supplied explicitly when it is wider than ExtraDefaults.
+    * ExtraDefaults is inferred from the defaults argument alone; it must be a
+    * partial of ExtraInitial (only declared keys may be defaulted).
+    *
+    * The resulting InitialContext contribution is InitialInput<ExtraInitial, ExtraDefaults>:
+    *   Partial<ExtraDefaults> & Omit<ExtraInitial, keyof ExtraDefaults>
+    * — defaulted fields are optional in the call signature; fields present in
+    * ExtraInitial but absent from ExtraDefaults are required.
+    *
+    * Returns never if ExtraInitial conflicts with the existing StepContext.
     */
-   extendInitial: <ExtraInitial extends object>(
-      defaults: CompatibleForMixin<StepContext, ExtraInitial>,
-   ) => PipelineBuilder<
-      Mixin<InitialContext, ExtraInitial>,
-      InjectedContext,
-      Mixin<ExprContext, ExtraInitial>,
-      Mixin<StepContext, ExtraInitial>,
-      VirtualContext,
-      Mixin<AllContext, ExtraInitial>
-   >
+   extendInitial: <
+      ExtraInitial extends object,
+      ExtraDefaults extends Partial<ExtraInitial> = Partial<ExtraInitial>,
+   >(
+      defaults: ExtraDefaults,
+   ) => [CompatibleForMixin<StepContext, ExtraInitial>] extends [never]
+      ? never
+      : PipelineBuilder<
+           Mixin<InitialContext, InitialInput<ExtraInitial, ExtraDefaults>>,
+           InjectedContext,
+           Mixin<ExprContext, ExtraInitial>,
+           Mixin<StepContext, ExtraInitial>,
+           VirtualContext,
+           Mixin<AllContext, ExtraInitial>
+        >
 
    /**
     * Declare a virtual feature contract.

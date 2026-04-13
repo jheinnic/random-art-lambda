@@ -2,19 +2,26 @@
  * WorkerPoolSegment — code-injecting segment helper.
  *
  * Declares the virtual `stagingStrategy` and `stagedFilePath` contracts and
- * registers the `stagingResult` step.  The step reaches the injected file store
- * through the `stagingStrategy` virtual via selector indirection.
+ * registers the `stagingResult` step.
  *
- * Precondition: the caller must have placed `fileStore: IFileStore` into the
- * builder context (via addPrivateInjection) before this segment is applied.
+ * Prerequisites expressed via witness chain:
+ *   - originalEncoding (BufferEncoding) — concrete after EncodingSegment
+ *   - transcodedTerms (TranscodedTerms)  — concrete after PermutationSegment
+ *   - fileStore (IFileStore)             — from addPrivateInjection on the witness
+ *   - canvasBuffer (Buffer)              — from pipeline initial context
  *
- * Runtime pruning: if an application's assembly never fulfills `stagingStrategy`,
+ * Runtime pruning: if an application never fulfills `stagingStrategy`,
  * the step is skipped and `stagingResult` is absent from the pipeline output.
  */
 
 import type { ConfigService } from "@nestjs/config"
-import type { IFileStore } from "../../interface/IFileStore.js"
-import { createSegmentBlueprint } from "../../../pipeline/index.js"
+import type { IFileStore } from "../../../storage/interface/IFileStore.js"
+import {
+   createPipeline,
+   createSegmentBlueprintFromBuilder,
+} from "../../../pipeline/index.js"
+import { createEncodingSegment } from "./EncodingSegment.js"
+import { createPermutationSegment } from "./PermutationSegment.js"
 
 /** Virtual contract: the resolved file store to stage into. */
 export interface FileStoreSelection {
@@ -40,14 +47,29 @@ type StagingSelectors = {
    ]
 }
 
-type StagingRequiredAC = {
-   fileStore: IFileStore
+/** Minimal initial context needed to build the prerequisite witness. */
+interface WorkerPoolMinimalIC {
+   prefix: Uint8ClampedArray
+   suffix: Uint8ClampedArray
    canvasBuffer: Buffer
 }
 
-// Placeholder blueprint used only to derive the helper's type signature.
-const _workerPoolBlueprint = createSegmentBlueprint()
-   .requiresInContext<StagingRequiredAC>()
+// Stub ConfigService: no config keys are read at witness-construction time.
+const _stubConfig = { get: () => undefined } as unknown as ConfigService
+
+// Witness: a minimal builder advanced through all prerequisites.
+// Used only for type extraction — runtime value is discarded.
+const _witness = createPermutationSegment(_stubConfig)(
+   createEncodingSegment(_stubConfig)(
+      createPipeline<WorkerPoolMinimalIC>().addPrivateInjection<IFileStore, "fileStore">(
+         "fileStore",
+      ),
+   ),
+)
+
+// Placeholder blueprint built from the witness, used only to derive the
+// exported helper type via ReturnType.
+const _workerPoolBlueprint = createSegmentBlueprintFromBuilder(_witness)
    .addVirtualFeature<FileStoreSelection, "stagingStrategy">("stagingStrategy")
    .addVirtualFeature<PathTargetSelection, "stagedFilePath">("stagedFilePath")
    .addStep<StagingResult, "stagingResult", StagingSelectors["stagingResult"]>(
@@ -75,12 +97,20 @@ export type WorkerPoolSegmentHelper = ReturnType<
    typeof _workerPoolBlueprint.buildHelper
 >
 
-// ConfigService accepted for API consistency; no keys read currently.
 export function createWorkerPoolSegment(
-   _configSvc: ConfigService,
+   configSvc: ConfigService,
 ): WorkerPoolSegmentHelper {
-   return createSegmentBlueprint()
-      .requiresInContext<StagingRequiredAC>()
+   // Witness chain: advance a minimal builder through all prerequisites.
+   const witness = createPermutationSegment(configSvc)(
+      createEncodingSegment(configSvc)(
+         createPipeline<WorkerPoolMinimalIC>().addPrivateInjection<
+            IFileStore,
+            "fileStore"
+         >("fileStore"),
+      ),
+   )
+
+   return createSegmentBlueprintFromBuilder(witness)
       .addVirtualFeature<FileStoreSelection, "stagingStrategy">("stagingStrategy")
       .addVirtualFeature<PathTargetSelection, "stagedFilePath">("stagedFilePath")
       .addStep<StagingResult, "stagingResult", StagingSelectors["stagingResult"]>(

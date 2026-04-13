@@ -4,26 +4,46 @@
  * Extends the pipeline initial context with a default `originalEncoding`
  * value (read from ConfigService) and declares a virtual `encodingOverride`
  * contract so applications can supply an expression-driven override.
+ *
+ * No prerequisites — uses createSegmentBlueprint() directly.
  */
 
 import type { ConfigService } from "@nestjs/config"
 import { createSegmentBlueprint } from "../../../pipeline/index.js"
 
-/** The encoding value placed into initial context. */
+/** The raw default encoding placed into initial context by this segment. */
 export interface OriginalEncoding {
    originalEncoding: BufferEncoding
 }
 
-/** Contract an application may fulfill to override the default encoding. */
+/** Virtual contract an application may fulfill to override the default encoding. */
 export interface EncodingOverride {
    selected: BufferEncoding | null
 }
 
-// Placeholder blueprint used only to derive the helper's type signature.
-// Runtime values do not affect the type — only the shape matters.
+/**
+ * The resolved encoding: encodingOverride.selected if present and non-null,
+ * otherwise originalEncoding.  Always concrete — downstream segments should
+ * select this rather than originalEncoding directly.
+ */
+export interface ResolvedEncoding {
+   selected: BufferEncoding
+}
+
+// Expression that resolves the encoding with fallback.
+// jse-eval returns undefined for missing context keys, so the ternary safely
+// short-circuits to originalEncoding when encodingOverride is unfulfilled.
+const RESOLVE_ENCODING_EXPR =
+   "encodingOverride != null && encodingOverride.selected != null" +
+   " ? encodingOverride.selected : originalEncoding"
+
+// Placeholder blueprint used only to derive the helper's return type.
 const _encodingBlueprint = createSegmentBlueprint()
    .extendInitial({ originalEncoding: "utf8" as BufferEncoding })
    .addVirtualFeature<EncodingOverride, "encodingOverride">("encodingOverride")
+   .addPublicFeature<ResolvedEncoding, "resolvedEncoding">("resolvedEncoding", {
+      selected: RESOLVE_ENCODING_EXPR,
+   })
 
 export type EncodingSegmentHelper = ReturnType<
    typeof _encodingBlueprint.buildHelper
@@ -37,9 +57,14 @@ export function createEncodingSegment(
 
    return createSegmentBlueprint()
       .extendInitial({ originalEncoding: defaultEncoding })
-      .addVirtualFeature<
-         EncodingOverride,
-         "encodingOverride"
-      >("encodingOverride")
+      .addVirtualFeature<EncodingOverride, "encodingOverride">(
+         "encodingOverride",
+      )
+      .addPublicFeature<ResolvedEncoding, "resolvedEncoding">(
+         "resolvedEncoding",
+         {
+            selected: RESOLVE_ENCODING_EXPR,
+         },
+      )
       .buildHelper()
 }

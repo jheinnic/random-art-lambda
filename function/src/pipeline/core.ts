@@ -2,7 +2,6 @@ import jseEval, { compile } from "jse-eval"
 import templatePlugin from "@jsep-plugin/template"
 
 import type {
-   CompatibleForMixin,
    ContextKeysAndPairs,
    Mixin,
    UnusedKey,
@@ -58,9 +57,7 @@ function createBuilderImpl<
    }
 
    return {
-      extendInitial<ExtraInitial extends object>(
-         defaults: CompatibleForMixin<StepContext, ExtraInitial>,
-      ) {
+      extendInitial(defaults: object) {
          return next({
             kind: "initialDefaults",
             defaults: defaults as Record<string, unknown>,

@@ -6,13 +6,18 @@
  * Also declares a virtual `appTerms` contract for application-specific term
  * enrichment.
  *
- * Precondition: createEncodingSegment must have been applied first so that
- * `originalEncoding` is present in the builder's context.
+ * Prerequisites expressed via witness chain through createEncodingSegment:
+ *   - originalEncoding (BufferEncoding) — concrete after EncodingSegment
+ *   - prefix (Uint8ClampedArray) — from pipeline initial context
+ *   - suffix (Uint8ClampedArray) — from pipeline initial context
  */
 
 import type { ConfigService } from "@nestjs/config"
-import { createSegmentBlueprint } from "../../../pipeline/index.js"
-import type { OriginalEncoding } from "./EncodingSegment.js"
+import {
+   createPipeline,
+   createSegmentBlueprintFromBuilder,
+} from "../../../pipeline/index.js"
+import { createEncodingSegment } from "./EncodingSegment.js"
 
 /** Transcoded term strings produced by this segment. */
 export interface TranscodedTerms {
@@ -26,11 +31,12 @@ export interface AppCustomTerms {
 }
 
 type TermsSelectors = {
-   prefix: readonly ["prefix", "originalEncoding"]
-   suffix: readonly ["suffix", "originalEncoding"]
+   prefix: readonly ["prefix", readonly ["resolvedEncoding", "selected"]]
+   suffix: readonly ["suffix", readonly ["resolvedEncoding", "selected"]]
 }
 
-type TermsRequiredAC = OriginalEncoding & {
+/** Minimal initial context needed to build the prerequisite witness. */
+interface PermutationMinimalIC {
    prefix: Uint8ClampedArray
    suffix: Uint8ClampedArray
 }
@@ -39,18 +45,30 @@ const termProperties = {
    prefix: {
       method: (bin: Uint8ClampedArray, enc: BufferEncoding) =>
          Buffer.from(bin.buffer).toString(enc),
-      selectors: ["prefix", "originalEncoding"] as const,
+      selectors: [
+         "prefix",
+         ["resolvedEncoding", "selected"] as const,
+      ] as const,
    },
    suffix: {
       method: (bin: Uint8ClampedArray, enc: BufferEncoding) =>
          Buffer.from(bin.buffer).toString(enc),
-      selectors: ["suffix", "originalEncoding"] as const,
+      selectors: [
+         "suffix",
+         ["resolvedEncoding", "selected"] as const,
+      ] as const,
    },
 }
 
-// Placeholder blueprint used only to derive the helper's type signature.
-const _permutationBlueprint = createSegmentBlueprint()
-   .requiresInContext<TermsRequiredAC>()
+// Witness: a minimal builder advanced through the prerequisites of this segment.
+// Used only for type extraction — its runtime value is discarded.
+const _witness = createEncodingSegment({ get: () => undefined } as unknown as ConfigService)(
+   createPipeline<PermutationMinimalIC>(),
+)
+
+// Placeholder blueprint built from the witness, used only to derive the
+// exported helper type via ReturnType.
+const _permutationBlueprint = createSegmentBlueprintFromBuilder(_witness)
    .addPublicFeature<TranscodedTerms, "transcodedTerms", TermsSelectors>(
       "transcodedTerms",
       termProperties,
@@ -61,12 +79,15 @@ export type PermutationSegmentHelper = ReturnType<
    typeof _permutationBlueprint.buildHelper
 >
 
-// ConfigService accepted for API consistency; no keys read currently.
 export function createPermutationSegment(
-   _configSvc: ConfigService,
+   configSvc: ConfigService,
 ): PermutationSegmentHelper {
-   return createSegmentBlueprint()
-      .requiresInContext<TermsRequiredAC>()
+   // Witness chain: advance a minimal builder through this segment's prerequisites.
+   const witness = createEncodingSegment(configSvc)(
+      createPipeline<PermutationMinimalIC>(),
+   )
+
+   return createSegmentBlueprintFromBuilder(witness)
       .addPublicFeature<TranscodedTerms, "transcodedTerms", TermsSelectors>(
          "transcodedTerms",
          termProperties,

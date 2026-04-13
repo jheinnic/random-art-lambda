@@ -1,5 +1,6 @@
 import { registerAs } from "@nestjs/config"
-import { dirname } from "path"
+import { dirname, resolve } from "path"
+import { homedir } from "os"
 import { fileURLToPath } from "url"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
@@ -162,4 +163,68 @@ export const paintQueueNames = registerAs(
       rawLoad.queueNames.toReceiveReplies = `reply-queue-${process.env.UNIQUE_ID}`
       return PaintQueueNamesEnvironmentSchema.parse(rawLoad)
    },
+)
+
+// =============================================================================
+// IPFS / Blockstore
+// =============================================================================
+
+const IpfsEnvironmentSchema = z.object({
+   blockstorePath: z
+      .string()
+      .default(resolve(homedir(), ".random-art", "blockstore")),
+})
+
+export type IpfsEnvironment = z.infer<typeof IpfsEnvironmentSchema>
+
+export const ipfs = registerAs(
+   "ipfs",
+   (): IpfsEnvironment =>
+      IpfsEnvironmentSchema.parse({
+         blockstorePath: process.env.RA_BLOCKSTORE_PATH,
+      }),
+)
+
+// =============================================================================
+// Staging
+// =============================================================================
+
+const StagingEnvironmentSchema = z.object({
+   stagerType: z.enum(["local", "s3"]).default("local"),
+   localRootPath: z.string().default("/tmp/trigram-output"),
+   s3Bucket: z.string().optional(),
+   s3Region: z.string().default("us-east-1"),
+   s3KeyPrefix: z.string().default("trigram-art"),
+})
+
+export type StagingEnvironment = z.infer<typeof StagingEnvironmentSchema>
+
+export const staging = registerAs(
+   "staging",
+   (): StagingEnvironment =>
+      StagingEnvironmentSchema.parse({
+         stagerType: process.env.RA_STAGER_TYPE,
+         localRootPath: process.env.RA_STAGING_ROOT,
+         s3Bucket: process.env.RA_S3_BUCKET ?? process.env.S3_BUCKET,
+         s3Region: process.env.RA_AWS_REGION ?? process.env.AWS_REGION,
+         s3KeyPrefix: process.env.RA_S3_KEY_PREFIX,
+      }),
+)
+
+// =============================================================================
+// Painting / Gen model
+// =============================================================================
+
+const PaintingEnvironmentSchema = z.object({
+   genModel: z.enum(["randomart", "genjs6"]).default("randomart"),
+})
+
+export type PaintingEnvironment = z.infer<typeof PaintingEnvironmentSchema>
+
+export const painting = registerAs(
+   "painting",
+   (): PaintingEnvironment =>
+      PaintingEnvironmentSchema.parse({
+         genModel: process.env.RA_GEN_MODEL,
+      }),
 )

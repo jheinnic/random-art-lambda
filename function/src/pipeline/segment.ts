@@ -1,22 +1,43 @@
+/* eslint-disable @typescript-eslint/method-signature-style */
 // =============================================================================
 // SegmentBlueprint — typed pipeline segment helper factory
 // =============================================================================
 //
+// A SegmentBlueprint is built using the same vocabulary as PipelineBuilder, but
+// starts from an EMPTY context so all TypeScript conditional type checks evaluate
+// on concrete types rather than unconstrained generics.
+//
+// Dependencies — context values that must already be CONCRETE in the target
+// builder — are declared via addVirtualDependency().  They are tracked in
+// RequiredAC and checked by BeforeSegment, but are NOT replayed in buildHelper()
+// because the real builder already has them concrete.
+//
+// New virtual contracts — ones this segment introduces — are declared via
+// addVirtualFeature().  They ARE replayed in buildHelper().
+//
+// All `as any` usage is confined to the factory function implementation;
+// segment developers never write unsafe casts.
+//
 // Usage:
 //
 //   export function createEncodingSegment(configSvc: ConfigService) {
-//     const defaultEncoding = configSvc.get<BufferEncoding>("encoding.default") ?? "utf8"
+//     const defaultEncoding =
+//       configSvc.get<BufferEncoding>("encoding.default") ?? "utf8"
 //     return createSegmentBlueprint()
 //       .extendInitial({ originalEncoding: defaultEncoding })
 //       .addVirtualFeature<EncodingOverride, "encodingOverride">("encodingOverride")
 //       .buildHelper()
 //   }
 //
-// The returned function has the signature:
-//   <B extends PipelineBuilder>(builder: BeforeSegment<B,...>) => AfterSegment<B,...>
-//
-// All `as any` usage is encapsulated inside buildHelper()'s implementation.
-// Segment developers never write unsafe casts.
+//   export function createWorkerPoolSegment(_configSvc: ConfigService) {
+//     return createSegmentBlueprint()
+//       .addVirtualDependency<IFileStore, "fileStore">()     // dep — must be concrete in real builder
+//       .addVirtualDependency<Buffer, "canvasBuffer">()      // dep — must be concrete in real builder
+//       .addVirtualFeature<FileStoreSelection, "stagingStrategy">("stagingStrategy")
+//       .addVirtualFeature<PathTargetSelection, "stagedFilePath">("stagedFilePath")
+//       .addStep("stagingResult", { method: ..., selectors: [...] })
+//       .buildHelper()
+//   }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -24,9 +45,11 @@ import type {
    UnusedKey,
    WithProp,
    CompatibleForMixin,
+   InitialInput,
    ContextKeysAndPairs,
 } from "./types.js"
 import type {
+   IBasePipelineBuilder,
    PipelineBuilder,
    ContextualMethod,
    PropertySelectorsMap,
@@ -56,9 +79,6 @@ type CompatibleMerge<A extends object, B extends object> = Simplify<
  * True if every key of Addition that already exists in Existing has an
  * identical type (bidirectional assignability).
  * Keys absent from Existing are always accepted.
- *
- * Uses tuple-wrapped non-distributive extends throughout to prevent
- * union short-circuiting.
  */
 type CompatibleAddition<Existing extends object, Addition extends object> = [
    keyof Addition & keyof Existing,
@@ -134,6 +154,12 @@ export type BeforeSegment<
 /**
  * Describes the PipelineBuilder produced after applying the segment's delta to B.
  * All prior accumulated state in B is preserved via CompatibleMerge.
+ *
+ * Virtual resolution: names in AddedVC that are already CONCRETE in B's
+ * StepContext (SC) are excluded from the result's VirtualContext.  This handles
+ * the case where an AddedVC entry was declared as a dep virtual in the blueprint
+ * (via addVirtualFeature) but is already concrete in the real builder — it should
+ * remain concrete rather than be re-declared as a virtual.
  */
 export type AfterSegment<
    B extends PipelineBuilder,
@@ -157,7 +183,8 @@ export type AfterSegment<
            CompatibleMerge<InjC, AddedInjC>,
            CompatibleMerge<EC, AddedEC>,
            CompatibleMerge<SC, AddedSC>,
-           CompatibleMerge<VC, AddedVC>,
+           // Virtual resolution: skip names already concrete in the real builder's SC.
+           CompatibleMerge<VC, Omit<AddedVC, keyof SC>>,
            CompatibleMerge<AC, AddedAC>
         >
       : never
@@ -188,13 +215,13 @@ type Operation =
 /**
  * Blueprint for constructing typed pipeline segment helper functions.
  *
- * Shares PipelineBuilder's method vocabulary but operates on a fresh empty
- * context, so every TypeScript conditional type check (UnusedKey,
- * CompatibleForMixin, etc.) evaluates on concrete types without unconstrained
- * generics.
+ * Extends IBasePipelineBuilder so the shared operation vocabulary (extendInitial,
+ * addVirtualFeature, addPublicFeature, addPrivateFeature, addStep,
+ * addPrivateInjection) is declared once on the base and inherited here with
+ * SegmentBlueprint-specific return types.
  *
- * Call buildHelper() to produce the typed helper function; all `as any`
- * usage is encapsulated in that one implementation site.
+ * Call buildHelper() to produce the typed helper function.  All `as any` usage
+ * is encapsulated in the factory function implementation site.
  *
  * Type parameters track the segment's delta:
  * @typeParam AddedIC    Additions to InitialContext
@@ -215,37 +242,24 @@ export interface SegmentBlueprint<
    AddedAC extends object = {},
    KnownAC extends object = {},
    RequiredAC extends object = {},
-> {
-   /**
-    * Declare that the target builder must have the given context shape before
-    * the helper is called.  Also makes those properties available for
-    * type-checking within subsequent blueprint calls (step selectors, etc.).
-    *
-    * Pure type-level declaration; no runtime effect.
-    */
-   requiresInContext<Required extends object>(): SegmentBlueprint<
-      AddedIC,
-      AddedInjC,
-      AddedEC,
-      AddedSC,
-      AddedVC,
-      AddedAC,
-      CompatibleMerge<KnownAC, Required>,
-      CompatibleMerge<RequiredAC, Required>
-   >
-
-   extendInitial<Extra extends object>(
-      defaults: CompatibleForMixin<AddedSC, Extra>,
-   ): SegmentBlueprint<
-      CompatibleMerge<AddedIC, Extra>,
-      AddedInjC,
-      CompatibleMerge<AddedEC, Extra>,
-      CompatibleMerge<AddedSC, Extra>,
-      AddedVC,
-      CompatibleMerge<AddedAC, Extra>,
-      CompatibleMerge<KnownAC, Extra>,
-      RequiredAC
-   >
+> extends IBasePipelineBuilder {
+   extendInitial<
+      Extra extends object,
+      ExtraDefaults extends Partial<Extra> = Partial<Extra>,
+   >(
+      defaults: ExtraDefaults,
+   ): [CompatibleForMixin<AddedSC, Extra>] extends [never]
+      ? never
+      : SegmentBlueprint<
+           CompatibleMerge<AddedIC, InitialInput<Extra, ExtraDefaults>>,
+           AddedInjC,
+           CompatibleMerge<AddedEC, Extra>,
+           CompatibleMerge<AddedSC, Extra>,
+           AddedVC,
+           CompatibleMerge<AddedAC, Extra>,
+           CompatibleMerge<KnownAC, Extra>,
+           RequiredAC
+        >
 
    addVirtualFeature<VType extends object, NameOut extends string>(
       nameOut: UnusedKey<KnownAC, NameOut>,
@@ -345,11 +359,11 @@ export interface SegmentBlueprint<
     *   - When any check fails, BeforeSegment<B,...> = never,
     *     so AfterSegment<never,...> = never, breaking the chain immediately.
     *
-    * Errors therefore surface on the variable receiving the result (or on the
-    * next segment call that receives `never`), rather than on the argument.
+    * Errors surface on the variable receiving the result (or the next segment
+    * call that receives `never`), rather than on the argument.
     *
-    * All `as any` usage is encapsulated here — segment developers never write
-    * unsafe casts.
+    * All `as any` usage is encapsulated in the factory function — segment
+    * developers never write unsafe casts.
     */
    buildHelper: () => <B extends PipelineBuilder<any, any, any, any, any, any>>(
       builder: B,
@@ -368,98 +382,100 @@ export interface SegmentBlueprint<
 // Implementation
 // =============================================================================
 
-// SegmentBlueprintImpl deliberately does NOT declare `implements SegmentBlueprint`.
-// The typed interface uses deeply nested conditional types that TypeScript cannot
-// verify against an erased implementation.  The cast to SegmentBlueprint<> happens
-// once at the createSegmentBlueprint() factory boundary below.
-class SegmentBlueprintImpl {
-   constructor(private readonly ops: Operation[] = []) {}
+/**
+ * Factory function producing SegmentBlueprint runtime objects.
+ * Mirrors the createBuilderImpl factory pattern in core.ts.
+ *
+ * Returns a plain object with all SegmentBlueprint methods attached.
+ * Cast to SegmentBlueprint<> happens once at the createSegmentBlueprint()
+ * public boundary.
+ */
+function createSegmentBlueprintImpl(ops: Operation[]): any {
+   return {
+      extendInitial(defaults: object) {
+         return createSegmentBlueprintImpl([
+            ...ops,
+            { kind: "extendInitial", defaults },
+         ])
+      },
 
-   requiresInContext(): SegmentBlueprintImpl {
-      return this // pure type-level; no runtime state change
-   }
+      addVirtualFeature(name: string) {
+         return createSegmentBlueprintImpl([
+            ...ops,
+            { kind: "addVirtualFeature", name },
+         ])
+      },
 
-   extendInitial(defaults: object): SegmentBlueprintImpl {
-      return new SegmentBlueprintImpl([
-         ...this.ops,
-         { kind: "extendInitial", defaults },
-      ])
-   }
+      addPublicFeature(name: string, properties: AnyProps) {
+         return createSegmentBlueprintImpl([
+            ...ops,
+            { kind: "addPublicFeature", name, properties },
+         ])
+      },
 
-   addVirtualFeature(name: string): SegmentBlueprintImpl {
-      return new SegmentBlueprintImpl([
-         ...this.ops,
-         { kind: "addVirtualFeature", name },
-      ])
-   }
+      addPrivateFeature(name: string, properties: AnyProps) {
+         return createSegmentBlueprintImpl([
+            ...ops,
+            { kind: "addPrivateFeature", name, properties },
+         ])
+      },
 
-   addPublicFeature(name: string, properties: AnyProps): SegmentBlueprintImpl {
-      return new SegmentBlueprintImpl([
-         ...this.ops,
-         { kind: "addPublicFeature", name, properties },
-      ])
-   }
+      addStep(name: string, impl: AnyMethod) {
+         return createSegmentBlueprintImpl([
+            ...ops,
+            { kind: "addStep", name, impl },
+         ])
+      },
 
-   addPrivateFeature(name: string, properties: AnyProps): SegmentBlueprintImpl {
-      return new SegmentBlueprintImpl([
-         ...this.ops,
-         { kind: "addPrivateFeature", name, properties },
-      ])
-   }
+      addPrivateInjection(name: string) {
+         return createSegmentBlueprintImpl([
+            ...ops,
+            { kind: "addPrivateInjection", name },
+         ])
+      },
 
-   addStep(name: string, impl: AnyMethod): SegmentBlueprintImpl {
-      return new SegmentBlueprintImpl([
-         ...this.ops,
-         { kind: "addStep", name, impl },
-      ])
-   }
+      addPublicInjection(name: string) {
+         return createSegmentBlueprintImpl([
+            ...ops,
+            { kind: "addPublicInjection", name },
+         ])
+      },
 
-   addPrivateInjection(name: string): SegmentBlueprintImpl {
-      return new SegmentBlueprintImpl([
-         ...this.ops,
-         { kind: "addPrivateInjection", name },
-      ])
-   }
-
-   buildHelper() {
-      const ops = this.ops
-      // This is the single `as any` bridge in the entire framework.
-      // `builder` arrives as BeforeSegment<B,...> — a concrete B at the call site.
-      // We replay the recorded operations, which mirror exactly what the developer
-      // declared on the blueprint.  The result is cast to AfterSegment<B,...>,
-      // which is provably correct because AfterSegment is derived from the same
-      // declarations the blueprint accumulated.
-      return function <B extends PipelineBuilder>(builder: any): any {
-         let b: any = builder
-         for (const op of ops) {
-            switch (op.kind) {
-               case "extendInitial":
-                  b = b.extendInitial(op.defaults)
-                  break
-               case "addVirtualFeature":
-                  b = b.addVirtualFeature(op.name)
-                  break
-               case "addPublicFeature":
-                  b = b.addPublicFeature(op.name, op.properties)
-                  break
-               case "addPrivateFeature":
-                  b = b.addPrivateFeature(op.name, op.properties)
-                  break
-               case "addStep":
-                  b = b.addStep(op.name, op.impl)
-                  break
-               case "addPrivateInjection":
-                  b = b.addPrivateInjection(op.name)
-                  break
-               case "addPublicInjection":
-                  b = b.addPublicInjection(op.name)
-                  break
+      buildHelper() {
+         return function (builder: any): any {
+            let b: any = builder
+            for (const op of ops) {
+               switch (op.kind) {
+                  case "extendInitial":
+                     b = b.extendInitial(op.defaults)
+                     break
+                  case "addVirtualFeature":
+                     b = b.addVirtualFeature(op.name)
+                     break
+                  case "addPublicFeature":
+                     b = b.addPublicFeature(op.name, op.properties)
+                     break
+                  case "addPrivateFeature":
+                     b = b.addPrivateFeature(op.name, op.properties)
+                     break
+                  case "addStep":
+                     b = b.addStep(op.name, op.impl)
+                     break
+                  case "addPrivateInjection":
+                     b = b.addPrivateInjection(op.name)
+                     break
+                  case "addPublicInjection":
+                     b = b.addPublicInjection(op.name)
+                     break
+               }
             }
+            return b
          }
-         return b
-      }
+      },
    }
 }
+
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 // =============================================================================
 // Factory
@@ -480,7 +496,64 @@ class SegmentBlueprintImpl {
  * }
  */
 export function createSegmentBlueprint(): SegmentBlueprint {
-   // Single cast: SegmentBlueprintImpl is the untyped runtime carrier;
+   // Single cast: the factory returns a plain object typed as any;
    // SegmentBlueprint<> is the typed facade visible to segment developers.
-   return new SegmentBlueprintImpl() as unknown as SegmentBlueprint
+   return createSegmentBlueprintImpl([]) as SegmentBlueprint
+}
+
+/**
+ * Create a SegmentBlueprint whose prerequisite context is derived from an
+ * existing PipelineBuilder witness.
+ *
+ * The witness is a PipelineBuilder that has been advanced through the same
+ * segment directors this new segment will depend on — it acts purely as a
+ * type-level proof that those prerequisites are concrete.  Its runtime value
+ * is discarded; only the type parameters are extracted.
+ *
+ * This separates prerequisite declaration from addition declaration:
+ * - Prerequisites: expressed structurally via the witness builder chain
+ * - Additions:     expressed via the returned SegmentBlueprint's methods
+ *
+ * The resulting SegmentBlueprint's BeforeSegment check will require the real
+ * builder to have at least the concrete context of the witness's StepContext,
+ * and will have access to AllContext (including virtuals) for selector
+ * type-checking within the new segment's declarations.
+ *
+ * @example
+ * export function createWorkerPoolSegment(configSvc: ConfigService) {
+ *   // Witness chain: advance a minimal builder through prerequisites
+ *   const prereqs = createPermutationSegment(configSvc)(
+ *     createEncodingSegment(configSvc)(
+ *       createPipeline<{ prefix: Uint8ClampedArray; suffix: Uint8ClampedArray; canvasBuffer: Buffer }>()
+ *         .addPrivateInjection<IFileStore, "fileStore">("fileStore")
+ *     )
+ *   )
+ *   // Blueprint: declare only the additions this segment contributes
+ *   return createSegmentBlueprintFromBuilder(prereqs)
+ *     .addVirtualFeature<FileStoreSelection, "stagingStrategy">("stagingStrategy")
+ *     .addVirtualFeature<PathTargetSelection, "stagedFilePath">("stagedFilePath")
+ *     .addStep("stagingResult", { ... })
+ *     .buildHelper()
+ * }
+ */
+export function createSegmentBlueprintFromBuilder<
+   _IC extends object,
+   _InjC extends object,
+   _EC extends object,
+   SC extends object,
+   _VC extends object,
+   AC extends object,
+>(
+   _witness: PipelineBuilder<_IC, _InjC, _EC, SC, _VC, AC>,
+): SegmentBlueprint<{}, {}, {}, {}, {}, {}, AC, SC> {
+   return createSegmentBlueprintImpl([]) as SegmentBlueprint<
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      AC,
+      SC
+   >
 }
