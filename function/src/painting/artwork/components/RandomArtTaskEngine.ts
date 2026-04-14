@@ -70,10 +70,9 @@ export class RandomArtTaskEngine {
       )
       try {
          // Parse the CID now that we have passed the point of serialization!
-         const regionMapRefAsCID: CID = CIDUtil.parseCID(
+         const regionMapRefAsCID: CID = CIDUtil.toCID(
             paintTask.plotDataRef.regionMapCID,
          )
-
          const regionMap: IRegionMap =
             await this.regionMapRepository.load(regionMapRefAsCID)
          const canvasFragment: CanvasFragment = nextTask.canvasFragment

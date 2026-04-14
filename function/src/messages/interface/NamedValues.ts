@@ -31,12 +31,6 @@ const ReleaseVersionName: unique symbol = Symbol("Release Version Name")
 const BuildVersionName: unique symbol = Symbol("Build Version Name")
 
 /**
- * A string that has been validated as a legitimate CID format.
- * Use CIDUtil.blessCID() to convert from LiteCIDString after validation.
- */
-export type CIDString = Nominal<string, typeof CIDStringName>
-
-/**
  * A string that is intended to be a CID but has not yet been validated.
  * This is used in application-facing DTOs where CID format validation
  * is deferred to the framework (e.g., FlowProducer).
@@ -45,6 +39,12 @@ export type CIDString = Nominal<string, typeof CIDStringName>
  * keeping application code free of multiformats dependency.
  */
 export type LiteCIDString = Nominal<string, typeof LiteCIDStringName>
+
+/**
+ * A LiteCIDString that has been validated as a legitimate CID format.
+ * Use CIDUtil.blessCID() to convert from LiteCIDString after validation.
+ */
+export type CIDString = Nominal<LiteCIDString, typeof CIDStringName>
 
 export type PrefixString = Nominal<string, typeof Prefix>
 export type SuffixString = Nominal<string, typeof Suffix>

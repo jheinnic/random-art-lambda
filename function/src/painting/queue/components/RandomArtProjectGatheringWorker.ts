@@ -2,10 +2,7 @@ import { Inject, Injectable, Logger } from "@nestjs/common"
 import { WorkerHost } from "@nestjs/bullmq"
 import { Job, Worker } from "bullmq"
 
-import {
-   Envelope,
-   type EnvelopeMemento,
-} from "../../../messages/index.js"
+import { Envelope, type EnvelopeMemento } from "../../../messages/index.js"
 import {
    CURRENT_RELEASE,
    PROJECT_MANIFEST_FILENAME,
@@ -56,7 +53,9 @@ export class RandomArtProjectGatheringWorker extends WorkerHost<
       private readonly fileStore: IFileStore,
    ) {
       super()
-      this.logger = new Logger("painting.queued.RandomArtProjectGatheringWorker")
+      this.logger = new Logger(
+         "painting.queued.RandomArtProjectGatheringWorker",
+      )
       this.logger.log("Created project gathering worker")
    }
 
@@ -109,7 +108,7 @@ export class RandomArtProjectGatheringWorker extends WorkerHost<
                PROGRESS_FOR_CHILD_COLLECTION / childKeys.length
 
             const resultsByTask: Record<PaintTaskId, TaskResultRecord> =
-               {} as Record<PaintTaskId, TaskResultRecord>
+               {} satisfies Record<PaintTaskId, TaskResultRecord>
             const manifestEntries: ProjectManifestEntry[] = []
             const counters = {
                totalTaskCount: expectedTaskCount,

@@ -1,36 +1,19 @@
+import {
+   paintQueueRedis,
+   PaintQueueRedisEnvironment,
+   PaintQueueRetentionEnvironment,
+} from "./../../../app/shared/di/Loaders"
+import { PaintQueueNamesEnvironment } from "../../../app/shared/di/Loaders.js"
 import type { ModuleDependenciesOption } from "../../../modules/index.js"
 
 export interface ModuleConfigData {
-   redis: {
-      host: string
-      port: number
-   }
-   retention: {
-      keepLogs: number
-      removeOnComplete: {
-         age: number
-      }
-      removeOnFail: {
-         age: number
-      }
-   }
-   jobDataSizeLimit: number
-   flowProducerNames: {
-      forJobSpecs: string
-   }
+   redis: PaintQueueRedisEnvironment
+   retention: PaintQueueRetentionEnvironment
+   flowProducerNames: PaintQueueNamesEnvironment["flowProducerNames"]
    /**
     * Queue names - aligned with paintQueueNames.yaml schema
     */
-   queueNames: {
-      /** Queue for scatter/paint tasks */
-      toPaintParts: string
-      /** Queue for gather/assemble tasks */
-      toGatherParts: string
-      /** Queue for project-level gather tasks */
-      toGatherTasks: string
-      /** Queue for receiving replies (per-node, dynamically named) */
-      toReceiveReplies: string
-   }
+   queueNames: PaintQueueNamesEnvironment["queueNames"]
    /**
     * Worker concurrency settings.
     * Controls how many jobs each worker type processes simultaneously.
@@ -42,7 +25,11 @@ export interface ModuleConfigData {
       /** Concurrency for gather/staging workers */
       gather?: number
    }
-   roles: Array<"paintWorker" | "mainApp" | "stageWorker" | "projectGatherer" | "jobDoneWorker">
+   roles: Array<
+      "mainApp" | "paintWorker" | "stageWorker"
+      // | "projectGatherer"
+      // | "jobDoneWorker"
+   >
 
    /**
     * File store dependency for the project gathering worker.

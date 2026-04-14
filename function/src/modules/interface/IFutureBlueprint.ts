@@ -54,12 +54,12 @@ export type ExternalizedBlueprint<
       Build,
       Injection,
       ReturnType<Blueprint[K]>,
-      ExpandConfig<Config, K, Injection, Parameters<Blueprint[K]>>,
-      ExpandTokens<Tokens, K, Injection, Parameters<Blueprint[K]>>
+      Config & ExpandConfig<K, Parameters<Blueprint[K]>, Injection>,
+      Tokens & ExpandTokens<K, Parameters<Blueprint[K]>, Injection>
    >
 }
 
-export type ConfigContract<
+export type ActualConfigContract<
    Build extends string,
    Injection extends TokenTypes<Injection>,
    Blueprint extends SomeBlueprint<Build, Injection, Blueprint>,
@@ -74,7 +74,7 @@ export type ConfigContract<
       ? StripUndefined<Config>
       : never
 
-export type TokensContract<
+export type ActualTokensContract<
    Build extends string,
    Injection extends TokenTypes<Injection>,
    Blueprint extends SomeBlueprint<Build, Injection, Blueprint>,
@@ -90,9 +90,31 @@ export type TokensContract<
       ? StripUndefined<Tokens>
       : never
 
+export type ConfigContract<
+   Build extends string,
+   Injection extends TokenTypes<Injection>,
+   Blueprint extends SomeBlueprint<Build, Injection, Blueprint>,
+> = StripUndefined<{
+   [K in Exclude<string & keyof Blueprint, Build>]: JustTheValue<
+      Parameters<Blueprint[K]>,
+      Injection
+   >
+}>
+
+export type TokensContract<
+   Build extends string,
+   Injection extends TokenTypes<Injection>,
+   Blueprint extends SomeBlueprint<Build, Injection, Blueprint>,
+> = StripUndefined<{
+   [K in Exclude<string & keyof Blueprint, Build>]: JustAnyToken<
+      Parameters<Blueprint[K]>,
+      Injection
+   >
+}>
+
 type StripUndefined<T extends object> = {
    [K in {
-      [K2 in keyof T]: T[K2] extends undefined ? never : K2
+      [K2 in keyof T]: [T[K2]] extends [undefined] ? never : K2
    }[keyof T]]: T[K]
 }
 
@@ -131,42 +153,50 @@ type AllowedBlueprintParams<
          : never
 
 type JustTheValue<
-   Injection extends TokenTypes<Injection>,
    Params extends readonly any[],
+   Injection extends TokenTypes<Injection>,
 > =
-   Params extends AllowedBlueprintParams<Params, Injection>
-      ? Params[0] extends OnlyValues<Params[0], Injection>
-         ? Params[0]
-         : Params[1]
-      : never
+   Params[0] extends OnlyValues<Params[0], Injection>
+      ? Params[0]
+      : Params[1] extends OnlyValues<Params[1], Injection>
+        ? Params[1]
+        : never
 
 type JustTheToken<
-   Injection extends TokenTypes<Injection>,
    Params extends readonly any[],
+   Injection extends TokenTypes<Injection>,
 > =
-   Params extends AllowedBlueprintParams<Params, Injection>
-      ? Params[0] extends OnlyToken<Params[0], Injection>
-         ? Params[0]
-         : Params[1]
-      : never
+   Params[0] extends OnlyToken<Params[0], Injection>
+      ? Params[0]
+      : Params[1] extends OnlyToken<Params[1], Injection>
+        ? Params[1]
+        : never
+
+type JustAnyToken<
+   Params extends readonly any[],
+   Injection extends TokenTypes<Injection>,
+> =
+   Params[0] extends OnlyToken<Params[0], Injection>
+      ? symbol
+      : Params[1] extends OnlyToken<Params[1], Injection>
+        ? symbol
+        : never
 
 type ExpandConfig<
-   Config,
    K extends string,
-   Injection extends TokenTypes<Injection>,
    Params extends readonly any[],
-> = Config & { [Key in K]: JustTheValue<Injection, Params> }
+   Injection extends TokenTypes<Injection>,
+> = { [Key in K]: JustTheValue<Params, Injection> }
 
 type ExpandTokens<
-   Config,
    K extends string,
-   Injection extends TokenTypes<Injection>,
    Params extends readonly any[],
-> = Config & { [Key in K]: JustTheToken<Injection, Params> }
+   Injection extends TokenTypes<Injection>,
+> = { [Key in K]: JustTheToken<Params, Injection> }
 
 interface Demo {
-   doo: (k: string) => Demo
    moo: (k: string) => Demo
+   doo: (k: string) => Demo
    soo: (a: number, b: typeof BB) => Demo
    foo: (a: typeof AA, b: string) => Demo
    noo: (a: typeof AA) => Demo
@@ -175,6 +205,7 @@ interface Demo {
 
 const AA: unique symbol = Symbol("aa")
 const BB: unique symbol = Symbol("bb")
+const CC: unique symbol = Symbol("cc")
 
 interface DemoTypes {
    [AA]: string
@@ -188,6 +219,17 @@ const host = jfs
    .soo(82, { use: "value", value: 18 })
    .doo("cabin")
    .noo({ use: "value", value: "truish" })
+// .moo("k")
+// .moo("k")
+// .foo({ use: "number", value: 8 }, "k")
 
-type A11 = ConfigContract<"build", DemoTypes, Demo, typeof host>
-type B11 = TokensContract<"build", DemoTypes, Demo, typeof host>
+type A11 = ConfigContract<"build", DemoTypes, Demo>
+type B11 = TokensContract<"build", DemoTypes, Demo>
+type C11 = ActualConfigContract<"build", DemoTypes, Demo, typeof host>
+type D11 = ActualTokensContract<"build", DemoTypes, Demo, typeof host>
+
+export const fook: A11 = { soo: 3, moo: "d", doo: "d", foo: "d" }
+export const wook: B11 = { soo: CC, foo: CC, noo: CC }
+
+export const zook: C11 = { soo: 82, doo: "cabin" }
+export const cook: D11 = { soo: BB, noo: AA }

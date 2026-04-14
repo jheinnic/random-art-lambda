@@ -8,6 +8,7 @@ import type {
    IRegionMapRepository,
 } from "../../../plotting/index.js"
 import type {
+   CIDString,
    LiteCIDString,
    PaintGeometry,
    ULIDString,
@@ -30,6 +31,9 @@ import type { PaintingTask } from "../../messages/values/PaintingTask.js"
 import {
    type PlotDataNameRef,
    type PlotDataCIDRef,
+   PlotDataLiteCIDRef,
+   isRefByName,
+   hasRefByCID,
 } from "../../messages/values/PlotDataRef.js"
 import type { PlotMapGeometry } from "../../messages/values/PlotMapGeometry.js"
 import type { PendingTask } from "../../cache/PendingTask.js"
@@ -37,7 +41,10 @@ import type { PendingTask } from "../../cache/PendingTask.js"
 import { CIDUtil } from "../../utility/CIDUtil.js"
 import { Envelope, NominalUtil } from "../../../messages/index.js"
 import { QueuedPaintingTypes } from "../di/Types.js"
-import { FlowConfiguration } from "./FlowConfiguration.js"
+import {
+   FlowConfiguration,
+   MultiTaskSimpleGatherFlowConfiguration,
+} from "./FlowConfiguration.js"
 
 /**
  * Resolved RegionMap data after CID validation and repository lookup.
@@ -60,16 +67,22 @@ export class RandomArtFlowProducer<
    ProjectDomain extends object = never,
 > {
    private readonly logger: Logger
+   // private readonly scatterPartsQueue: string
+   // private readonly gatherPartsQueue: string
+   // private readonly gatherTasksQueue: string
 
    constructor(
       @InjectFlowProducer("paintFlows")
       private readonly flowProducer: FlowProducer,
       @Inject(QueuedPaintingTypes.FlowProducerConfig)
-      private readonly config: FlowConfiguration,
+      private readonly config: MultiTaskSimpleGatherFlowConfiguration,
       @Inject(QueuedPaintingTypes.InjectedRegionMapRepo)
       private readonly regionMapRepo: IRegionMapRepository,
    ) {
       this.logger = new Logger(RandomArtFlowProducer.name)
+      // this.scatterPartsQueue = config.scatterPartsQueue
+      // this.gatherPartsQueue = config.gatherPartsQueue
+      // this.gatherTasksQueue = config.gatherTasksQueue
       this.logger.log("RandomArtFlowProducer initialized")
    }
 
@@ -159,7 +172,7 @@ export class RandomArtFlowProducer<
       // Step 4: Enqueue the flow
       await this.flowProducer.add({
          name: `project:${projectId}`,
-         queueName: this.config.gatherProjectQueue,
+         queueName: this.config.gatherTasksQueue,
          data: projectEnvelope,
          children: flowChildren,
       })
@@ -176,57 +189,6 @@ export class RandomArtFlowProducer<
          acceptedAt: startTime,
          taskCount: expectedTaskCount,
       }
-   }
-
-   /**
-    * Validate CIDs and resolve RegionMaps from repository.
-    *
-    * @param regionMapNames Map of friendly names to LiteCIDStrings
-    * @returns Map of friendly names to resolved RegionMap data
-    */
-   private async resolveRegionMaps(
-      regionMapNames: Record<string, LiteCIDString>,
-   ): Promise<Map<string, ResolvedRegionMap>> {
-      const resolved = new Map<string, ResolvedRegionMap>()
-
-      for (const [name, liteCid] of Object.entries(regionMapNames)) {
-         // Presume liteCid is parsable and load RegionMap from repository
-         const regionMap: IRegionMap = await (async () => {
-            try {
-               const cid = CIDUtil.parseCID(liteCid)
-               return await this.regionMapRepo.load(cid)
-            } catch (error) {
-               throw new Error(
-                  `RegionMap "${name}": Failed to load CID "${liteCid}": ${(error as Error).message}`,
-                  { cause: error },
-               )
-            }
-         })()
-
-         // Extract geometry from loaded RegionMap
-         // Type assertions needed: IRegionMap returns plain numbers,
-         // but PlotMapGeometry uses nominal types for type safety
-         const geometry: PlotMapGeometry = {
-            boundary: regionMap.regionBoundary,
-            imageSize: {
-               width: regionMap.pixelWidth,
-               height: regionMap.pixelHeight,
-               size: regionMap.pixelSize,
-            },
-         }
-         NominalUtil.blessGeometry(geometry)
-         CIDUtil.trustCID(liteCid)
-         const cidRef: PlotDataCIDRef = {
-            regionMapCID: liteCid,
-            regionMapName: name,
-         }
-         resolved.set(name, { cidRef, geometry })
-         this.logger.debug(
-            `RegionMap "${name}": Resolves to ${liteCid} with ${JSON.stringify(geometry)}`,
-         )
-      }
-
-      return resolved
    }
 
    /**
@@ -249,21 +211,25 @@ export class RandomArtFlowProducer<
       const { width: pixelWidth, height: pixelHeight } =
          task.paintGeometry.imageSize
       const totalPixels = pixelWidth * pixelHeight
-      const pixelsPerChunk = this.config.pixelsPerTask
 
       // Calculate number of chunks needed
-      const chunkCount = Math.max(1, Math.ceil(totalPixels / pixelsPerChunk))
+      const chunkCount = Math.max(
+         1,
+         Math.ceil(totalPixels / this.config.pixelsPerJob),
+      )
       const rowsPerChunk = Math.ceil(pixelHeight / chunkCount)
 
       // Create the gather envelope first - its trace becomes parent for chunks
       // The gather envelope's messageId also serves as the taskId
-      const gatherEnvelope =
+      const gatherEnvelope: Envelope<
+         GatherPaintedPartsRequest<PaintingDomain, ProjectDomain>
+      > =
          projectEnvelope.startReplying<
             GatherPaintedPartsRequest<PaintingDomain, ProjectDomain>
          >()
 
       const taskId: PaintTaskId = gatherEnvelope.messageId
-      const projectId: ULIDString = projectEnvelope.correlationId
+      const projectId: ULIDString = gatherEnvelope.correlationId
 
       // Commit the gather envelope payload
       gatherEnvelope.commitBody({
@@ -283,44 +249,23 @@ export class RandomArtFlowProducer<
       )
 
       // Create scatter jobs for each chunk as children of the gather envelope
-      const scatterJobs: FlowChildJob[] = Array.from(
-         { length: chunkCount },
-         (_, chunkIndex) => {
-            const firstRow = chunkIndex * rowsPerChunk
-            const lastRow = Math.min(
-               firstRow + rowsPerChunk - 1,
-               pixelHeight - 1,
-            )
+      const scatterJobs: FlowChildJob[] = new Array(chunkCount)
+      for (let ii = 0; ii < chunkCount; ii++) {
+         const firstRow = ii * rowsPerChunk
+         const lastRow = Math.min(firstRow + rowsPerChunk - 1, pixelHeight - 1)
 
-            const canvasFragment: CanvasFragment = {
-               fragmentIndex: chunkIndex,
-               totalFragmentsCount: chunkCount,
-               fragmentFirstRow: firstRow,
-               fragmentLastRow: lastRow,
-            }
-
-            // Create chunk envelope as child of gather envelope
-            const chunkEnvelope =
-               gatherEnvelope.startReplying<PartialPaintRequest>()
-
-            chunkEnvelope.commitBody({
-               taskId,
-               projectId,
-               paintTask: {
-                  genSeed: task.genSeed,
-                  plotDataRef: task.plotDataRef,
-                  domainExtension: task.paintGeometry,
-               },
-               canvasFragment,
-            })
-
-            return {
-               name: `chunk:${taskId}:${chunkIndex}`,
-               queueName: this.config.scatterPartsQueue,
-               data: chunkEnvelope,
-            }
-         },
-      )
+         const canvasFragment: CanvasFragment = {
+            fragmentIndex: ii,
+            totalFragmentsCount: chunkCount,
+            fragmentFirstRow: firstRow,
+            fragmentLastRow: lastRow,
+         }
+         scatterJobs[ii] = this.createPaintPartJob(
+            task,
+            canvasFragment,
+            gatherEnvelope,
+         )
+      }
 
       // Return the gather job with its scatter children
       return {
@@ -332,5 +277,101 @@ export class RandomArtFlowProducer<
             children: scatterJobs,
          },
       }
+   }
+
+   private createPaintPartJob(
+      task: PendingTask<PaintingDomain>,
+      canvasFragment: CanvasFragment,
+      gatherEnvelope: Envelope<
+         GatherPaintedPartsRequest<PaintingDomain, ProjectDomain>
+      >,
+   ): FlowChildJob {
+      const taskId: PaintTaskId = gatherEnvelope.messageId
+      const projectId: ULIDString = gatherEnvelope.correlationId
+
+      // Create chunk envelope as child of gather envelope
+      const chunkEnvelope: Envelope<PartialPaintRequest> =
+         gatherEnvelope.startReplying<PartialPaintRequest>()
+
+      chunkEnvelope.commitBody({
+         taskId,
+         projectId,
+         paintTask: {
+            genSeed: task.genSeed,
+            plotDataRef: task.plotDataRef,
+            domainExtension: task.paintGeometry,
+         },
+         canvasFragment,
+      })
+
+      return {
+         name: `chunk:${taskId}:${canvasFragment.fragmentIndex}`,
+         queueName: this.config.scatterPartsQueue,
+         data: chunkEnvelope,
+      }
+   }
+
+   private async maybeLookupRegionMap(
+      cidStr: LiteCIDString | CIDString,
+      name?: string,
+   ): Promise<ResolvedRegionMap> {
+      // Presume liteCid is parsable and load RegionMap from repository
+      let regionMap: IRegionMap
+      try {
+         const cid = CIDUtil.maybeToCID(cidStr)
+         regionMap = await this.regionMapRepo.load(cid)
+      } catch (error) {
+         throw new Error(
+            `RegionMap${name == null ? ' "' : ""}${name ?? ""}${name == null ? '"' : ""}: Failed to load CID "${cidStr}": ${(error as Error).message}`,
+            { cause: error },
+         )
+      }
+
+      // Extract geometry from loaded RegionMap
+      // Type assertions needed: IRegionMap returns plain numbers,
+      // but PlotMapGeometry uses nominal types for type safety
+      const geometry: PlotMapGeometry = {
+         boundary: regionMap.regionBoundary,
+         imageSize: {
+            width: regionMap.pixelWidth,
+            height: regionMap.pixelHeight,
+            size: regionMap.pixelSize,
+         },
+      }
+      NominalUtil.blessGeometry(geometry)
+
+      // We can trust any liteCid now because it was used to successfully load
+      // the regionMap geometry.
+      CIDUtil.trustCID(cidStr)
+      const cidRef: PlotDataCIDRef = {
+         regionMapCID: cidStr,
+         regionMapName: name,
+         isValidated: true,
+      }
+      return { cidRef, geometry }
+   }
+
+   /**
+    * Validate CIDs and resolve RegionMaps from repository.
+    *
+    * @param regionMapNames Map of friendly names to LiteCIDStrings and or CIDStrings
+    * @returns Map of friendly names to resolved RegionMap data
+    */
+   private async resolveRegionMaps(
+      regionMapNames: Record<string, LiteCIDString>,
+   ): Promise<Map<string, ResolvedRegionMap>> {
+      const resolved = new Map<string, ResolvedRegionMap>()
+
+      for (const [name, liteCid] of Object.entries(regionMapNames)) {
+         const resolvedRegionMap: ResolvedRegionMap =
+            await this.maybeLookupRegionMap(liteCid, name)
+         resolved.set(name, resolvedRegionMap)
+         resolved.set(liteCid, resolvedRegionMap)
+         this.logger.debug(
+            `RegionMap "${name}": Resolves to ${liteCid} with ${JSON.stringify(resolvedRegionMap.geometry)}`,
+         )
+      }
+
+      return resolved
    }
 }

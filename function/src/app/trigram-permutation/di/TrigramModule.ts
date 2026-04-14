@@ -6,8 +6,6 @@ import {
    InjectableModuleClassFactory,
    IDynamicModuleDirector,
    IDynamicModuleBuilder,
-   ModuleDependencies,
-   ModuleDependenciesOption,
 } from "../../../modules/index.js"
 
 /**

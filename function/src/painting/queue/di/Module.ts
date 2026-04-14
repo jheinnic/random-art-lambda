@@ -4,8 +4,8 @@ import { BullModule, Processor } from "@nestjs/bullmq"
 import { QueuedPaintingTypes } from "./Types.js"
 import { RandomArtFlowProducer } from "./../components/RandomArtFlowProducer.js"
 import { RandomArtPaintingWorker } from "../components/RandomArtPaintingWorker.js"
-import { RandomArtStoreWorker } from "../components/RandomArtStoreWorker.js"
-import { RandomArtStoreEventListener } from "../components/RandomArtStoreEventListener.js"
+// import { RandomArtStoreWorker } from "../components/RandomArtStoreWorker.js"
+// import { RandomArtStoreEventListener } from "../components/RandomArtStoreEventListener.js"
 
 import {
    IDynamicModuleDirector,
@@ -16,7 +16,7 @@ import { ReturnQueueRoutingProcessor as ReplyQueueRoutingProcessor } from "../co
 import { ModuleConfigData } from "./Configuration.js"
 import { RandomArtGatheringWorker } from "../components/RandomArtGatheringWorker.js"
 import { RandomArtProjectGatheringWorker } from "../components/RandomArtProjectGatheringWorker.js"
-import { FlowConfiguration } from "../components/FlowConfiguration.js"
+import { MultiTaskSimpleGatherFlowConfiguration } from "../components/FlowConfiguration.js"
 
 const injectModuleTokens = {
    paintEngine: QueuedPaintingTypes.InjectedPaintEngine,
@@ -32,7 +32,7 @@ const moduleHost = InjectableModuleClassFactory.create(
             BullModule.forRoot({
                connection: config.redis,
                defaultJobOptions: {
-                  sizeLimit: config.jobDataSizeLimit,
+                  sizeLimit: config.retention.jobDataSizeLimit,
                   ...config.retention,
                },
             }),
@@ -63,14 +63,32 @@ const moduleHost = InjectableModuleClassFactory.create(
                },
                {
                   provide: QueuedPaintingTypes.FlowProducerConfig,
-                  useValue: new FlowConfiguration(
-                     config.queueNames.toPaintParts,
+                  useValue: new MultiTaskSimpleGatherFlowConfiguration(
                      56000,
+                     config.queueNames.toPaintParts,
                      config.queueNames.toGatherParts,
                      config.queueNames.toGatherTasks,
                   ),
                },
             )
+            if (config.fileStore == null) {
+               throw new Error(
+                  "fileStore config is required when projectGatherer role is active",
+               )
+            }
+            // Apply @Processor decorator dynamically with configured queue name
+            Processor(config.queueNames.toGatherTasks)(
+               RandomArtProjectGatheringWorker,
+            )
+            // Wire up the IFileStore dependency for the project gathering worker
+            builder.importDependencies([
+               QueuedPaintingTypes.InjectedFileStore,
+               config.fileStore,
+            ])
+            builder.defineProviders({
+               provide: QueuedPaintingTypes.ProjectGatheringWorker,
+               useClass: RandomArtProjectGatheringWorker,
+            })
          }
          if (config.roles.includes("paintWorker")) {
             // Apply @Processor decorator dynamically with configured queue name
@@ -97,38 +115,18 @@ const moduleHost = InjectableModuleClassFactory.create(
                useClass: RandomArtGatheringWorker,
             })
          }
-         if (config.roles.includes("projectGatherer")) {
-            if (config.fileStore == null) {
-               throw new Error(
-                  "fileStore config is required when projectGatherer role is active",
-               )
-            }
-            // Apply @Processor decorator dynamically with configured queue name
-            Processor(config.queueNames.toGatherTasks)(
-               RandomArtProjectGatheringWorker,
-            )
-            // Wire up the IFileStore dependency for the project gathering worker
-            builder.importDependencies([
-               QueuedPaintingTypes.InjectedFileStore,
-               config.fileStore,
-            ])
-            builder.defineProviders({
-               provide: QueuedPaintingTypes.ProjectGatheringWorker,
-               useClass: RandomArtProjectGatheringWorker,
-            })
-         }
-         if ("jobCompleteWorker" in config.roles) {
-            builder.defineProviders(
-               {
-                  provide: QueuedPaintingTypes.StoreWorker,
-                  useClass: RandomArtStoreWorker,
-               },
-               {
-                  provide: QueuedPaintingTypes.StoreListener,
-                  useClass: RandomArtStoreEventListener,
-               },
-            )
-         }
+         // if ("jobCompleteWorker" in config.roles) {
+         //    builder.defineProviders(
+         //       {
+         //          provide: QueuedPaintingTypes.StoreWorker,
+         //          useClass: RandomArtStoreWorker,
+         //       },
+         //       {
+         //          provide: QueuedPaintingTypes.StoreListener,
+         //          useClass: RandomArtStoreEventListener,
+         //       },
+         //    )
+         // }
       }
    },
 )

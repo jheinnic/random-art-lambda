@@ -69,11 +69,13 @@ export interface UseValueInjection<T extends object> {
    value: T
 }
 
+// Semantic sugar for UseValueInjection<string>
 export interface UseStringInjection {
    use: "string"
    value: string
 }
 
+// Semantic sugar for UseValueInjection<number>
 export interface UseNumberInjection {
    use: "number"
    value: number

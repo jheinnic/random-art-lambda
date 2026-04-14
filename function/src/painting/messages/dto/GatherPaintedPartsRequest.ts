@@ -1,10 +1,5 @@
 import { PaintGeometry } from "../../../messages/interface/NamedValues.js"
-import {
-   PaintingTask,
-   PaintProjectId,
-   PaintTaskId,
-   PlotMapGeometry,
-} from "../values/index.js"
+import { PaintingTask, PaintProjectId, PaintTaskId } from "../values/index.js"
 import { PlotDataCIDRef } from "../values/PlotDataRef.js"
 
 export interface GatherPaintedPartsRequest<

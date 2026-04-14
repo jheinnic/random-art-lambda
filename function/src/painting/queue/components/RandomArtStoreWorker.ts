@@ -8,7 +8,7 @@ export class RandomArtStoreWorker extends WorkerHost {
 
    constructor() {
       super()
-      this.logger = new Logger("painting.queued.RandomArtStoreWorker")
+      this.logger = new Logger("painting.queue.RandomArtStoreWorker")
       this.logger.log("Created store worker")
    }
 

@@ -51,7 +51,7 @@ export const paintingModule: DynamicModule = PaintingModule.forRoot({
    genModelProvider: {
       use: "value",
       value: new RandomArtProvider(),
-   }
+   },
 })
 
 // Staging module for image output (used by stageWorker role)
@@ -62,7 +62,6 @@ export const stagingModule: DynamicModule = StagingModule.forRoot({
       rootPath: "/tmp/random-art-cli-output",
    },
 })
-
 
 // TODO: Configure the role!!!
 export const queueModule: DynamicModule = QueueingPaintModule.forRoot({
@@ -78,13 +77,12 @@ export const queueModule: DynamicModule = QueueingPaintModule.forRoot({
       removeOnFail: {
          age: 300,
       },
+      jobDataSizeLimit: 1024 ^ 3,
    },
-   jobDataSizeLimit: 1024 ^ 3,
    queueNames: {
       toPaintParts: "paintTasks",
       toGatherParts: "gatherParts",
-      toGatherTasks: "gatherTasks",
-      toReceiveReplies: `reply-queue-${process.env.UNIQUE_ID ?? "cli"}`,
+      toGatherTasks: `gatherTasks-${process.env.UNIQUE_ID ?? "cli"}`,
    },
    flowProducerNames: {
       forJobSpecs: "forSpecs",

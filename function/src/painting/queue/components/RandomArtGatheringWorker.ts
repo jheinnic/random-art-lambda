@@ -18,11 +18,7 @@ import {
    type PartialPaintResult,
 } from "../../messages/dto/index.js"
 import { OutcomeType } from "../../messages/values/TaskResultRecord.js"
-import {
-   IMAGE_STAGER_TOKEN,
-   type IImageStager,
-   type StagingContext,
-} from "../../staging/index.js"
+import { type IImageStager, type StagingContext } from "../../staging/index.js"
 import { QueuedPaintingTypes } from "../di/Types.js"
 
 const PROGRESS_FOR_STAGED_WRITE: number = 20

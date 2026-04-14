@@ -15,26 +15,26 @@ const __filename = fileURLToPath(import.meta.url)
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const __dirname = dirname(__filename)
 
-export interface PainterChannelEnvironment {
-   concurrency: number
-   timeout: number
-}
+// export interface PainterChannelEnvironment {
+//    concurrency: number
+//    timeout: number
+// }
 
-export const painterChannel = registerAs(
-   "painterChannel",
-   (): PainterChannelEnvironment => {
-      const concurrency =
-         process.env.RA_PAINTER_CONCURRENCY != null &&
-         parseInt(process.env.RA_PAINTER_CONCURRENCY)
-      const timeout =
-         process.env.RA_PAINTER_TIMEOUT != null &&
-         parseInt(process.env.RA_PAINTER_TIMEOUT)
-      return {
-         concurrency: typeof concurrency === "boolean" ? 8 : concurrency,
-         timeout: typeof timeout === "boolean" ? 90000 : timeout,
-      }
-   },
-)
+// export const painterChannel = registerAs(
+//    "painterChannel",
+//    (): PainterChannelEnvironment => {
+//       const concurrency =
+//          process.env.RA_PAINTER_CONCURRENCY != null &&
+//          parseInt(process.env.RA_PAINTER_CONCURRENCY)
+//       const timeout =
+//          process.env.RA_PAINTER_TIMEOUT != null &&
+//          parseInt(process.env.RA_PAINTER_TIMEOUT)
+//       return {
+//          concurrency: typeof concurrency === "boolean" ? 8 : concurrency,
+//          timeout: typeof timeout === "boolean" ? 90000 : timeout,
+//       }
+//    },
+// )
 
 const PaintAppRolesEnvironmentSchema = z.object({
    roles: z
@@ -142,7 +142,6 @@ const PaintQueueNamesEnvironmentSchema = z.object({
       toPaintParts: BullName,
       toGatherParts: BullName,
       toGatherTasks: BullName,
-      toReceiveReplies: BullName,
    }),
 })
 export type PaintQueueNamesEnvironment = z.infer<
@@ -160,7 +159,7 @@ export const paintQueueNames = registerAs(
       if (process.env.UNIQUE_ID === undefined) {
          throw new Error("UNIQUE_ID must be set to derive reply-to queue name!")
       }
-      rawLoad.queueNames.toReceiveReplies = `reply-queue-${process.env.UNIQUE_ID}`
+      rawLoad.queueNames.toGatherTasks = `${rawLoad.queueNames.toGatherTasks as string}-${process.env.UNIQUE_ID}`
       return PaintQueueNamesEnvironmentSchema.parse(rawLoad)
    },
 )
@@ -215,16 +214,18 @@ export const staging = registerAs(
 // Painting / Gen model
 // =============================================================================
 
-const PaintingEnvironmentSchema = z.object({
+const PaintGenModelEnvironmentSchema = z.object({
    genModel: z.enum(["randomart", "genjs6"]).default("randomart"),
 })
 
-export type PaintingEnvironment = z.infer<typeof PaintingEnvironmentSchema>
+export type PaintGenModelEnvironment = z.infer<
+   typeof PaintGenModelEnvironmentSchema
+>
 
-export const painting = registerAs(
-   "painting",
-   (): PaintingEnvironment =>
-      PaintingEnvironmentSchema.parse({
+export const paintGenModel = registerAs(
+   "paintGenModel",
+   (): PaintGenModelEnvironment =>
+      PaintGenModelEnvironmentSchema.parse({
          genModel: process.env.RA_GEN_MODEL,
       }),
 )

@@ -43,11 +43,10 @@ import { PaintingModule } from "../../../painting/artwork/di/Module.js"
 import { PaintingModuleTypes } from "../../../painting/artwork/di/Types.js"
 import { IpfsModule } from "../../../ipfs/di/Module.js"
 import {
-   paintQueueNames,
    type PaintQueueNamesEnvironment,
    type IpfsEnvironment,
    type StagingEnvironment,
-   type PaintingEnvironment,
+   type PaintGenModelEnvironment,
    type PaintQueueRedisEnvironment,
    type PaintQueueRetentionEnvironment,
 } from "../../shared/di/Loaders.js"
@@ -69,10 +68,6 @@ interface WorkerCliOptions {
    concurrency: number
 }
 
-// Queue names loaded from configuration (paintQueueNames.yaml)
-// This ensures workers listen on the same queues that the submitter sends to
-let queueNames: PaintQueueNamesEnvironment["queueNames"]
-
 // Token for injecting the blockstore
 const WORKER_BLOCKSTORE = Symbol("WorkerBlockstore")
 
@@ -80,7 +75,7 @@ const WORKER_BLOCKSTORE = Symbol("WorkerBlockstore")
  * Create the appropriate IGenModelProvider based on configuration.
  */
 function createGenModelProvider(
-   genModel: PaintingEnvironment["genModel"],
+   genModel: PaintGenModelEnvironment["genModel"],
 ): IGenModelProvider {
    switch (genModel) {
       case "genjs6":
@@ -114,14 +109,22 @@ class TrigramWorkerAppModule implements OnModuleInit {
       configSvc: ConfigService,
       pipelineModule: DynamicModule | undefined,
    ): DynamicModule {
+      const queueConfig = requireConfig<PaintQueueNamesEnvironment>(
+         configSvc,
+         "paintQueueNames",
+      )
+      const queueNames: PaintQueueNamesEnvironment["queueNames"] =
+         queueConfig.queueNames
+      const flowProducerNames: PaintQueueNamesEnvironment["flowProducerNames"] =
+         queueConfig.flowProducerNames
       const ipfsConfig = requireConfig<IpfsEnvironment>(configSvc, "ipfs")
       const stagingConfig = requireConfig<StagingEnvironment>(
          configSvc,
          "staging",
       )
-      const paintingConfig = requireConfig<PaintingEnvironment>(
+      const genModelConfig = requireConfig<PaintGenModelEnvironment>(
          configSvc,
-         "painting",
+         "paintGenModel",
       )
       const redisConfig = requireConfig<PaintQueueRedisEnvironment>(
          configSvc,
@@ -151,7 +154,7 @@ class TrigramWorkerAppModule implements OnModuleInit {
       })
 
       // 3. PaintingModule - provides IRandomArtTaskEngine
-      const genModelProvider = createGenModelProvider(paintingConfig.genModel)
+      const genModelProvider = createGenModelProvider(genModelConfig.genModel)
 
       const paintingModule: DynamicModule = PaintingModule.forRoot({
          regionMapRepo: {
@@ -197,21 +200,9 @@ class TrigramWorkerAppModule implements OnModuleInit {
       // 5. QueueingPaintModule - creates workers based on role config
       const queueModule: DynamicModule = QueueingPaintModule.forRoot({
          redis: redisConfig,
-         retention: {
-            keepLogs: retentionConfig.keepLogs,
-            removeOnComplete: retentionConfig.removeOnComplete,
-            removeOnFail: retentionConfig.removeOnFail,
-         },
-         jobDataSizeLimit: retentionConfig.jobDataSizeLimit,
-         queueNames: {
-            toPaintParts: queueNames.toPaintParts,
-            toGatherParts: queueNames.toGatherParts,
-            toGatherTasks: queueNames.toGatherTasks,
-            toReceiveReplies: `reply-queue-worker-${process.pid}`,
-         },
-         flowProducerNames: {
-            forJobSpecs: "forSpecs",
-         },
+         retention: retentionConfig,
+         queueNames,
+         flowProducerNames,
          workerConcurrency: {
             paint: options.concurrency,
             gather: options.concurrency,
@@ -384,15 +375,14 @@ async function main(): Promise<void> {
 
    // Load queue names from configuration before building the module
    // This ensures workers listen on the same queues that the submitter sends to
-   const queueConfig = paintQueueNames()
-   queueNames = queueConfig.queueNames
+   // const queueConfig = paintQueueNames()
 
    console.log(`\nStarting Trigram Worker`)
    console.log(`  Role: ${options.role}`)
    console.log(`  Concurrency: ${options.concurrency}`)
    console.log(`  Stager: ${options.stagerType}`)
-   console.log(`  Paint Queue: ${queueNames.toPaintParts}`)
-   console.log(`  Gather Queue: ${queueNames.toGatherParts}`)
+   // console.log(`  Paint Queue: ${queueNames.toPaintParts}`)
+   // console.log(`  Gather Queue: ${queueNames.toGatherParts}`)
    console.log()
 
    // Phase 1: mini-bootstrap to get ConfigService for the assembly function.
@@ -405,11 +395,13 @@ async function main(): Promise<void> {
    await configContext.close()
 
    // Log resolved config values after Phase 1.
+   // Queue names loaded from configuration (paintQueueNames.yaml)
+   // This ensures workers listen on the same queues that the submitter sends to
    const ipfsConfig = requireConfig<IpfsEnvironment>(configSvc, "ipfs")
    const stagingConfig = requireConfig<StagingEnvironment>(configSvc, "staging")
-   const paintingConfig = requireConfig<PaintingEnvironment>(
+   const paintingConfig = requireConfig<PaintGenModelEnvironment>(
       configSvc,
-      "painting",
+      "paintGenModel",
    )
    const redisConfig = requireConfig<PaintQueueRedisEnvironment>(
       configSvc,
