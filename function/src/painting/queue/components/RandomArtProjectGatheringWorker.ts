@@ -259,7 +259,10 @@ export class RandomArtProjectGatheringWorker extends WorkerHost<
    private extractStagedFileRef(
       result: TaskResultRecord,
    ): StagedFileRef | undefined {
-      if (result.outcomeType !== OutcomeType.OK || !result.reportIfCompleted) {
+      if (
+         result.outcomeType !== OutcomeType.OK ||
+         result.reportIfCompleted == null
+      ) {
          return undefined
       }
 

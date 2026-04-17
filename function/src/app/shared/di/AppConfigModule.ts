@@ -49,11 +49,10 @@ export class AppConfigModule implements OnApplicationBootstrap {
    static paintQueueNames: PaintQueueNamesEnvironment | undefined
    static paintQueueRetention: PaintQueueRetentionEnvironment | undefined
    static paintQueueRedis: PaintQueueRedisEnvironment | undefined
-   // static painterChannel: PainterChannelEnvironment | undefined
    static paintAppRoles: PaintAppRolesEnvironment | undefined
    static ipfs: IpfsEnvironment | undefined
    static staging: StagingEnvironment | undefined
-   static paintMode: PaintGenModelEnvironment | undefined
+   static paintGenModel: PaintGenModelEnvironment | undefined
 
    constructor(
       @Inject()
@@ -71,19 +70,17 @@ export class AppConfigModule implements OnApplicationBootstrap {
       )
       AppConfigModule.paintQueueRedis =
          this.configService.get("paintQueueRedis")
-      // AppConfigModule.painterChannel = this.configService.get("painterChannel")
       AppConfigModule.paintAppRoles = this.configService.get("paintAppRoles")
       AppConfigModule.ipfs = this.configService.get("ipfs")
       AppConfigModule.staging = this.configService.get("staging")
-      AppConfigModule.paintMode = this.configService.get("painting")
+      AppConfigModule.paintGenModel = this.configService.get("paintGenModel")
       logger.log(JSON.stringify(AppConfigModule.paintQueueNames))
       logger.log(JSON.stringify(AppConfigModule.paintQueueRetention))
       logger.log(JSON.stringify(AppConfigModule.paintQueueRedis))
       logger.log(JSON.stringify(AppConfigModule.paintAppRoles))
-      // logger.log(JSON.stringify(AppConfigModule.painterChannel))
       logger.log(JSON.stringify(AppConfigModule.ipfs))
       logger.log(JSON.stringify(AppConfigModule.staging))
-      logger.log(JSON.stringify(AppConfigModule.paintMode))
+      logger.log(JSON.stringify(AppConfigModule.paintGenModel))
    }
 
    static async forRoot(): Promise<DynamicModule> {

@@ -1,29 +1,26 @@
-// import { ScatterGatherTask } from "../../../messages/interface/ScatterGatherTask"
 import { Inject, Injectable } from "@nestjs/common"
 import { CID } from "multiformats"
 import { Canvas } from "canvas"
 import { sha256 as hasher } from "multiformats/hashes/sha2"
-import { createHash } from "crypto"
+import { createHash, generateKeyPairSync } from "crypto"
 import fs from "fs"
 
 import type {
    IRegionMapRepository,
    IRegionMap,
 } from "../../../plotting/interface/index.js"
+import { GenModelArtist } from "../../../painting/artwork/components/GenModelArtist.js"
+import { GenJs6Provider } from "../../../painting/artwork/components/GenJs6Provider.js"
+import { RandomArtProvider } from "../../../painting/artwork/components/RandomArtProvider.js"
 
-import { IpldPlottingModuleTypes } from "../../../plotting/ipld/di/Types.js"
 import { ProtobufPlottingModuleTypes } from "../../../plotting/protobuf/di/Types.js"
+import { IpldPlottingModuleTypes } from "../../../plotting/ipld/di/Types.js"
 
 import { PBufRegionMapFactory } from "../../../plotting/protobuf/components/PBufRegionMapFactory.js"
 import { PBufRegionMap } from "../../../plotting/protobuf/components/PBufRegionMap.js"
 import { CanvasPersister } from "../../../painting/artwork/components/CanvasPersister.js"
 import { QueuedPaintingTypes } from "../../../painting/queue/di/Types.js"
 import { RandomArtFlowProducer } from "../../../painting/queue/components/RandomArtFlowProducer.js"
-
-import { GenModelArtist } from "../../../painting/artwork/components/GenModelArtist.js"
-import { GenJs6Provider } from "../../../painting/artwork/components/GenJs6Provider.js"
-import { RandomArtProvider } from "../../../painting/artwork/components/RandomArtProvider.js"
-
 import { IGenModel, IGenModelProvider } from "../../../painting/index.js"
 
 interface Task {
@@ -45,6 +42,17 @@ export class AppService {
       private readonly mapRepo: IRegionMapRepository,
       @Inject(ProtobufPlottingModuleTypes.ProtobufRegionMapFactory)
       private readonly regionMapFactory: PBufRegionMapFactory,
+      // @Inject( PaintingModuleTypes.IRandomArtPainter )
+      // @Inject( PaintingModuleTypes.IRandomArtTaskEngine )
+      // private readonly taskRepo: IRandomArtTaskEngine,
+      // SHELVED: Seeding extension point
+      // @Inject(SeedingModuleTypes.GMSeedExtensionPoint)
+      // private readonly seedExtensionPoint: IGMSeedExtensionPoint,
+      // @Inject(RANDOM_ART_LOCAL_CALLS_CHANNEL)
+      // private readonly paintRequestChannel: IRxLocalCallChannel<
+      //    PartialPaintRequest,
+      //    PartialPaintResult
+      // >,
       @Inject(QueuedPaintingTypes.FlowProducer)
       private readonly flowProducer: RandomArtFlowProducer<object, object>,
    ) {}
@@ -118,11 +126,11 @@ export class AppService {
    //    const keyAsBase64 = publicKey.toString("base64")
    //    const prefixChars = keyAsBase64.slice(52, 68) // 16 printable ASCII chars
    //    const suffixChars = keyAsBase64.slice(72, 90) // 18 printable ASCII chars
-   //
+
    //    // Encode those ASCII strings as UTF-8 bytes, then base64-encode for transport
    //    const prefixBytes = Buffer.from(prefixChars, "utf8")
    //    const suffixBytes = Buffer.from(suffixChars, "utf8")
-   //
+
    //    const aJobSpec: ScatterGatherTask<
    //       StagedPaintRequest,
    //       PartialPaintRequest,

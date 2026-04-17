@@ -31,9 +31,6 @@ import type { PaintingTask } from "../../messages/values/PaintingTask.js"
 import {
    type PlotDataNameRef,
    type PlotDataCIDRef,
-   PlotDataLiteCIDRef,
-   isRefByName,
-   hasRefByCID,
 } from "../../messages/values/PlotDataRef.js"
 import type { PlotMapGeometry } from "../../messages/values/PlotMapGeometry.js"
 import type { PendingTask } from "../../cache/PendingTask.js"
@@ -41,10 +38,7 @@ import type { PendingTask } from "../../cache/PendingTask.js"
 import { CIDUtil } from "../../utility/CIDUtil.js"
 import { Envelope, NominalUtil } from "../../../messages/index.js"
 import { QueuedPaintingTypes } from "../di/Types.js"
-import {
-   FlowConfiguration,
-   MultiTaskSimpleGatherFlowConfiguration,
-} from "./FlowConfiguration.js"
+import { MultiTaskSimpleGatherFlowConfiguration } from "./FlowConfiguration.js"
 
 /**
  * Resolved RegionMap data after CID validation and repository lookup.
@@ -67,9 +61,6 @@ export class RandomArtFlowProducer<
    ProjectDomain extends object = never,
 > {
    private readonly logger: Logger
-   // private readonly scatterPartsQueue: string
-   // private readonly gatherPartsQueue: string
-   // private readonly gatherTasksQueue: string
 
    constructor(
       @InjectFlowProducer("paintFlows")
@@ -80,9 +71,6 @@ export class RandomArtFlowProducer<
       private readonly regionMapRepo: IRegionMapRepository,
    ) {
       this.logger = new Logger(RandomArtFlowProducer.name)
-      // this.scatterPartsQueue = config.scatterPartsQueue
-      // this.gatherPartsQueue = config.gatherPartsQueue
-      // this.gatherTasksQueue = config.gatherTasksQueue
       this.logger.log("RandomArtFlowProducer initialized")
    }
 

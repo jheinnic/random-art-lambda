@@ -1,8 +1,8 @@
 import { NestFactory } from "@nestjs/core"
 import { NestExpressApplication } from "@nestjs/platform-express"
 
-import { AppService } from "./app/components/AppService.js"
-import { AppModule } from "./app/di/AppModule2.js"
+import { AppService } from "./app/toy-one/components/AppService.js"
+import { AppModule } from "./app/toy-one/di/AppModule2.js"
 import { IncomingMessage, Server } from "node:http"
 
 async function bootstrap(): Promise<void> {
