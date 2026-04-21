@@ -1,3 +1,5 @@
+import { Injectable } from "@nestjs/common"
+
 export type ProjectCardinality = "single" | "multi"
 export type GatherStyle = "notParallel" | "simpleGather" | "hybridGather"
 
@@ -85,6 +87,7 @@ abstract class HybridGatherFlowConfiguration extends ParallelFlowConfiguration {
    }
 }
 
+@Injectable()
 export class MultiTaskSimpleGatherFlowConfiguration extends SimpleGatherFlowConfiguration {
    public readonly projectCardinality: "multi" = "multi"
 
@@ -98,6 +101,7 @@ export class MultiTaskSimpleGatherFlowConfiguration extends SimpleGatherFlowConf
    }
 }
 
+@Injectable()
 export class MultiTaskSingleThreadFlowConfiguration extends SingleThreadedFlowConfiguration {
    public readonly projectCardinality: "multi" = "multi"
 
@@ -109,6 +113,7 @@ export class MultiTaskSingleThreadFlowConfiguration extends SingleThreadedFlowCo
    }
 }
 
+@Injectable()
 export class MultiTaskHybridGatherFlowConfiguration extends HybridGatherFlowConfiguration {
    public readonly projectCardinality: "multi" = "multi"
 
@@ -123,6 +128,7 @@ export class MultiTaskHybridGatherFlowConfiguration extends HybridGatherFlowConf
    }
 }
 
+@Injectable()
 export class SingleTaskSimpleGatherFlowConfiguration extends SimpleGatherFlowConfiguration {
    public readonly projectCardinality: "single" = "single"
 
@@ -136,6 +142,7 @@ export class SingleTaskSimpleGatherFlowConfiguration extends SimpleGatherFlowCon
    }
 }
 
+@Injectable()
 export class SingleTaskSingleThreadFlowConfiguration extends SingleThreadedFlowConfiguration {
    public readonly projectCardinality: "single" = "single"
 
@@ -145,6 +152,7 @@ export class SingleTaskSingleThreadFlowConfiguration extends SingleThreadedFlowC
    }
 }
 
+@Injectable()
 export class SingleTaskHybridGatherFlowConfiguration extends HybridGatherFlowConfiguration {
    public readonly projectCardinality: "single" = "single"
 

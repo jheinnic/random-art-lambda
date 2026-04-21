@@ -5,12 +5,14 @@ import { Job, Worker } from "bullmq"
 
 import {
    Envelope,
-   NominalUtil,
-   PixelsData,
    ULIDString,
    type EnvelopeMemento,
-   type PaintedData,
 } from "../../../messages/index.js"
+import { NominalUtil } from "../../messages/components/NominalUtil.js"
+import type {
+   ValidPixelData,
+   ValidPngData,
+} from "../../messages/values/PaintingNamedValues.js"
 import {
    CURRENT_RELEASE,
    type GatherPaintedPartsRequest,
@@ -20,6 +22,7 @@ import {
 import { OutcomeType } from "../../messages/values/TaskResultRecord.js"
 import { type IImageStager, type StagingContext } from "../../staging/index.js"
 import { QueuedPaintingTypes } from "../di/Types.js"
+import { RawPixelData } from "../../messages/values/index.js"
 
 const PROGRESS_FOR_STAGED_WRITE: number = 20
 const PROGRESS_FOR_CHILD_DATA_MERGER: number = 100 - PROGRESS_FOR_STAGED_WRITE
@@ -78,7 +81,7 @@ export class RandomArtGatheringWorker extends WorkerHost<
          ): Promise<GatherPaintedPartsResult> => {
             const request: GatherPaintedPartsRequest = handling.getPayload()
             const { taskId, expectedPartCount } = request
-            const { width: pixelWidth, height: pixelHeight } =
+            const { pixelWidth: pixelWidth, pixelHeight: pixelHeight } =
                request.paintGeometry.imageSize
             const childData: Record<string, ChildResultMemento> =
                await job.getChildrenValues()
@@ -87,8 +90,10 @@ export class RandomArtGatheringWorker extends WorkerHost<
             if (childKeys.length === 0) {
                throw new Error(`Task ${taskId}: No child results received`)
             }
+            const widthStr: string = pixelWidth.toString(10)
+            const heightStr: string = pixelHeight.toString(10)
             this.logger.log(
-               `Task ${taskId}: Gathering ${expectedPartCount} parts for ${pixelWidth}x${pixelHeight} image`,
+               `Task ${taskId}: Gathering ${expectedPartCount} parts for ${widthStr}x${heightStr} image`,
             )
 
             // Step 4: Allocate a Uint8ClampedArray to hold collected pixel data
@@ -103,24 +108,16 @@ export class RandomArtGatheringWorker extends WorkerHost<
                progress += progressPerChild
                await job.updateProgress(Math.floor(progress))
             }
-
-            // Step 6: Convert pixel data to PNG via canvas
-            const canvas = new Canvas(pixelWidth, pixelHeight, "image")
-            const ctx: CanvasRenderingContext2D = canvas.getContext("2d", {
-               alpha: false,
-               pixelFormat: "RGB24",
-            })
-            const fullImageData: ImageData = new ImageData(
-               destArray,
+            const pixelsData: RawPixelData = {
+               data: destArray,
                pixelWidth,
                pixelHeight,
-            )
-            ctx.putImageData(fullImageData, 0, 0)
+            }
+            NominalUtil.assertPixelsData(pixelsData)
 
-            // Convert to PNG buffer
-            const imageData: PaintedData = canvas.toBuffer(
-               "image/png",
-            ) as PaintedData
+            // Step 6: Convert pixel data to PNG via canvas
+            const imageData: ValidPngData =
+               NominalUtil.encodePixelsData(pixelsData)
 
             // Step 7: Stage the image - worker doesn't know WHERE, just "Go"
             const stagingContext: StagingContext = {
@@ -172,16 +169,14 @@ export class RandomArtGatheringWorker extends WorkerHost<
       }
 
       const partResult: PartialPaintResult = childEnvelope.getPayload()
-      const { canvasFragment, fragmentGeometry, pixelData } = partResult
+      const { canvasFragment, pixelDataString } = partResult
 
       // Bless and convert pixel data for insertion into full image array
-      const paintedData: PixelsData = NominalUtil.toPixelsData(
-         pixelData,
-         fragmentGeometry,
-      )
+      const pixelData: ValidPixelData =
+         NominalUtil.toPixelsData(pixelDataString)
       const firstRowOffset =
-         canvasFragment.fragmentFirstRow * fragmentGeometry.width * 4
-      destArray.set(paintedData, firstRowOffset)
+         canvasFragment.fragmentFirstRow * pixelData.pixelWidth * 4
+      destArray.set(pixelData.data, firstRowOffset)
 
       this.logger.debug(
          `Task ${taskId}: Merged fragment index ${canvasFragment.fragmentIndex}/${canvasFragment.totalFragmentsCount}, rows ${canvasFragment.fragmentFirstRow} to ${canvasFragment.fragmentLastRow}`,

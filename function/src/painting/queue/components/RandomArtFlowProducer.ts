@@ -3,6 +3,7 @@ import { InjectFlowProducer } from "@nestjs/bullmq"
 import type { FlowChildJob } from "bullmq"
 import { FlowProducer } from "bullmq"
 
+import { QueuedPaintingTypes } from "../di/Types.js"
 import type {
    IRegionMap,
    IRegionMapRepository,
@@ -10,7 +11,6 @@ import type {
 import type {
    CIDString,
    LiteCIDString,
-   PaintGeometry,
    ULIDString,
 } from "../../../messages/index.js"
 import {
@@ -25,19 +25,21 @@ import type {
    MultiTaskRequestModel,
 } from "../../messages/dto/index.js"
 
-import type { CanvasFragment } from "../../messages/values/CanvasFragment.js"
-import type { PaintTaskId } from "../../messages/values/PaintTaskId.js"
-import type { PaintingTask } from "../../messages/values/PaintingTask.js"
-import {
-   type PlotDataNameRef,
-   type PlotDataCIDRef,
-} from "../../messages/values/PlotDataRef.js"
-import type { PlotMapGeometry } from "../../messages/values/PlotMapGeometry.js"
-import type { PendingTask } from "../../cache/PendingTask.js"
+import type {
+   CanvasFragment,
+   GenModelSeed,
+   PaintTaskId,
+   PaintingTask,
+   PlotDataCIDRef,
+   PlotDataRef,
+   PlotMapGeometry,
+   ValidPaintGeometry,
+} from "../../messages/values/index.js"
+import { isRefByName } from "../../messages/values/PlotDataRef.js"
 
 import { CIDUtil } from "../../utility/CIDUtil.js"
-import { Envelope, NominalUtil } from "../../../messages/index.js"
-import { QueuedPaintingTypes } from "../di/Types.js"
+import { Envelope } from "../../../messages/index.js"
+import { NominalUtil } from "../../messages/components/NominalUtil.js"
 import { MultiTaskSimpleGatherFlowConfiguration } from "./FlowConfiguration.js"
 
 /**
@@ -45,7 +47,7 @@ import { MultiTaskSimpleGatherFlowConfiguration } from "./FlowConfiguration.js"
  */
 interface ResolvedRegionMap {
    cidRef: PlotDataCIDRef
-   geometry: PaintGeometry
+   geometry: ValidPaintGeometry
 }
 
 /**
@@ -119,42 +121,47 @@ export class RandomArtFlowProducer<
       )
 
       // Step 3: Process tasks and prepare pending tasks
-      const taskIds: PaintTaskId[] = []
-      const flowChildren: FlowChildJob[] = []
+      const taskIds: PaintTaskId[] = Array(request.taskUnits.length)
+      const flowChildren: FlowChildJob[] = Array(request.taskUnits.length)
 
       for (let i = 0; i < request.taskUnits.length; i++) {
-         const taskUnit: PaintingTask<PaintingDomain, PlotDataNameRef> =
+         const taskUnit: PaintingTask<PaintingDomain, PlotDataRef> =
             request.taskUnits[i]
 
          // Resolve the RegionMap for this task
-         const regionMapName = taskUnit.plotDataRef.regionMapName
-         if (regionMapName === undefined) {
-            throw new Error(`Task ${i}: plotDataRef.regionMapName is required`)
+         let resolved: ResolvedRegionMap | undefined
+         if (isRefByName(taskUnit.plotDataRef)) {
+            const regionMapName = taskUnit.plotDataRef.regionMapName
+            resolved = resolvedMaps.get(regionMapName)
+         } else {
+            const regionMapCidStr = taskUnit.plotDataRef.regionMapCID
+            resolved = resolvedMaps.get(regionMapCidStr)
+            if (resolved == null) {
+               resolved = await this.maybeLookupRegionMap(
+                  regionMapCidStr,
+                  taskUnit.plotDataRef.regionMapName,
+               )
+               resolvedMaps.set(regionMapCidStr, resolved)
+            }
          }
-
-         const resolved = resolvedMaps.get(regionMapName)
          if (resolved === undefined) {
+            const refStr: string = JSON.stringify(taskUnit.plotDataRef)
             throw new Error(
-               `Task ${i}: RegionMap "${regionMapName}" not found in resolved maps`,
+               `Task ${i}: RegionMap "${refStr}" could not be located`,
             )
-         }
-
-         // Create the pending task with validated CID and geometry
-         const pendingTask: PendingTask<PaintingDomain> = {
-            ...taskUnit,
-            plotDataRef: resolved.cidRef,
-            paintGeometry: resolved.geometry,
          }
 
          // Create BullMQ flow child for this task
          const { taskId, flowChild } = this.createTaskFlowChildren(
-            pendingTask,
+            taskUnit.genSeed,
+            resolved,
+            taskUnit.domainExtension,
             projectEnvelope,
          )
 
          // Task data is in the BullMQ flow payload - no separate cache needed
-         taskIds.push(taskId)
-         flowChildren.push(flowChild)
+         taskIds[i] = taskId
+         flowChildren[i] = flowChild
       }
 
       // Step 4: Enqueue the flow
@@ -193,11 +200,13 @@ export class RandomArtFlowProducer<
     * @returns Object with taskId and the flow child job
     */
    private createTaskFlowChildren(
-      task: PendingTask<PaintingDomain>,
+      genSeed: GenModelSeed,
+      resolvedRegionMap: ResolvedRegionMap,
+      paintingExtension: PaintingDomain,
       projectEnvelope: Envelope<GatherProjectTasksRequest<ProjectDomain>>,
    ): { taskId: PaintTaskId; flowChild: FlowChildJob } {
-      const { width: pixelWidth, height: pixelHeight } =
-         task.paintGeometry.imageSize
+      const { pixelWidth: pixelWidth, pixelHeight: pixelHeight } =
+         resolvedRegionMap.geometry.imageSize
       const totalPixels = pixelWidth * pixelHeight
 
       // Calculate number of chunks needed
@@ -224,11 +233,11 @@ export class RandomArtFlowProducer<
          taskId,
          projectId,
          paintTask: {
-            genSeed: task.genSeed,
-            plotDataRef: task.plotDataRef,
-            domainExtension: task.domainExtension,
+            genSeed,
+            plotDataRef: resolvedRegionMap.cidRef,
+            domainExtension: paintingExtension,
          },
-         paintGeometry: task.paintGeometry,
+         paintGeometry: resolvedRegionMap.geometry,
          expectedPartCount: chunkCount,
       })
 
@@ -247,9 +256,11 @@ export class RandomArtFlowProducer<
             totalFragmentsCount: chunkCount,
             fragmentFirstRow: firstRow,
             fragmentLastRow: lastRow,
+            pixelSize: resolvedRegionMap.geometry.imageSize.pixelSize,
          }
          scatterJobs[ii] = this.createPaintPartJob(
-            task,
+            genSeed,
+            resolvedRegionMap,
             canvasFragment,
             gatherEnvelope,
          )
@@ -268,7 +279,8 @@ export class RandomArtFlowProducer<
    }
 
    private createPaintPartJob(
-      task: PendingTask<PaintingDomain>,
+      genSeed: GenModelSeed,
+      resolvedRegionMap: ResolvedRegionMap,
       canvasFragment: CanvasFragment,
       gatherEnvelope: Envelope<
          GatherPaintedPartsRequest<PaintingDomain, ProjectDomain>
@@ -284,11 +296,8 @@ export class RandomArtFlowProducer<
       chunkEnvelope.commitBody({
          taskId,
          projectId,
-         paintTask: {
-            genSeed: task.genSeed,
-            plotDataRef: task.plotDataRef,
-            domainExtension: task.paintGeometry,
-         },
+         genSeed,
+         plotDataRef: resolvedRegionMap.cidRef,
          canvasFragment,
       })
 
@@ -321,12 +330,12 @@ export class RandomArtFlowProducer<
       const geometry: PlotMapGeometry = {
          boundary: regionMap.regionBoundary,
          imageSize: {
-            width: regionMap.pixelWidth,
-            height: regionMap.pixelHeight,
-            size: regionMap.pixelSize,
+            pixelWidth: regionMap.pixelWidth,
+            pixelHeight: regionMap.pixelHeight,
+            pixelSize: regionMap.pixelSize,
          },
       }
-      NominalUtil.blessGeometry(geometry)
+      NominalUtil.assertValidPaintGeometry(geometry)
 
       // We can trust any liteCid now because it was used to successfully load
       // the regionMap geometry.
