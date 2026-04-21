@@ -2,7 +2,7 @@ import {
    RenderedImageCache,
    CachedRenderedImage,
 } from "../RenderedImageCache.js"
-import { ULIDString } from "../../../messages/interface/NamedValues.js"
+import { ULIDString } from "../../../../src/messages/interface/NamedValues.js"
 import { Logger } from "@nestjs/common"
 import { describe, expect, it, beforeEach, jest } from "@jest/globals"
 

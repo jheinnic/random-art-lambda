@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { LRUCache } from "lru-cache"
 import type { LRUCache as LRUCacheType } from "lru-cache"
-import { ULIDString } from "../../messages/interface/NamedValues.js"
+import { ULIDString } from "../../../src/messages/interface/NamedValues.js"
 
 /**
  * Cached rendered image data.
@@ -101,7 +101,9 @@ export class RenderedImageCache {
       // Use provided cache instance (for testing) or create new one
       if (options.cacheInstance) {
          this.cache = options.cacheInstance
-         this.logger.log("RenderedImageCache initialized with provided cache instance")
+         this.logger.log(
+            "RenderedImageCache initialized with provided cache instance",
+         )
       } else {
          this.cache = this.createDefaultCache(options)
          this.logger.log(

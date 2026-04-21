@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { LRUCache } from "lru-cache"
-import { SinglePaintingTaskRequest } from "../messages/dto/SinglePaintingTaskRequest.js"
+import { SinglePaintingTaskRequest } from "../../../src/painting/messages/dto/SinglePaintingTaskRequest.js"
 import * as crypto from "crypto"
 
 /**
