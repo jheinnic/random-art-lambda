@@ -71,28 +71,27 @@ export class RandomPrimeField {
    }
 
    /**
-    * Generates a random prime of the specified bit length."""
+    * Generates a random prime of the specified bit length.
     */
    private generateLargePrime(): bigint {
-      const max: bigint = 1n << BigInt(this.bitLength)
-      const min: bigint = max / 2n
+      const max: bigint = (1n << BigInt(this.bitLength)) - 1n
+      const min: bigint = 1n << BigInt(this.bitLength - 1)
       const spread: bigint = max - min
 
       while (true) {
-         let p: bigint = randBelow(spread) + min
-         p |= (1n << BigInt(this.bitLength - 1)) | 1n
+         const p: bigint = (randBelow(spread) + min) | 1n
          if (this.isMillerRabinPassed(p, 40)) {
-	    if (checkPrimeSync(p)) {
-	       console.log("Miller Rabin and crypto both passed ", p)
+            if (checkPrimeSync(p)) {
+               console.log("Miller Rabin and crypto both passed ", p)
                return p
-	    } else {
-	       console.log("Miller Rabin passed ", p, " but crypto did not!")
+            } else {
+               console.log("Miller Rabin passed ", p, " but crypto did not!")
             }
-         } else if(checkPrimeSync(p)) {
-	    console.log("Crypto passed ", p, " but Miller Rabin did not!")
-	 } else {
-	    console.log("Both Miller Rabin and crypto failed ", p)
-	 }
+         } else if (checkPrimeSync(p)) {
+            console.log("Crypto passed ", p, " but Miller Rabin did not!")
+         } else {
+            console.log("Both Miller Rabin and crypto failed ", p)
+         }
       }
    }
 
