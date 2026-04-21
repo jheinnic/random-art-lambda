@@ -1,5 +1,9 @@
-import type { PaintedData } from "../../../messages/interface/NamedValues.js"
-import type { GenModelSeed, PaintTaskId, PaintProjectId } from "../../messages/values/index.js"
+import type { ValidPngData } from "../../messages/values/PaintingNamedValues.js"
+import type {
+   GenModelSeed,
+   PaintTaskId,
+   PaintProjectId,
+} from "../../messages/values/index.js"
 import type { TaskResultRecord } from "../../messages/values/TaskResultRecord.js"
 
 /**
@@ -9,7 +13,7 @@ import type { TaskResultRecord } from "../../messages/values/TaskResultRecord.js
  */
 export interface StagingContext {
    /** The rendered image data ready to be staged */
-   readonly imageData: PaintedData
+   readonly imageData: ValidPngData
 
    /** Task identity for tracking/correlation */
    readonly taskId: PaintTaskId

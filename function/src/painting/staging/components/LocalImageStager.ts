@@ -49,7 +49,7 @@ export class LocalImageStager implements IImageStager<LocalStagingReport> {
          await mkdir(dirname(outputPath), { recursive: true })
 
          // Write the image
-         await this.writeFile(outputPath, imageData)
+         await this.writeFile(outputPath, imageData.data)
 
          this.logger.log(`Successfully staged: ${outputPath}`)
 
@@ -57,7 +57,7 @@ export class LocalImageStager implements IImageStager<LocalStagingReport> {
             outcomeType: OutcomeType.OK,
             reportIfCompleted: {
                primaryPath: outputPath,
-               fileSizeKb: Math.ceil(imageData.length / 1024),
+               fileSizeKb: Math.ceil(imageData.data.length / 1024),
             },
          }
       } catch (error) {

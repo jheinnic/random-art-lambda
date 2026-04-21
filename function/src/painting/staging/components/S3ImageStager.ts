@@ -72,7 +72,7 @@ export class S3ImageStager implements IImageStager<S3StagingReport> {
                   bucket: this.config.bucketName,
                   key: s3Key,
                },
-               fileSizeKb: Math.ceil(imageData.length / 1024),
+               fileSizeKb: Math.ceil(imageData.data.length / 1024),
             },
          }
       } catch (error) {
