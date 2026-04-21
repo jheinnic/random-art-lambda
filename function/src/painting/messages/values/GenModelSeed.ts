@@ -1,7 +1,9 @@
 import {
+   PrefixData,
    PrefixString,
+   SuffixData,
    SuffixString,
-} from "../../../messages/interface/NamedValues.js"
+} from "./PaintingNamedValues.js"
 
 /**
  * Seed data used to initialize a GenModel artwork space.
@@ -21,6 +23,6 @@ export interface GenModelSeed {
    /**
     * A base64 encoding of the content prefix used to seed this piece's GenModel
     */
-   readonly seedPrefix: PrefixString | Uint8ClampedArray<ArrayBufferLike> // base64-encoded binary seed
-   readonly seedSuffix: SuffixString | Uint8ClampedArray<ArrayBufferLike> // base64-encoded binary seed
+   readonly seedPrefix: PrefixString | PrefixData
+   readonly seedSuffix: SuffixString | SuffixData
 }

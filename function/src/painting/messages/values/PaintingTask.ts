@@ -11,8 +11,7 @@ export interface PaintingTask<
    readonly genSeed: GenModelSeed
 
    /**
-    * Reference
-    * infinite plane will be rendered, and at what resolution.
+    * Reference to what plane will be rendered, and at what resolution.
     */
    readonly plotDataRef: RefPlotData
 

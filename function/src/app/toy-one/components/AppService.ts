@@ -379,6 +379,7 @@ export class AppService {
          regionMap.pixelWidth,
          0,
          regionMap.pixelHeight,
+         regionMap.pixelSize,
       )
       await regionMap.directPlotter(artist, 0, regionMap.pixelHeight)
       const stream = fs.createWriteStream(fileName)

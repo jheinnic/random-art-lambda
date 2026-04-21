@@ -1,8 +1,8 @@
-import { PaintGeometry } from "../../../messages/interface/index.js"
 import { PlotDataCIDRef } from "../values/PlotDataRef.js"
 import {
    CanvasFragment,
-   PaintingTask,
+   GenModelSeed,
+   ValidPaintGeometry,
    PaintProjectId,
    PaintTaskId,
 } from "../values/index.js"
@@ -18,13 +18,24 @@ export interface PartialPaintRequest {
     * task is, that project's projectId will be provided here.
     */
    readonly projectId?: PaintProjectId
-   /**
-    * All the metadata from the PaintingTask this request targets a
-    * subset of the rows from.   The PlotDataRef has been fully expanded
-    * to include any name, the CID for loading its plot points, and a
-    * copy of its RegionBoundary and SpatialDimensions for convenience.
+
+   /*
+    * Seed data for the GenModel artifact that determines what is painted from the
+    * location defined by plotDataRef.
     */
-   readonly paintTask: PaintingTask<PaintGeometry, PlotDataCIDRef>
+   readonly genSeed: GenModelSeed
+
+   /**
+    * Reference to what plane will be rendered, and at what resolution.  Any
+    * local name alias has by now been resolved to appear with its well-formed CID.
+    */
+   readonly plotDataRef: PlotDataCIDRef
+
+   /**
+    * Geometry of the region described by plotDataRef, and validated by
+    * assertValidPaintGeometry()
+   readonly paintGeometry: ValidPaintGeometry
+    */
 
    /**
     * Additional metadata that selects a subset of the overall task rows

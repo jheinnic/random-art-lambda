@@ -1,3 +1,4 @@
+import { PlotDataCIDRef } from "./../../messages/values/PlotDataRef"
 import { Inject, Injectable, Logger } from "@nestjs/common"
 
 import { PaintingModuleTypes } from "../di/Types.js"
@@ -16,11 +17,12 @@ import {
    CanvasFragment,
    GenModelSeed,
    PaintResolution,
+   RawPixelData as RawPixelsData,
 } from "../../messages/values/index.js"
 import { hasRefByCID } from "../../messages/values/PlotDataRef.js"
 import { CIDUtil } from "../../utility/CIDUtil.js"
 import { CID } from "multiformats"
-import { NominalUtil } from "../../../messages/components/NominalUtil.js"
+import { NominalUtil } from "../../messages/components/NominalUtil.js"
 
 // Helper to decode base64 string to Uint8ClampedArray
 function decodeBase64ToBytes(base64: string): Uint8ClampedArray {
@@ -53,43 +55,41 @@ export class RandomArtTaskEngine {
       logger: Logger,
    ): Promise<PartialPaintResult> {
       logger.log("RandomArtTaskEngine handling call for", nextTask)
-      const { paintTask } = nextTask
-      if (!hasRefByCID(paintTask.plotDataRef)) {
-         throw new Error("Paint Task must refer to a RegionMap by CIDString")
-      }
-      const seedStrategy: GenModelSeed = paintTask.genSeed
+      const { genSeed, plotDataRef, canvasFragment } = nextTask
+      // if (!hasRefByCID(plotDataRef)) {
+      // throw new Error("Paint Task must refer to a RegionMap by CIDString")
+      // }
 
       // Decode base64 seeds to binary and create model via provider
       const genModel = this.genModelProvider.createModel(
-         typeof seedStrategy.seedPrefix === "string"
-            ? decodeBase64ToBytes(seedStrategy.seedPrefix)
-            : seedStrategy.seedPrefix,
-         typeof seedStrategy.seedSuffix === "string"
-            ? decodeBase64ToBytes(seedStrategy.seedSuffix)
-            : seedStrategy.seedSuffix,
+         typeof genSeed.seedPrefix === "string"
+            ? decodeBase64ToBytes(genSeed.seedPrefix)
+            : genSeed.seedPrefix,
+         typeof genSeed.seedSuffix === "string"
+            ? decodeBase64ToBytes(genSeed.seedSuffix)
+            : genSeed.seedSuffix,
       )
       try {
          // Parse the CID now that we have passed the point of serialization!
-         const regionMapRefAsCID: CID = CIDUtil.toCID(
-            paintTask.plotDataRef.regionMapCID,
-         )
+         const regionMapRefAsCID: CID = CIDUtil.toCID(plotDataRef.regionMapCID)
          const regionMap: IRegionMap =
             await this.regionMapRepository.load(regionMapRefAsCID)
-         const canvasFragment: CanvasFragment = nextTask.canvasFragment
          const initialY: number = canvasFragment.fragmentFirstRow
          const finalY: number = Math.min(
-            regionMap.pixelHeight,
+            regionMap.pixelHeight / regionMap.pixelSize,
             canvasFragment.fragmentLastRow + 1,
          )
          // Allocate a new buffer for an array of 32-bit pixels
-         const pixelCount = (finalY - initialY) * regionMap.pixelWidth
+         const pixelCount =
+            (finalY - initialY) * regionMap.pixelWidth * regionMap.pixelSize
          const pixel32Data: Uint32Array = new Uint32Array(pixelCount)
          const artist: GenModelArtist = new GenModelArtist(
             genModel,
             pixel32Data,
-            regionMap.pixelWidth,
+            regionMap.pixelWidth / regionMap.pixelSize,
             initialY,
             finalY,
+            regionMap.pixelSize,
          )
          logger.log("Initiating plot run")
          await regionMap.directPlotter(artist, initialY, finalY)
@@ -97,27 +97,31 @@ export class RandomArtTaskEngine {
          // Re-wrap the original buffer of 32-bit words with 8-bit word boundaries for no-copy reuse as eight-bit pixel data.
          const pixel8Data: Uint8ClampedArray = new Uint8ClampedArray(
             pixel32Data.buffer,
+            pixel32Data.byteOffset,
+            pixel32Data.byteLength,
          )
 
          // Create fragment-specific resolution for blessing pixel data
-         const fragmentResolution: PaintResolution = {
-            width: regionMap.pixelWidth,
-            height: finalY - initialY,
-            size: 1,
+         const fragmentPixelsData: RawPixelsData = {
+            data: pixel8Data,
+            pixelWidth: regionMap.pixelWidth,
+            pixelHeight: finalY - initialY,
          }
 
-         if (!NominalUtil.blessPixelsData(pixel8Data, fragmentResolution)) {
-            throw new Error(
-               `Failed to bless pixel data: expected ${4 * regionMap.pixelWidth * (finalY - initialY)} bytes`,
-            )
-         }
+         NominalUtil.assertPixelsData(fragmentPixelsData)
 
-         return {
+         const retVal: PartialPaintResult = {
             taskId: nextTask.taskId,
             canvasFragment: nextTask.canvasFragment,
-            fragmentGeometry: fragmentResolution,
-            pixelData: NominalUtil.fromPixelsData(pixel8Data),
+            pixelDataString: NominalUtil.fromPixelsData(fragmentPixelsData),
          }
+         if (nextTask.projectId != null) {
+            return {
+               ...retVal,
+               projectId: nextTask.projectId,
+            }
+         }
+         return retVal
       } catch (error) {
          logger.error("Error processing task:", error)
          throw error

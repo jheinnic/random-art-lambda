@@ -16,7 +16,7 @@ import type {
    PrefixString,
    SuffixData,
    SuffixString,
-} from "../interface/NamedValues.js"
+} from "../values/PaintingNamedValues.js"
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class SeedEncodingUtil {

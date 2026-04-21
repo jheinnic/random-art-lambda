@@ -165,7 +165,7 @@ export class Envelope<
       content: EnvelopeData<Payload, PayloadHeaders>,
       spanTiming: SpanTiming,
    ) {
-      this._headers = headers
+      this._headers = [...headers]
       this._content = content
       this._spanTiming = spanTiming
    }
@@ -426,7 +426,7 @@ export class Envelope<
          this._content = {
             [FSM_STATE]: MessageLifecycle.INVALID,
             payload: new Error(
-               `Version mismatch: message's ${remoteVersion.toString()} to expected ${localVersion.toString()}`,
+               `Version mismatch: message's ${remoteVersion.toString()} not handled by ${localVersion.toString()}`,
             ),
             isError: true,
          }

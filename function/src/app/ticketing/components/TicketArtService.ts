@@ -85,7 +85,7 @@ export class AppService {
    //          regionMapRef: CIDUtil.parseCID(
    //             // "bafyreigktmlsvsl7t4nbpwcc7qb56vsfgynokrvlyadqcdl7ixibkaacpm",
    //             // "bafyreigah33uysc2jhbjopmhmr5hezdpxbpndvlu5tvl2524bdbrdj2bzy",
-   //             // "bafyreiexe6npphnaou2tz7jdbwtgh2wnfdbsnbti22smksport4sqr7bgu",
+   //             // "bafyreiex:e6npphnaou2tz7jdbwtgh2wnfdbsnbti22smksport4sqr7bgu",
    //             // "bafyreidkwc4w3sxxlwxpru7a6ossdjir3p3rewdtuinko7rlfr7ogtfr3u",
    //             // "bafyreihluy6dahevakcbsrch4qecrarfqhtr3jxf464iavoalfesxroygq",
    //             "bafyreibtfvyutz3gs3xw7wuysvnpj2meaacvqg5lkzi3ylmx2liayktzt4",
@@ -371,6 +371,7 @@ export class AppService {
          regionMap.pixelWidth,
          0,
          regionMap.pixelHeight,
+         regionMap.pixelSize,
       )
       await regionMap.directPlotter(artist, 0, regionMap.pixelHeight)
       const stream = fs.createWriteStream(fileName)

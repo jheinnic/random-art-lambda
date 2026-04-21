@@ -18,16 +18,16 @@ import type { MultiTaskRequestModel } from "../../../painting/messages/dto/Multi
 import type { GenModelSeed } from "../../../painting/messages/values/GenModelSeed.js"
 import type { PaintingTask } from "../../../painting/messages/values/PaintingTask.js"
 import { type PlotDataNameRef } from "../../../painting/messages/values/PlotDataRef.js"
+import type { LiteCIDString } from "../../../messages/interface/NamedValues.js"
 import type {
-   LiteCIDString,
    PrefixString,
    SuffixString,
-} from "../../../messages/interface/NamedValues.js"
+} from "../../../painting/messages/values/PaintingNamedValues.js"
 import { TrigramPaintProject } from "../models/paint/TrigramPaintProject.js"
 import { TrigramPaintTask } from "../models/paint/TrigramPaintTask.js"
 import { TermPairSource } from "../models/paint/TermPairSource.js"
 import { TermPairSourceType } from "../models/paint/TermPairSourceType.js"
-import { SeedEncodingUtil } from "../../../messages/components/SeedEncodingUtil.js"
+import { SeedEncodingUtil } from "../../../painting/messages/components/SeedEncodingUtil.js"
 import {
    resolveFileNameExpression,
    type FileNameExpressionConfig,
@@ -35,6 +35,7 @@ import {
 import type { ExpressionVisibility } from "../../../painting/messages/expression/ExpressionVisibility.js"
 
 const TRIGRAM_EXPRESSION_CONFIG: FileNameExpressionConfig = {
+   // eslint-disable-next-line no-template-curly-in-string
    defaultExpression: "${_methods.prefixAndSuffixHash()}.png",
    moduleLevel: "optional",
    projectLevel: "optional",

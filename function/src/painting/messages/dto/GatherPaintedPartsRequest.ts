@@ -1,4 +1,4 @@
-import { PaintGeometry } from "../../../messages/interface/NamedValues.js"
+import { ValidPaintGeometry } from "../values/PaintingNamedValues.js"
 import { PaintingTask, PaintProjectId, PaintTaskId } from "../values/index.js"
 import { PlotDataCIDRef } from "../values/PlotDataRef.js"
 
@@ -26,7 +26,7 @@ export interface GatherPaintedPartsRequest<
     */
    readonly paintTask: PaintingTask<PaintingDomain, PlotDataCIDRef>
 
-   readonly paintGeometry: PaintGeometry
+   readonly paintGeometry: ValidPaintGeometry
 
    /**
     * This is the row count of how many PartialPaintRequest's this

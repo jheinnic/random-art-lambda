@@ -1,10 +1,10 @@
 import { CID } from "multiformats"
-import { CIDUtil } from "../../painting/utility/CIDUtil.js"
+import { CIDUtil } from "../../utility/CIDUtil.js"
 import { AsyncLocalStorage } from "async_hooks"
-import { EnvelopeCodec } from "./EnvelopeCodec.js"
-import { ReleaseVersion } from "./ReleaseVersion.js"
-// import { AsyncCallRequestImpl } from "../../../channels/components/AsyncCallRequestImpl.js"
-// import { ReplyMessageImpl } from "../../../channels/components/ReplyMessageImpl.js"
+import { EnvelopeCodec } from "../../../messages/components/EnvelopeCodec.js"
+import { ReleaseVersion } from "../../../messages/components/ReleaseVersion.js"
+import { Registry } from "../../../messages/components/CodecRegistry.js"
+import { WORKLOAD_RANDOM_ART } from "../dto/WorkloadIds.js"
 
 export function encodeMessage(msg: any): any {
    if (msg instanceof Error) {
@@ -27,12 +27,6 @@ export function encodeMessage(msg: any): any {
       const buf = Buffer.from(msg.buffer)
       return { __t: "U32", v: buf.toString("base64") }
    }
-   // if (msg instanceof AsyncCallRequestImpl) {
-   //    return { __t: "AsyncCall", ...msg, payload: encodeMessage(msg.payload) }
-   // }
-   // if (msg instanceof ReplyMessageImpl) {
-   //    return { __t: "ReplyMsg", ...msg, payload: encodeMessage(msg.payload) }
-   // }
    if (Array.isArray(msg)) {
       return msg.map(encodeMessage)
    }
@@ -48,8 +42,9 @@ export function decodeMessage(msg: any): any {
    if (msg == null) {
       return undefined
    }
-   if (msg.__t != null) {
-      switch (msg.__t) {
+   if (msg.__t != null && typeof msg.__t === "string") {
+      const valueType: string = msg.__t
+      switch (valueType) {
          case "Error": {
             const error = new Error(msg.message)
             error.name = msg.name
@@ -77,32 +72,10 @@ export function decodeMessage(msg: any): any {
          }
          default: {
             throw new Error(
-               "Unimplemented codec data transform type: " + msg.__t,
+               "Unimplemented codec data transform type: " + valueType,
             )
          }
       }
-      // if (msg?.__t === "AsyncCall") {
-      //    return new AsyncCallRequestImpl(
-      //       msg.messageId,
-      //       msg.correlationId,
-      //       msg.causationId,
-      //       msg.timestamp,
-      //       msg.headers,
-      //       decodeMessage(msg.payload),
-      //    )
-      // }
-      // if (msg?.__t === "ReplyMsg") {
-      //    return new ReplyMessageImpl(
-      //       msg.messageId,
-      //       msg.correlationId,
-      //       msg.causationId,
-      //       msg.timestamp,
-      //       msg.headers,
-      //       msg.status,
-      //       msg.error,
-      //       decodeMessage(msg.payload),
-      //    )
-      // }
    }
    if (Array.isArray(msg)) {
       return msg.map(decodeMessage)
@@ -142,3 +115,9 @@ export function getCodec<Payload extends object>(): EnvelopeCodec<Payload> {
          decode(payload),
    }
 }
+
+// Self-register the RandomArt codec so any module that imports this file
+// will have the codec available for all RandomArt workload envelopes.
+// TODO: Replace with dynamic module-level registration when NestJS DI
+//       integration for codec registration is implemented.
+Registry.register(WORKLOAD_RANDOM_ART, getCodec())

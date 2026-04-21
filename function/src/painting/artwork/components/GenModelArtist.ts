@@ -20,7 +20,13 @@ export class GenModelArtist implements IRegionPlotter {
       private readonly canvasWidth: number,
       private readonly initialY: number,
       private readonly finalY: number,
+      private readonly pixelSize: number,
    ) {
+      if (pixelSize !== 1) {
+         throw new Error(
+            `Only pixelSize == 1 is currently supported, but received ${pixelSize}`,
+         )
+      }
       this.plotIndex = 0
    }
 

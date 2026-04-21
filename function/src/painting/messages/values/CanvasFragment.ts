@@ -10,4 +10,5 @@ export interface CanvasFragment {
    readonly totalFragmentsCount: number
    readonly fragmentFirstRow: number
    readonly fragmentLastRow: number
+   readonly pixelSize: number
 }
