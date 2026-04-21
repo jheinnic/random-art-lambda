@@ -49,7 +49,7 @@ import type {
    ContextKeysAndPairs,
 } from "./types.js"
 import type {
-   IBasePipelineBuilder,
+   // IBasePipelineBuilder,
    PipelineBuilder,
    ContextualMethod,
    PropertySelectorsMap,
@@ -81,41 +81,35 @@ type CompatibleMerge<A extends object, B extends object> = Simplify<
  * Keys absent from Existing are always accepted.
  */
 type CompatibleAddition<Existing extends object, Addition extends object> = [
-   keyof Addition & keyof Existing,
-] extends [never]
+   {
+      [K in keyof Addition & keyof Existing]: [Existing[K]] extends [
+         Addition[K],
+      ]
+         ? [Addition[K]] extends [Existing[K]]
+            ? 1
+            : 0
+         : 0
+   }[keyof Addition & keyof Existing],
+] extends [1]
    ? true
-   : [
-          {
-             [K in keyof Addition & keyof Existing]: [Existing[K]] extends [
-                Addition[K],
-             ]
-                ? [Addition[K]] extends [Existing[K]]
-                   ? 1
-                   : 0
-                : 0
-          }[keyof Addition & keyof Existing],
-       ] extends [1]
-     ? true
-     : false
+   : false
 
 /**
  * True if every key of Required exists in AC with an assignable type.
  */
 type RequiredPresent<AC extends object, Required extends object> = [
    keyof Required,
-] extends [never]
-   ? true
-   : [keyof Required] extends [keyof AC]
-     ? [
-          {
-             [K in keyof Required & keyof AC]: [AC[K]] extends [Required[K]]
-                ? 1
-                : 0
-          }[keyof Required & keyof AC],
-       ] extends [1]
-        ? true
-        : false
-     : false
+] extends [keyof AC]
+   ? [
+        {
+           [K in keyof Required & keyof AC]: [AC[K]] extends [Required[K]]
+              ? 1
+              : 0
+        }[keyof Required & keyof AC],
+     ] extends [1]
+      ? true
+      : false
+   : false
 
 // =============================================================================
 // BeforeSegment / AfterSegment
@@ -130,6 +124,17 @@ type RequiredPresent<AC extends object, Required extends object> = [
  *   - Each name in AddedVC is absent from B's AllContext, or present with
  *     an identical type
  *   - All entries in RequiredAC are present in B's AllContext with compatible types
+ *   - No key in AddedEC targets a name that is private (in SC but not EC) in B,
+ *     which would illegally promote a private feature to expression-visible
+ *   - All entries in RequiredIC are present in B's InitialContext — the witness
+ *     established these fields as caller-supplied inputs, so the real builder must
+ *     also source them from IC (not from derived features or injections)
+ *   - All entries in RequiredInjC are present in B's InjectedContext — the witness
+ *     established these as DI-supplied; the real builder must inject them, not
+ *     derive them from IC or features
+ *   - All entries in RequiredEC are present in B's ExprContext — the witness
+ *     established these as expression-visible; the real builder must not keep
+ *     them private
  *
  * Evaluates to B itself when all constraints pass, or `never` on any violation.
  * Applied as the type of the `builder` parameter in the generated helper function,
@@ -140,13 +145,32 @@ export type BeforeSegment<
    AddedSC extends object,
    AddedVC extends object,
    RequiredAC extends object = {},
+   AddedEC extends object = {},
+   RequiredIC extends object = {},
+   RequiredInjC extends object = {},
+   RequiredEC extends object = {},
 > =
-   B extends PipelineBuilder<any, any, any, any, any, infer AC>
+   B extends PipelineBuilder<
+      infer IC,
+      infer InjC,
+      infer EC,
+      infer SC,
+      any,
+      infer AC
+   >
       ? CompatibleAddition<AC, AddedSC> extends true
          ? CompatibleAddition<AC, AddedVC> extends true
             ? RequiredPresent<AC, RequiredAC> extends true
-               ? B
-               : never
+               ? [keyof AddedEC & Exclude<keyof SC, keyof EC>] extends [never]
+                  ? RequiredPresent<IC, RequiredIC> extends true
+                     ? RequiredPresent<InjC, RequiredInjC> extends true
+                        ? RequiredPresent<EC, RequiredEC> extends true
+                           ? B
+                           : never // EC missing expression-visible fields required by witness
+                        : never // InjC missing injection slots required by witness
+                     : never // IC missing initial-input fields required by witness
+                  : never // AddedEC would promote a private feature to public
+               : never // AC missing required prerequisite fields
             : never
          : never
       : never
@@ -183,8 +207,13 @@ export type AfterSegment<
            CompatibleMerge<InjC, AddedInjC>,
            CompatibleMerge<EC, AddedEC>,
            CompatibleMerge<SC, AddedSC>,
-           // Virtual resolution: skip names already concrete in the real builder's SC.
-           CompatibleMerge<VC, Omit<AddedVC, keyof SC>>,
+           // Virtual resolution:
+           // - Drop from VC names that AddedSC is concretizing (segment fulfills them).
+           // - Drop from AddedVC names already concrete in SC or being concretized by AddedSC.
+           CompatibleMerge<
+              Omit<VC, keyof AddedSC>,
+              Omit<AddedVC, keyof SC | keyof AddedSC>
+           >,
            CompatibleMerge<AC, AddedAC>
         >
       : never
@@ -224,14 +253,20 @@ type Operation =
  * is encapsulated in the factory function implementation site.
  *
  * Type parameters track the segment's delta:
- * @typeParam AddedIC    Additions to InitialContext
- * @typeParam AddedInjC  Additions to InjectedContext
- * @typeParam AddedEC    Additions to ExprContext
- * @typeParam AddedSC    Additions to StepContext
- * @typeParam AddedVC    New virtual feature contracts declared by this segment
- * @typeParam AddedAC    Combined AllContext additions (AddedSC ∪ AddedVC)
- * @typeParam KnownAC    AddedAC ∪ RequiredAC — available for internal type-checking
- * @typeParam RequiredAC Preconditions: must be present in the target builder's AC
+ * @typeParam AddedIC     Additions to InitialContext
+ * @typeParam AddedInjC   Additions to InjectedContext
+ * @typeParam AddedEC     Additions to ExprContext
+ * @typeParam AddedSC     Additions to StepContext
+ * @typeParam AddedVC     New virtual feature contracts declared by this segment
+ * @typeParam AddedAC     Combined AllContext additions (AddedSC ∪ AddedVC)
+ * @typeParam KnownAC     AddedAC ∪ RequiredAC — available for internal type-checking
+ * @typeParam RequiredAC  Preconditions: must be present in the target builder's AC
+ * @typeParam RequiredIC  Fields the witness sourced from InitialContext; the real
+ *                        builder must also supply them as IC (not derive them)
+ * @typeParam RequiredInjC Fields the witness sourced from InjectedContext; the real
+ *                        builder must inject them, not source them from IC or features
+ * @typeParam RequiredEC  Fields the witness exposed to expressions; the real builder
+ *                        must not keep them private
  */
 export interface SegmentBlueprint<
    AddedIC extends object = {},
@@ -242,23 +277,26 @@ export interface SegmentBlueprint<
    AddedAC extends object = {},
    KnownAC extends object = {},
    RequiredAC extends object = {},
-> extends IBasePipelineBuilder {
-   extendInitial<
-      Extra extends object,
-      ExtraDefaults extends Partial<Extra> = Partial<Extra>,
-   >(
-      defaults: ExtraDefaults,
+   RequiredIC extends object = {},
+   RequiredInjC extends object = {},
+   RequiredEC extends object = {},
+> {
+   extendInitial<Extra extends object, HasDefaults extends keyof Extra = never>(
+      defaults: Pick<Extra, HasDefaults>,
    ): [CompatibleForMixin<AddedSC, Extra>] extends [never]
       ? never
       : SegmentBlueprint<
-           CompatibleMerge<AddedIC, InitialInput<Extra, ExtraDefaults>>,
+           CompatibleMerge<AddedIC, InitialInput<Extra, HasDefaults>>,
            AddedInjC,
            CompatibleMerge<AddedEC, Extra>,
            CompatibleMerge<AddedSC, Extra>,
            AddedVC,
            CompatibleMerge<AddedAC, Extra>,
            CompatibleMerge<KnownAC, Extra>,
-           RequiredAC
+           RequiredAC,
+           RequiredIC,
+           RequiredInjC,
+           RequiredEC
         >
 
    addVirtualFeature<VType extends object, NameOut extends string>(
@@ -271,7 +309,10 @@ export interface SegmentBlueprint<
       WithProp<AddedVC, NameOut, VType>,
       WithProp<AddedAC, NameOut, VType>,
       WithProp<KnownAC, NameOut, VType>,
-      RequiredAC
+      RequiredAC,
+      RequiredIC,
+      RequiredInjC,
+      RequiredEC
    >
 
    addPublicFeature<
@@ -289,7 +330,10 @@ export interface SegmentBlueprint<
       AddedVC,
       WithProp<AddedAC, NameOut, ExprOut>,
       WithProp<KnownAC, NameOut, ExprOut>,
-      RequiredAC
+      RequiredAC,
+      RequiredIC,
+      RequiredInjC,
+      RequiredEC
    >
 
    addPrivateFeature<
@@ -307,7 +351,10 @@ export interface SegmentBlueprint<
       AddedVC,
       WithProp<AddedAC, NameOut, ExprOut>,
       WithProp<KnownAC, NameOut, ExprOut>,
-      RequiredAC
+      RequiredAC,
+      RequiredIC,
+      RequiredInjC,
+      RequiredEC
    >
 
    addStep<
@@ -333,7 +380,10 @@ export interface SegmentBlueprint<
       [keyof StepOut] extends [never]
          ? KnownAC
          : WithProp<KnownAC, NameOut, StepOut>,
-      RequiredAC
+      RequiredAC,
+      RequiredIC,
+      RequiredInjC,
+      RequiredEC
    >
 
    addPrivateInjection<InjectedType, NameOut extends string>(
@@ -346,36 +396,35 @@ export interface SegmentBlueprint<
       AddedVC,
       WithProp<AddedAC, NameOut, InjectedType>,
       WithProp<KnownAC, NameOut, InjectedType>,
-      RequiredAC
+      RequiredAC,
+      RequiredIC,
+      RequiredInjC,
+      RequiredEC
    >
 
    /**
     * Produce the typed segment helper function.
     *
-    * The parameter type is `B` so TypeScript can infer `B` directly from the
-    * argument.  The return type threads `B` through `BeforeSegment<B,...>` first:
-    *   - When preconditions and uniqueness checks pass, BeforeSegment<B,...> = B,
-    *     so the return is AfterSegment<B,...> — the fully accumulated type.
-    *   - When any check fails, BeforeSegment<B,...> = never,
-    *     so AfterSegment<never,...> = never, breaking the chain immediately.
-    *
-    * Errors surface on the variable receiving the result (or the next segment
-    * call that receives `never`), rather than on the argument.
+    * The parameter type uses `B & BeforeSegment<B,...>` so TypeScript infers `B`
+    * from the argument directly, then collapses to `never` if any precondition
+    * fails — surfacing the error at the call site rather than downstream.
     *
     * All `as any` usage is encapsulated in the factory function — segment
     * developers never write unsafe casts.
     */
    buildHelper: () => <B extends PipelineBuilder<any, any, any, any, any, any>>(
-      builder: B,
-   ) => AfterSegment<
-      BeforeSegment<B, AddedSC, AddedVC, RequiredAC>,
-      AddedIC,
-      AddedInjC,
-      AddedEC,
-      AddedSC,
-      AddedVC,
-      AddedAC
-   >
+      builder: B &
+         BeforeSegment<
+            B,
+            AddedSC,
+            AddedVC,
+            RequiredAC,
+            AddedEC,
+            RequiredIC,
+            RequiredInjC,
+            RequiredEC
+         >,
+   ) => AfterSegment<B, AddedIC, AddedInjC, AddedEC, AddedSC, AddedVC, AddedAC>
 }
 
 // =============================================================================
@@ -537,15 +586,15 @@ export function createSegmentBlueprint(): SegmentBlueprint {
  * }
  */
 export function createSegmentBlueprintFromBuilder<
-   _IC extends object,
-   _InjC extends object,
-   _EC extends object,
+   IC extends object,
+   InjC extends object,
+   EC extends object,
    SC extends object,
    _VC extends object,
    AC extends object,
 >(
-   _witness: PipelineBuilder<_IC, _InjC, _EC, SC, _VC, AC>,
-): SegmentBlueprint<{}, {}, {}, {}, {}, {}, AC, SC> {
+   _witness: PipelineBuilder<IC, InjC, EC, SC, _VC, AC>,
+): SegmentBlueprint<{}, {}, {}, {}, {}, {}, AC, SC, IC, InjC, EC> {
    return createSegmentBlueprintImpl([]) as SegmentBlueprint<
       {},
       {},
@@ -554,6 +603,9 @@ export function createSegmentBlueprintFromBuilder<
       {},
       {},
       AC,
-      SC
+      SC,
+      IC,
+      InjC,
+      EC
    >
 }

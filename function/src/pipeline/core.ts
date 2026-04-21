@@ -65,7 +65,7 @@ function createBuilderImpl<
       },
 
       addVirtualFeature<_VirtualType extends object, NameOut extends string>(
-         nameOut: UnusedKey<AllContext, NameOut>,
+         nameOut: UnusedKey<VirtualContext, NameOut>,
       ) {
          return next({ kind: "virtual", name: nameOut as string }) as any
       },
@@ -200,9 +200,7 @@ function createBuilderImpl<
       buildPipeline<ResultOut extends object>(
          resultSelectors:
             | {
-                 [K in keyof ResultOut]: ContextKeysAndPairs<
-                    Mixin<ExprContext, VirtualContext>
-                 >
+                 [K in keyof ResultOut]: ContextKeysAndPairs<ExprContext>
               }
             | ((context: ExprContext) => ResultOut),
       ): (

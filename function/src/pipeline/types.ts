@@ -15,8 +15,8 @@
  */
 export type InitialInput<
    ExtraInitial extends object,
-   ExtraDefaults extends Partial<ExtraInitial>,
-> = Partial<ExtraDefaults> & Omit<ExtraInitial, keyof ExtraDefaults>
+   HasDefaults extends keyof ExtraInitial,
+> = Partial<Pick<ExtraInitial, HasDefaults>> & Omit<ExtraInitial, HasDefaults>
 
 /** Candidate is the literal type only if it is not already a key of Context. */
 export type UnusedKey<
@@ -30,17 +30,24 @@ export type CompatibleForMixin<
    Candidate extends object,
 > = [keyof Context & keyof Candidate] extends [never] ? Candidate : never
 
-/** Non-overlapping merge of two object types; never if they share a key. */
+/**
+ * Non-overlapping merge of two object types; never if they share a key.
+ *
+ * Produces a single flat object type (no visible intersection seams) while
+ * preserving `?:` and `readonly` modifiers from both sides.
+ *
+ * The `extends infer Flat` step is load-bearing: it introduces a fresh type
+ * variable `Flat`, making the inner `{ [K in keyof Flat]: Flat[K] }` a
+ * homomorphic mapped type. TypeScript copies property modifiers (including
+ * optionality) in homomorphic mappings but strips them in non-homomorphic
+ * ones (`[K in keyof A | keyof B]`), so this indirection is necessary.
+ */
 export type Mixin<Context extends object, Candidate extends object> = [
    keyof Context & keyof Candidate,
 ] extends [never]
-   ? {
-        [K in keyof Context | keyof Candidate]: K extends keyof Context
-           ? Context[K]
-           : K extends keyof Candidate
-             ? Candidate[K]
-             : never
-     }
+   ? (Context & Candidate) extends infer Flat
+      ? { [K in keyof Flat]: Flat[K] }
+      : never
    : never
 
 /** Add a single new property to an object type; never if the key is taken. */

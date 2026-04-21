@@ -9,33 +9,6 @@ import type {
 } from "./types.js"
 
 // =============================================================================
-// IBasePipelineBuilder — shared vocabulary for PipelineBuilder and SegmentBlueprint
-// =============================================================================
-
-/**
- * Structural base interface shared by PipelineBuilder and SegmentBlueprint.
- *
- * Captures the common operation vocabulary (method names and loose parameter
- * shapes) so that code handling either kind of builder can reference a single
- * type.  Both concrete interfaces provide fully-typed method signatures that
- * override these loose stubs.
- *
- * Uses method-shorthand syntax so TypeScript applies bivariance for parameter
- * types, permitting concrete implementations to narrow the parameter types
- * without triggering strictFunctionTypes violations.
- */
-export interface IBasePipelineBuilder {
-   /* eslint-disable @typescript-eslint/method-signature-style */
-   extendInitial(defaults: object): IBasePipelineBuilder
-   addVirtualFeature(nameOut: string): IBasePipelineBuilder
-   addPublicFeature(nameOut: string, properties: object): IBasePipelineBuilder
-   addPrivateFeature(nameOut: string, properties: object): IBasePipelineBuilder
-   addStep(nameOut: string, implementation: object): IBasePipelineBuilder
-   addPrivateInjection(nameOut: string): IBasePipelineBuilder
-   /* eslint-enable @typescript-eslint/method-signature-style */
-}
-
-// =============================================================================
 // ContextualMethod
 // =============================================================================
 
@@ -91,20 +64,10 @@ export type FeatureProperties<
    SelectorsMap extends PropertySelectorsMap<Context, Props>,
 > = {
    [K in keyof Props]:
-      | string // developer-config expression: full StepContext access
-      | readonly [string] // two-stage: outer expr (StepContext) → inner (ExprContext sandbox)
-      | (K extends keyof SelectorsMap
-           ? ContextualMethod<Context, Props[K], NonNullable<SelectorsMap[K]>>
-           : never)
-}
-
-/**
- * Property map when a feature call fulfills a virtual contract.
- * Restricted to expression strings only — no ContextualMethod.
- * ExprOut must structurally satisfy the declared virtual type.
- */
-export type VirtualFulfillmentProperties<ExprOut> = {
-   [K in keyof ExprOut]: string | readonly [string]
+      (K extends keyof SelectorsMap
+         ? ContextualMethod<Context, Props[K], NonNullable<SelectorsMap[K]>>
+         : readonly [string] // two-stage: outer expr (StepContext) → inner (ExprContext sandbox)
+           | string // developer-config expression: full StepContext access
 }
 
 /**
@@ -120,7 +83,9 @@ export type ConditionalFeatureProperties<
    SelectorsMap extends PropertySelectorsMap<AllCtx, ExprOut>,
 > = NameOut extends keyof VirtualCtx
    ? ExprOut extends VirtualCtx[NameOut]
-      ? VirtualFulfillmentProperties<ExprOut>
+      ? VirtualCtx[NameOut] extends ExprOut
+        ? FeatureProperties<AllCtx, ExprOut, SelectorsMap>
+        : never // ExprOut does not satisfy the declared virtual contract
       : never // ExprOut does not satisfy the declared virtual contract
    : FeatureProperties<AllCtx, ExprOut, SelectorsMap>
 
@@ -153,26 +118,25 @@ export interface PipelineBuilder<
     * Extend the initial seed context with additional properties.
     *
     * ExtraInitial is the full shape added to ExprContext and StepContext —
-    * must be supplied explicitly when it is wider than ExtraDefaults.
-    * ExtraDefaults is inferred from the defaults argument alone; it must be a
-    * partial of ExtraInitial (only declared keys may be defaulted).
+    * must be supplied explicitly since it is wider than the defaults object.
+    * HasDefaults is inferred from the keys of the defaults argument.
     *
-    * The resulting InitialContext contribution is InitialInput<ExtraInitial, ExtraDefaults>:
-    *   Partial<ExtraDefaults> & Omit<ExtraInitial, keyof ExtraDefaults>
-    * — defaulted fields are optional in the call signature; fields present in
-    * ExtraInitial but absent from ExtraDefaults are required.
+    * The resulting InitialContext contribution is InitialInput<ExtraInitial, HasDefaults>:
+    *   Partial<Pick<ExtraInitial, HasDefaults>> & Omit<ExtraInitial, HasDefaults>
+    * — defaulted fields are optional in the call signature; fields absent from
+    * the defaults object remain required.
     *
     * Returns never if ExtraInitial conflicts with the existing StepContext.
     */
    extendInitial: <
       ExtraInitial extends object,
-      ExtraDefaults extends Partial<ExtraInitial> = Partial<ExtraInitial>,
+      HasDefaults extends keyof ExtraInitial = never,
    >(
-      defaults: ExtraDefaults,
+      defaults: Pick<ExtraInitial, HasDefaults>,
    ) => [CompatibleForMixin<StepContext, ExtraInitial>] extends [never]
       ? never
       : PipelineBuilder<
-           Mixin<InitialContext, InitialInput<ExtraInitial, ExtraDefaults>>,
+           Mixin<InitialContext, InitialInput<ExtraInitial, HasDefaults>>,
            InjectedContext,
            Mixin<ExprContext, ExtraInitial>,
            Mixin<StepContext, ExtraInitial>,
@@ -188,18 +152,34 @@ export interface PipelineBuilder<
     * Steps may reference the virtual in their selectors; they are pruned at
     * runtime if the virtual is never fulfilled.
     *
-    * nameOut must be absent from AllContext (i.e. from both StepContext and VirtualContext).
+    * nameOut must be absent from VirtualContext (duplicate virtual declaration is rejected).
+    * If nameOut is already in StepContext (already concrete):
+    *   - VirtualType must be assignable to the concrete type, otherwise never.
+    *   - If assignable, this is a no-op (the concrete value already satisfies the contract).
     */
    addVirtualFeature: <VirtualType extends object, NameOut extends string>(
-      nameOut: UnusedKey<AllContext, NameOut>,
-   ) => PipelineBuilder<
-      InitialContext,
-      InjectedContext,
-      ExprContext,
-      StepContext, // unchanged — virtual is not concrete yet
-      WithProp<VirtualContext, typeof nameOut, VirtualType>,
-      WithProp<AllContext, typeof nameOut, VirtualType>
-   >
+      nameOut: UnusedKey<VirtualContext, NameOut>,
+   ) => NameOut extends keyof StepContext
+      ? StepContext[NameOut] extends VirtualType
+         ? VirtualType extends StepContext[NameOut]
+            ? PipelineBuilder<
+                 InitialContext,
+                 InjectedContext,
+                 ExprContext,
+                 StepContext,
+                 VirtualContext,
+                 AllContext
+              >
+            : never // VirtualType is incompatible with the already-concrete type
+         : never // VirtualType is incompatible with the already-concrete type
+      : PipelineBuilder<
+           InitialContext,
+           InjectedContext,
+           ExprContext,
+           StepContext,
+           WithProp<VirtualContext, typeof nameOut, VirtualType>,
+           WithProp<AllContext, typeof nameOut, VirtualType>
+        >
 
    /**
     * Add a step: a programmatic method invoked with typed context selectors.
@@ -401,9 +381,7 @@ export interface PipelineBuilder<
    buildPipeline: <ResultOut extends object>(
       resultSelectors:
          | {
-              [K in keyof ResultOut]: ContextKeysAndPairs<
-                 Mixin<ExprContext, VirtualContext>
-              >
+              [K in keyof ResultOut]: ContextKeysAndPairs<ExprContext>
            }
          | ((context: ExprContext) => ResultOut),
    ) => (

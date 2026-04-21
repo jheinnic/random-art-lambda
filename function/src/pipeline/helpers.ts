@@ -1,4 +1,9 @@
+import { AsyncLocalStorage } from "async_hooks"
 import type { ContextKeysAndPairs, CallableParams } from "./types.js"
+import { ConfigService } from "@nestjs/config"
+
+export const CONFIG_SERVICE_STORE: AsyncLocalStorage<ConfigService> =
+   new AsyncLocalStorage<ConfigService>()
 
 // =============================================================================
 // cm() — Type-safe feature method factory
