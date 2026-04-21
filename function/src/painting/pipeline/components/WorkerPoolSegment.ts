@@ -14,14 +14,13 @@
  * the step is skipped and `stagingResult` is absent from the pipeline output.
  */
 
-import type { ConfigService } from "@nestjs/config"
 import type { IFileStore } from "../../../storage/interface/IFileStore.js"
 import {
    createPipeline,
    createSegmentBlueprintFromBuilder,
 } from "../../../pipeline/index.js"
 import { createEncodingSegment } from "./EncodingSegment.js"
-import { createPermutationSegment } from "./PermutationSegment.js"
+import { createArtworkEngineSegment } from "./ArtworkEngineSegment.js"
 
 /** Virtual contract: the resolved file store to stage into. */
 export interface FileStoreSelection {
@@ -39,37 +38,22 @@ export interface StagingResult {
    uri: string
 }
 
-type StagingSelectors = {
+interface StagingSelectors {
    stagingResult: readonly [
       readonly ["stagingStrategy", "selected"],
       readonly ["stagedFilePath", "selected"],
-      "canvasBuffer",
+      "pngData",
    ]
 }
 
-/** Minimal initial context needed to build the prerequisite witness. */
-interface WorkerPoolMinimalIC {
-   prefix: Uint8ClampedArray
-   suffix: Uint8ClampedArray
-   canvasBuffer: Buffer
-}
-
-// Stub ConfigService: no config keys are read at witness-construction time.
-const _stubConfig = { get: () => undefined } as unknown as ConfigService
-
 // Witness: a minimal builder advanced through all prerequisites.
-// Used only for type extraction — runtime value is discarded.
-const _witness = createPermutationSegment(_stubConfig)(
-   createEncodingSegment(_stubConfig)(
-      createPipeline<WorkerPoolMinimalIC>().addPrivateInjection<IFileStore, "fileStore">(
-         "fileStore",
-      ),
-   ),
+const witness = createEncodingSegment(
+   createArtworkEngineSegment(createPipeline()),
 )
 
 // Placeholder blueprint built from the witness, used only to derive the
 // exported helper type via ReturnType.
-const _workerPoolBlueprint = createSegmentBlueprintFromBuilder(_witness)
+const workerPoolBlueprint = createSegmentBlueprintFromBuilder(witness)
    .addVirtualFeature<FileStoreSelection, "stagingStrategy">("stagingStrategy")
    .addVirtualFeature<PathTargetSelection, "stagedFilePath">("stagedFilePath")
    .addStep<StagingResult, "stagingResult", StagingSelectors["stagingResult"]>(
@@ -86,52 +70,61 @@ const _workerPoolBlueprint = createSegmentBlueprintFromBuilder(_witness)
             return { status: 1, uri }
          },
          selectors: [
+            // Used only for type extraction — runtime value is discarded.
             ["stagingStrategy", "selected"] as const,
             ["stagedFilePath", "selected"] as const,
-            "canvasBuffer",
+            "pngData",
          ] as const,
       },
    )
 
 export type WorkerPoolSegmentHelper = ReturnType<
-   typeof _workerPoolBlueprint.buildHelper
+   typeof workerPoolBlueprint.buildHelper
 >
 
-export function createWorkerPoolSegment(
-   configSvc: ConfigService,
-): WorkerPoolSegmentHelper {
-   // Witness chain: advance a minimal builder through all prerequisites.
-   const witness = createPermutationSegment(configSvc)(
-      createEncodingSegment(configSvc)(
-         createPipeline<WorkerPoolMinimalIC>().addPrivateInjection<
-            IFileStore,
-            "fileStore"
-         >("fileStore"),
-      ),
-   )
+export const createWorkerPoolSegment: WorkerPoolSegmentHelper =
+   workerPoolBlueprint.buildHelper()
 
-   return createSegmentBlueprintFromBuilder(witness)
-      .addVirtualFeature<FileStoreSelection, "stagingStrategy">("stagingStrategy")
-      .addVirtualFeature<PathTargetSelection, "stagedFilePath">("stagedFilePath")
-      .addStep<StagingResult, "stagingResult", StagingSelectors["stagingResult"]>(
-         "stagingResult",
-         {
-            method: async (
-               store: IFileStore,
-               filePath: string,
-               canvas: Buffer,
-            ): Promise<StagingResult> => {
-               const uri = await store.write(filePath, canvas, {
-                  contentType: "image/png",
-               })
-               return { status: 1, uri }
-            },
-            selectors: [
-               ["stagingStrategy", "selected"] as const,
-               ["stagedFilePath", "selected"] as const,
-               "canvasBuffer",
-            ] as const,
-         },
-      )
-      .buildHelper()
-}
+// export function createWorkerPoolSegment(
+//    configSvc: ConfigService,
+// ): WorkerPoolSegmentHelper {
+//    // Witness chain: advance a minimal builder through all prerequisites.
+//    const witness = createPermutationSegment(configSvc)(
+//       createEncodingSegment(configSvc)(
+//          createPipeline<WorkerPoolMinimalIC>().addPrivateInjection<
+//             IFileStore,
+//             "fileStore"
+//          >("fileStore"),
+//       ),
+//    )
+
+//    return createSegmentBlueprintFromBuilder(witness)
+//       .addVirtualFeature<FileStoreSelection, "stagingStrategy">(
+//          "stagingStrategy",
+//       )
+//       .addVirtualFeature<PathTargetSelection, "stagedFilePath">(
+//          "stagedFilePath",
+//       )
+//       .addStep<
+//          StagingResult,
+//          "stagingResult",
+//          StagingSelectors["stagingResult"]
+//       >("stagingResult", {
+//          method: async (
+//             store: IFileStore,
+//             filePath: string,
+//             canvas: Buffer,
+//          ): Promise<StagingResult> => {
+//             const uri = await store.write(filePath, canvas, {
+//                contentType: "image/png",
+//             })
+//             return { status: 1, uri }
+//          },
+//          selectors: [
+//             ["stagingStrategy", "selected"] as const,
+//             ["stagedFilePath", "selected"] as const,
+//             "canvasBuffer",
+//          ] as const,
+//       })
+//       .buildHelper()
+// }

@@ -24,13 +24,15 @@ import {
    type IDynamicModuleBuilder,
 } from "../../../modules/index.js"
 import { createPipeline } from "../../../pipeline/index.js"
+import { createArtworkEngineSegment } from "../../../painting/pipeline/components/ArtworkEngineSegment.js"
 import { createEncodingSegment } from "../../../painting/pipeline/components/EncodingSegment.js"
-import { createPermutationSegment } from "../../../painting/pipeline/components/PermutationSegment.js"
 import {
    createWorkerPoolSegment,
    type FileStoreSelection,
    type PathTargetSelection,
 } from "../../../painting/pipeline/components/WorkerPoolSegment.js"
+import type { PaintedTask } from "../../../painting/pipeline/values/PaintedTask.js"
+import type { TaskTermEncoding } from "../../../painting/pipeline/values/TaskTermEncoding.js"
 import type { IFileStore } from "../../../storage/interface/IFileStore.js"
 import { TrigramModuleTypes } from "./Types.js"
 
@@ -41,24 +43,11 @@ import { TrigramModuleTypes } from "./Types.js"
 /**
  * Fields that the gathering worker provides when calling the compiled pipeline.
  *
- * `originalEncoding` is absent — added to the initial context by
- * createEncodingSegment() via extendInitial(), with the config-derived default.
- *
- * `prefix` / `suffix` carry the raw bytes of the trigram strings so that
- * createPermutationSegment() can re-encode them to the resolved encoding.
+ * All PaintedTask fields are required (provided by ArtworkEngineSegment's
+ * extendInitial). resolvedFileNameExpression is trigram-specific and optional —
+ * the stagedFilePath expression falls back to the config default when absent.
  */
-export interface TrigramPipelineInput {
-   /** Raw prefix bytes (Uint8ClampedArray wrapping a Buffer's underlying memory). */
-   prefix: Uint8ClampedArray
-   /** Raw suffix bytes. */
-   suffix: Uint8ClampedArray
-   /** Rendered canvas image produced by the paint step. */
-   canvasBuffer: Buffer
-   /**
-    * Resolved filename expression forwarded from the paint task.
-    * The stagedFilePath feature's expression references this field;
-    * falls back to the config default when undefined.
-    */
+export interface TrigramPipelineInput extends PaintedTask {
    resolvedFileNameExpression?: string
 }
 
@@ -95,34 +84,37 @@ export const TrigramPipelineModule = InjectableModuleClassFactory.create(
          // ------------------------------------------------------------------
          // Build the compiled pipeline inline.
          //
+         // Segments are stateless module-level constants — no configSvc arg.
+         // Config-derived values are baked into expression strings here.
          // Each const step receives the fully-accumulated type from the prior
          // step — TypeScript verifies every selector, key uniqueness, and
          // virtual fulfillment without any `as any` escape.
          // ------------------------------------------------------------------
 
-         // 1. Declare the fileStore injection slot (private — hidden from expressions).
-         const b0 = createPipeline<TrigramPipelineInput>().addPrivateInjection<
-            IFileStore,
-            "fileStore"
-         >("fileStore")
+         const appEncoding =
+            configSvc.get<BufferEncoding>("trigram.encoding") ?? "utf-8"
 
-         // 2. Encoding: adds originalEncoding to initial/step context,
-         //    resolvedEncoding public feature, declares encodingOverride virtual.
-         const b1 = createEncodingSegment(configSvc)(b0)
+         // 1. Base: artwork engine (adds PaintedTask to IC), then add the
+         //    trigram-specific optional field with a default of undefined.
+         const b0 = createArtworkEngineSegment(createPipeline()).extendInitial<
+            { resolvedFileNameExpression?: string },
+            "resolvedFileNameExpression"
+         >({ resolvedFileNameExpression: undefined })
 
-         // 3. Permutation: adds transcodedTerms public feature,
-         //    declares appTerms virtual.
-         const b2 = createPermutationSegment(configSvc)(b1)
+         // 2. Encoding: declares taskTermEncoding virtual, adds encodedTerms.
+         const b1 = createEncodingSegment(b0)
 
-         // 4. Worker pool: declares stagingStrategy + stagedFilePath virtuals,
+         // 3. Worker pool: declares stagingStrategy + stagedFilePath virtuals,
          //    registers stagingResult step.
-         const b3 = createWorkerPoolSegment(configSvc)(b2)
+         const b2 = createWorkerPoolSegment(b1)
 
-         // 5. Fulfill virtuals with application-specific expressions.
-         //    stagedFilePath: resolvedFileNameExpression from initial context,
-         //      falling back to the config-derived default.
-         //    stagingStrategy: selects the injected fileStore by name.
-         const pipeline = b3
+         // 4. Fulfill injections and virtuals with application-specific values.
+         const pipeline = b2
+            .addPrivateInjection<IFileStore, "fileStore">("fileStore")
+            .addPrivateFeature<TaskTermEncoding, "taskTermEncoding">(
+               "taskTermEncoding",
+               { encoding: `"${appEncoding}"` },
+            )
             .addPublicFeature<PathTargetSelection, "stagedFilePath">(
                "stagedFilePath",
                {
@@ -134,9 +126,7 @@ export const TrigramPipelineModule = InjectableModuleClassFactory.create(
             )
             .addPrivateFeature<FileStoreSelection, "stagingStrategy">(
                "stagingStrategy",
-               {
-                  selected: "fileStore",
-               },
+               { selected: "fileStore" },
             )
             .buildPipeline({
                status: ["stagingResult", "status"] as const,

@@ -8,18 +8,13 @@
  * No prerequisites — uses createSegmentBlueprint() directly.
  */
 
-import type { ConfigService } from "@nestjs/config"
-import { createSegmentBlueprint } from "../../../pipeline/index.js"
-
-/** The raw default encoding placed into initial context by this segment. */
-export interface OriginalEncoding {
-   originalEncoding: BufferEncoding
-}
-
-/** Virtual contract an application may fulfill to override the default encoding. */
-export interface EncodingOverride {
-   selected: BufferEncoding | null
-}
+import {
+   createPipeline,
+   createSegmentBlueprintFromBuilder,
+} from "../../../pipeline/index.js"
+import { TaskTermEncoding } from "../values/TaskTermEncoding.js"
+import { createArtworkEngineSegment } from "./ArtworkEngineSegment.js"
+import { EncodedTerms } from "../values/EncodedTerms.js"
 
 /**
  * The resolved encoding: encodingOverride.selected if present and non-null,
@@ -29,42 +24,56 @@ export interface EncodingOverride {
 export interface ResolvedEncoding {
    selected: BufferEncoding
 }
+const termProperties = {
+   systemPrefixString: {
+      method: (bin: Uint8ClampedArray) =>
+         Buffer.from(bin.buffer).toString("base64url"),
+      selectors: ["seedPrefix"] as const,
+   },
+   systemSuffixString: {
+      method: (bin: Uint8ClampedArray) =>
+         Buffer.from(bin.buffer).toString("base64url"),
+      selectors: ["seedSuffix"] as const,
+   },
+   appPrefixString: {
+      method: (bin: Uint8ClampedArray, enc: BufferEncoding) =>
+         Buffer.from(bin.buffer).toString(enc),
+      selectors: [
+         "seedPrefix",
+         ["taskTermEncoding", "encoding"] as const,
+      ] as const,
+   },
+   appSuffixString: {
+      method: (bin: Uint8ClampedArray, enc: BufferEncoding) =>
+         Buffer.from(bin.buffer).toString(enc),
+      selectors: [
+         "seedSuffix",
+         ["taskTermEncoding", "encoding"] as const,
+      ] as const,
+   },
+}
 
-// Expression that resolves the encoding with fallback.
-// jse-eval returns undefined for missing context keys, so the ternary safely
-// short-circuits to originalEncoding when encodingOverride is unfulfilled.
-const RESOLVE_ENCODING_EXPR =
-   "encodingOverride != null && encodingOverride.selected != null" +
-   " ? encodingOverride.selected : originalEncoding"
+export const SELECT_TOKENS_MAP = {
+   systemPrefixString: ["seedPrefix"],
+   systemSuffixString: ["seedSuffix"],
+   appPrefixString: ["seedPrefix", ["taskTermEncoding", "encoding"]],
+   appSuffixString: ["seedSuffix", ["taskTermEncoding", "encoding"]],
+} as const
+
+const witness = createArtworkEngineSegment(createPipeline())
 
 // Placeholder blueprint used only to derive the helper's return type.
-const _encodingBlueprint = createSegmentBlueprint()
-   .extendInitial({ originalEncoding: "utf8" as BufferEncoding })
-   .addVirtualFeature<EncodingOverride, "encodingOverride">("encodingOverride")
-   .addPublicFeature<ResolvedEncoding, "resolvedEncoding">("resolvedEncoding", {
-      selected: RESOLVE_ENCODING_EXPR,
-   })
+const _encodingBlueprint = createSegmentBlueprintFromBuilder(witness)
+   .addVirtualFeature<TaskTermEncoding, "taskTermEncoding">("taskTermEncoding")
+   .addPublicFeature<
+      EncodedTerms,
+      "encodedTerms",
+      typeof SELECT_TOKENS_MAP
+   >("encodedTerms", termProperties)
 
 export type EncodingSegmentHelper = ReturnType<
    typeof _encodingBlueprint.buildHelper
 >
 
-export function createEncodingSegment(
-   configSvc: ConfigService,
-): EncodingSegmentHelper {
-   const defaultEncoding =
-      configSvc.get<BufferEncoding>("encoding.defaultEncoding") ?? "utf8"
-
-   return createSegmentBlueprint()
-      .extendInitial({ originalEncoding: defaultEncoding })
-      .addVirtualFeature<EncodingOverride, "encodingOverride">(
-         "encodingOverride",
-      )
-      .addPublicFeature<ResolvedEncoding, "resolvedEncoding">(
-         "resolvedEncoding",
-         {
-            selected: RESOLVE_ENCODING_EXPR,
-         },
-      )
-      .buildHelper()
-}
+export const createEncodingSegment: EncodingSegmentHelper =
+   _encodingBlueprint.buildHelper()
