@@ -12,7 +12,7 @@ import {
    IDynamicModuleBuilder,
    InjectableModuleClassFactory,
 } from "../../../modules/index.js"
-import { ReturnQueueRoutingProcessor as ReplyQueueRoutingProcessor } from "../components/ReturnQueueRoutingProcessor.js"
+import { ReturnQueueRoutingProcessor as ReplyQueueRoutingProcessor } from "../unused/ReturnQueueRoutingProcessor.js"
 import { ModuleConfigData } from "./Configuration.js"
 import { RandomArtGatheringWorker } from "../components/RandomArtGatheringWorker.js"
 import { RandomArtProjectGatheringWorker } from "../components/RandomArtProjectGatheringWorker.js"

@@ -1,5 +1,4 @@
 import { EnvelopeCodec } from "./EnvelopeCodec.js"
-import { getCodec } from "./RandomArtCodec.js"
 
 /** * 1. THE REGISTRY (Must be defined before class) */
 class CodecRegistry {
@@ -25,7 +24,7 @@ class CodecRegistry {
    }
 
    get<Payload extends object>(id: string): EnvelopeCodec<Payload> | undefined {
-      return this.codecs.get(id) ?? getCodec()
+      return this.codecs.get(id)
    }
 }
 
