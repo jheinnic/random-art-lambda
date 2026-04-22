@@ -138,9 +138,7 @@ export const TrigramPipelineModule = InjectableModuleClassFactory.create(
          // by importDependencies above).
          builder.exportProviders({
             provide: TrigramModuleTypes.PipelineFn,
-            useFactory:
-               (store: IFileStore) => (initial: TrigramPipelineInput) =>
-                  pipeline(initial, { fileStore: store }),
+            useFactory: (store: IFileStore) => pipeline({ fileStore: store }),
             inject: [TrigramModuleTypes.WorkerFileStore],
          })
       },

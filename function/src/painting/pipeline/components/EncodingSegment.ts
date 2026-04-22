@@ -68,7 +68,7 @@ const _encodingBlueprint = createSegmentBlueprintFromBuilder(witness)
    .addPublicFeature<
       EncodedTerms,
       "encodedTerms",
-      typeof SELECT_TOKENS_MAP
+      typeof termProperties
    >("encodedTerms", termProperties)
 
 export type EncodingSegmentHelper = ReturnType<

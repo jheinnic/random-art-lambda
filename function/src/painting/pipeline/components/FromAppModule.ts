@@ -17,14 +17,14 @@ const result = pipelineBuilder
    .addPrivateInjection<IFileStore, "fileStore">("fileStore")
    .addPrivateFeature<TaskTermEncoding, "taskTermEncoding">(
       "taskTermEncoding",
-      { encoding: ['"utf-8"'] },
+      { encoding: ['"utf-8"'] as const },
    )
    .addPublicFeature<FileStoreSelection, "stagingStrategy">("stagingStrategy", {
       selected: "fileStore",
    })
    .addPublicFeature<PathTargetSelection, "stagedFilePath">("stagedFilePath", {
       // eslint-disable-next-line no-template-curly-in-string
-      selected: ["`${appSuffixString}/${appPrefixString}.png`"],
+      selected: ["`${appSuffixString}/${appPrefixString}.png`"] as const,
    })
 
 /**
@@ -37,4 +37,4 @@ const artifact = result.buildPipeline<{ a: string; b: string; c: string }>({
    c: ["stagedFilePath", "selected"],
 })
 
-console.log(artifact({} as any, {} as any))
+console.log(artifact({} as any)({} as any))

@@ -1,17 +1,13 @@
 import jseEval, { compile } from "jse-eval"
 import templatePlugin from "@jsep-plugin/template"
 
+import type { ContextKeysAndPairs, Mixin, UnusedKey } from "./types.js"
 import type {
-   ContextKeysAndPairs,
-   Mixin,
-   UnusedKey,
-} from "./types.js"
-import type {
-   ConditionalFeatureProperties,
+   ConditionalFeatureProps,
    ContextualMethod,
-   FeatureProperties,
+   LooseFeatureProp,
+   CheckFeatureProps,
    PipelineBuilder,
-   PropertySelectorsMap,
 } from "./builder.js"
 import type {
    SelectorPath,
@@ -40,6 +36,7 @@ function createBuilderImpl<
    StepContext extends object,
    VirtualContext extends object,
    AllContext extends object = Mixin<StepContext, VirtualContext>,
+   StepResultContext extends object = {},
 >(
    stages: RuntimeStage[],
 ): PipelineBuilder<
@@ -48,11 +45,12 @@ function createBuilderImpl<
    ExprContext,
    StepContext,
    VirtualContext,
-   AllContext
+   AllContext,
+   StepResultContext
 > {
    function next(
       stage: RuntimeStage,
-   ): PipelineBuilder<any, any, any, any, any, any> {
+   ): PipelineBuilder<any, any, any, any, any, any, any> {
       return createBuilderImpl([...stages, stage])
    }
 
@@ -91,18 +89,18 @@ function createBuilderImpl<
       addPublicFeature<
          ExprOut extends object,
          NameOut extends string,
-         Sel extends PropertySelectorsMap<AllContext, ExprOut> = Record<
-            never,
-            never
-         >,
+         Props extends { [K in keyof ExprOut]: LooseFeatureProp } = {
+            [K in keyof ExprOut]: LooseFeatureProp
+         },
       >(
          nameOut: UnusedKey<StepContext, NameOut>,
-         properties: ConditionalFeatureProperties<
+         properties: ConditionalFeatureProps<
             AllContext,
             VirtualContext,
             NameOut,
             ExprOut,
-            Sel
+            ExprOut,
+            Props
          >,
       ) {
          return next({
@@ -116,18 +114,18 @@ function createBuilderImpl<
       addPrivateFeature<
          ExprOut extends object,
          NameOut extends string,
-         Sel extends PropertySelectorsMap<AllContext, ExprOut> = Record<
-            never,
-            never
-         >,
+         Props extends { [K in keyof ExprOut]: LooseFeatureProp } = {
+            [K in keyof ExprOut]: LooseFeatureProp
+         },
       >(
          nameOut: UnusedKey<StepContext, NameOut>,
-         properties: ConditionalFeatureProperties<
+         properties: ConditionalFeatureProps<
             AllContext,
             VirtualContext,
             NameOut,
             ExprOut,
-            Sel
+            ExprOut,
+            Props
          >,
       ) {
          return next({
@@ -142,28 +140,28 @@ function createBuilderImpl<
          ExprOut extends object,
          NameOut extends string,
          StepOut extends ExprOut = ExprOut,
-         PublicSel extends PropertySelectorsMap<AllContext, ExprOut> = Record<
-            never,
-            never
-         >,
-         PrivateSel extends PropertySelectorsMap<
-            AllContext,
-            Omit<StepOut, keyof ExprOut>
-         > = Record<never, never>,
+         Props extends { [K in keyof ExprOut]: LooseFeatureProp } = {
+            [K in keyof ExprOut]: string
+         },
+         PrivateProps extends {
+            [K in keyof Omit<StepOut, keyof ExprOut>]: LooseFeatureProp
+         } = { [K in keyof Omit<StepOut, keyof ExprOut>]: string },
       >(
          nameOut: UnusedKey<StepContext, NameOut>,
-         publicProperties: ConditionalFeatureProperties<
+         publicProperties: ConditionalFeatureProps<
             AllContext,
             VirtualContext,
             NameOut,
             ExprOut,
-            PublicSel
+            StepOut,
+            Props
          >,
-         privateProperties: FeatureProperties<
-            AllContext,
-            Omit<StepOut, keyof ExprOut>,
-            PrivateSel
-         >,
+         privateProperties: PrivateProps &
+            CheckFeatureProps<
+               AllContext,
+               Omit<StepOut, keyof ExprOut>,
+               PrivateProps
+            >,
       ) {
          const publicKeys = Object.keys(publicProperties as object)
          return next({
@@ -200,13 +198,14 @@ function createBuilderImpl<
       buildPipeline<ResultOut extends object>(
          resultSelectors:
             | {
-                 [K in keyof ResultOut]: ContextKeysAndPairs<ExprContext>
+                 [K in keyof ResultOut]: ContextKeysAndPairs<
+                    Mixin<ExprContext, StepResultContext>
+                 >
               }
-            | ((context: ExprContext) => ResultOut),
+            | ((context: Mixin<ExprContext, StepResultContext>) => ResultOut),
       ): (
-         initial: InitialContext,
          injections: InjectedContext,
-      ) => Promise<Partial<ResultOut>> {
+      ) => (initial: InitialContext) => Promise<Partial<ResultOut>> {
          // ── one-time pre-processing (runs once when buildPipeline() is called) ──
 
          // Merge all initialDefaults stages into a single baseline object.
@@ -305,170 +304,195 @@ function createBuilderImpl<
             | Record<string, SelectorPath>
             | ((ctx: Record<string, unknown>) => Record<string, unknown>)
 
-         // ── per-invocation callable ────────────────────────────────────────────
-         return async (initial, injections) => {
-            // Full context: every concrete value available to steps and methods.
-            const stepCtx: Record<string, unknown> = {
-               ...defaults,
-               ...(initial as Record<string, unknown>),
-            }
-            // Expression-visible subset: only public outputs reach this context.
-            const exprCtx: Record<string, unknown> = {
-               ...defaults,
-               ...(initial as Record<string, unknown>),
-            }
-            // Names of stages whose output is unavailable this invocation.
-            const pruned = new Set<string>()
-
-            // Resolve a single selector path; returns the value or signals absence.
-            const resolvePath = (
-               sel: SelectorPath,
-               ctx: Record<string, unknown>,
-            ): { found: true; value: unknown } | { found: false } => {
-               const topKey = typeof sel === "string" ? sel : sel[0]
-               if (!(topKey in ctx)) return { found: false }
-               if (typeof sel === "string")
-                  return { found: true, value: ctx[topKey] }
-               const sub = ctx[topKey] as Record<string, unknown>
-               if (!(sel[1] in sub)) return { found: false }
-               return { found: true, value: sub[sel[1]] }
-            }
-
-            // Resolve every selector in the list; returns null if any is absent.
-            const resolveArgs = (
-               selectors: readonly SelectorPath[],
-               ctx: Record<string, unknown>,
-            ): unknown[] | null => {
-               const args: unknown[] = []
-               for (const sel of selectors) {
-                  const r = resolvePath(sel, ctx)
-                  if (!r.found) return null
-                  args.push(r.value)
+         // ── outer: binds injections once per pipeline instance ─────────────────
+         return (injections) => {
+            // ── inner: per-request invocation ──────────────────────────────────
+            return async (initial) => {
+               // Full context: initial + defaults; grows as features are computed.
+               const stepCtx: Record<string, unknown> = {
+                  ...defaults,
+                  ...(initial as Record<string, unknown>),
                }
-               return args
-            }
+               // Expression-visible subset (public features + public injections).
+               const exprCtx: Record<string, unknown> = {
+                  ...defaults,
+                  ...(initial as Record<string, unknown>),
+               }
+               // Step result context: isolated from features, visible only to
+               // buildPipeline result selectors.
+               const stepResultCtx: Record<string, unknown> = {}
 
-            // False if any selector's top-level key is unfulfilled or pruned.
-            const selectable = (selectors: readonly SelectorPath[]): boolean =>
-               selectors.every((sel) => {
-                  const top = typeof sel === "string" ? sel : sel[0]
-                  return !pruned.has(top) && !unfulfilled.has(top)
-               })
+               // Names of feature/injection stages whose output is unavailable.
+               const pruned = new Set<string>()
+               // Names of steps that were pruned (selector missing or unfulfilled virtual).
+               const prunedSteps = new Set<string>()
 
-            for (const stage of executionOrder) {
-               switch (stage.kind) {
-                  case "injection": {
-                     // Both public and private injections are supplied at call time
-                     // via the injections argument.  The public/private distinction
-                     // only controls expression visibility (exprCtx).
-                     const value = (injections as Record<string, unknown>)[
-                        stage.name
-                     ]
-                     stepCtx[stage.name] = value
-                     if (stage.isPublic) exprCtx[stage.name] = value
-                     break
+               // Resolve a single selector path; returns the value or signals absence.
+               const resolvePath = (
+                  sel: SelectorPath,
+                  ctx: Record<string, unknown>,
+               ): { found: true; value: unknown } | { found: false } => {
+                  const topKey = typeof sel === "string" ? sel : sel[0]
+                  if (!(topKey in ctx)) return { found: false }
+                  if (typeof sel === "string")
+                     return { found: true, value: ctx[topKey] }
+                  const sub = ctx[topKey] as Record<string, unknown>
+                  if (!(sel[1] in sub)) return { found: false }
+                  return { found: true, value: sub[sel[1]] }
+               }
+
+               // Resolve every selector in the list; returns null if any is absent.
+               const resolveArgs = (
+                  selectors: readonly SelectorPath[],
+                  ctx: Record<string, unknown>,
+               ): unknown[] | null => {
+                  const args: unknown[] = []
+                  for (const sel of selectors) {
+                     const r = resolvePath(sel, ctx)
+                     if (!r.found) return null
+                     args.push(r.value)
                   }
+                  return args
+               }
 
-                  case "step": {
-                     if (!selectable(stage.impl.selectors)) {
-                        pruned.add(stage.name)
+               // False if any selector's top-level key is unfulfilled or pruned.
+               const selectable = (
+                  selectors: readonly SelectorPath[],
+               ): boolean =>
+                  selectors.every((sel) => {
+                     const top = typeof sel === "string" ? sel : sel[0]
+                     return !pruned.has(top) && !unfulfilled.has(top)
+                  })
+
+               // Seed injections into both contexts before processing other stages.
+               for (const stage of executionOrder) {
+                  if (stage.kind !== "injection") continue
+                  const value = (injections as Record<string, unknown>)[
+                     stage.name
+                  ]
+                  stepCtx[stage.name] = value
+                  if (stage.isPublic) exprCtx[stage.name] = value
+               }
+
+               for (const stage of executionOrder) {
+                  switch (stage.kind) {
+                     case "injection": {
+                        // Already seeded above; skip in the main loop.
                         break
                      }
-                     const args = resolveArgs(stage.impl.selectors, stepCtx)
-                     if (args === null) {
-                        pruned.add(stage.name)
+
+                     case "step": {
+                        // Steps resolve from the full stepCtx (all features, including
+                        // private), but their outputs go only to stepResultCtx — not
+                        // back into stepCtx or exprCtx.
+                        if (!selectable(stage.impl.selectors)) {
+                           prunedSteps.add(stage.name)
+                           break
+                        }
+                        const args = resolveArgs(stage.impl.selectors, stepCtx)
+                        if (args === null) {
+                           prunedSteps.add(stage.name)
+                           break
+                        }
+                        const result = await Promise.resolve(
+                           stage.impl.fn(...args),
+                        )
+                        stepResultCtx[stage.name] = result
                         break
                      }
-                     const result = await Promise.resolve(
-                        stage.impl.fn(...args),
-                     )
-                     // Steps are always public.
-                     stepCtx[stage.name] = result
-                     exprCtx[stage.name] = result
-                     break
-                  }
 
-                  case "feature": {
-                     const ns: Record<string, unknown> = {}
-                     let failed = false
-                     for (const [key, propDef] of Object.entries(
-                        stage.properties,
-                     )) {
-                        switch (propDef.kind) {
-                           case "expr":
-                              ns[key] = propDef.fn(stepCtx)
-                              break
-                           case "indirect": {
-                              // Outer expression yields an inner expression string.
-                              const innerExpr = propDef.outer(stepCtx) as string
-                              let innerFn = propDef.cache.get(innerExpr)
-                              if (innerFn === undefined) {
-                                 const compiled = compile(innerExpr) as
-                                    | CompiledExpr
-                                    | undefined
-                                 if (compiled === undefined) {
-                                    failed = true
-                                    break
+                     case "feature": {
+                        const ns: Record<string, unknown> = {}
+                        let failed = false
+                        for (const [key, propDef] of Object.entries(
+                           stage.properties,
+                        )) {
+                           switch (propDef.kind) {
+                              case "expr":
+                                 ns[key] = propDef.fn(stepCtx)
+                                 break
+                              case "indirect": {
+                                 // Outer expression yields an inner expression string.
+                                 const innerExpr = propDef.outer(
+                                    stepCtx,
+                                 ) as string
+                                 let innerFn = propDef.cache.get(innerExpr)
+                                 if (innerFn === undefined) {
+                                    const compiled = compile(innerExpr) as
+                                       | CompiledExpr
+                                       | undefined
+                                    if (compiled === undefined) {
+                                       failed = true
+                                       break
+                                    }
+                                    propDef.cache.set(innerExpr, compiled)
+                                    innerFn = compiled
                                  }
-                                 propDef.cache.set(innerExpr, compiled)
-                                 innerFn = compiled
+                                 // Inner expression runs against exprCtx (public subset).
+                                 ns[key] = innerFn(exprCtx)
+                                 break
                               }
-                              // Inner expression runs against exprCtx (public subset).
-                              ns[key] = innerFn(exprCtx)
-                              break
-                           }
-                           case "method": {
-                              const args = resolveArgs(
-                                 propDef.selectors,
-                                 stepCtx,
-                              )
-                              if (args === null) {
-                                 failed = true
-                              } else {
-                                 ns[key] = await Promise.resolve(
-                                    propDef.fn(...args),
+                              case "method": {
+                                 const args = resolveArgs(
+                                    propDef.selectors,
+                                    stepCtx,
                                  )
+                                 if (args === null) {
+                                    failed = true
+                                 } else {
+                                    ns[key] = await Promise.resolve(
+                                       propDef.fn(...args),
+                                    )
+                                 }
+                                 break
                               }
-                              break
                            }
+                           if (failed) break
                         }
-                        if (failed) break
-                     }
-                     if (failed) {
-                        pruned.add(stage.name)
+                        if (failed) {
+                           pruned.add(stage.name)
+                           break
+                        }
+                        stepCtx[stage.name] = ns
+                        if (stage.publicKeys === "all") {
+                           exprCtx[stage.name] = ns
+                        } else if (stage.publicKeys !== "none") {
+                           // addFeature: only declared public keys enter exprCtx.
+                           const publicNs: Record<string, unknown> = {}
+                           for (const k of stage.publicKeys) {
+                              if (k in ns) publicNs[k] = ns[k]
+                           }
+                           exprCtx[stage.name] = publicNs
+                        }
                         break
                      }
-                     stepCtx[stage.name] = ns
-                     if (stage.publicKeys === "all") {
-                        exprCtx[stage.name] = ns
-                     } else if (stage.publicKeys !== "none") {
-                        // addFeature: only declared public keys enter exprCtx.
-                        const publicNs: Record<string, unknown> = {}
-                        for (const k of stage.publicKeys) {
-                           if (k in ns) publicNs[k] = ns[k]
-                        }
-                        exprCtx[stage.name] = publicNs
-                     }
-                     break
                   }
                }
-            }
 
-            // Collect results; omit keys whose top-level selector is unavailable.
-            if (typeof compiledResultSelectors === "function") {
-               return compiledResultSelectors(exprCtx) as any
+               // Result context: public features + step results.
+               const resultCtx = { ...exprCtx, ...stepResultCtx }
+
+               // Collect results; omit keys whose top-level selector is unavailable.
+               if (typeof compiledResultSelectors === "function") {
+                  return compiledResultSelectors(resultCtx) as any
+               }
+               const output: Record<string, unknown> = {}
+               for (const [resultKey, selector] of Object.entries(
+                  compiledResultSelectors,
+               )) {
+                  const topKey =
+                     typeof selector === "string" ? selector : selector[0]
+                  if (
+                     unfulfilled.has(topKey) ||
+                     pruned.has(topKey) ||
+                     prunedSteps.has(topKey)
+                  )
+                     continue
+                  const r = resolvePath(selector, resultCtx)
+                  if (r.found) output[resultKey] = r.value
+               }
+               return output as any
             }
-            const output: Record<string, unknown> = {}
-            for (const [resultKey, selector] of Object.entries(
-               compiledResultSelectors,
-            )) {
-               const topKey =
-                  typeof selector === "string" ? selector : selector[0]
-               if (unfulfilled.has(topKey) || pruned.has(topKey)) continue
-               const r = resolvePath(selector, stepCtx)
-               if (r.found) output[resultKey] = r.value
-            }
-            return output as any
          }
       },
    }
@@ -486,7 +510,8 @@ function createBuilderImpl<
  *   .addStep("result", { method: ..., selectors: [...] })
  *   .buildPipeline({ output: ["result", "value"] })
  *
- * const output = await pipeline(initialState, injections)
+ * const run = pipeline(injections)
+ * const output = await run(initialState)
  * ```
  */
 export function createPipeline<
@@ -497,7 +522,8 @@ export function createPipeline<
    InitialContext,
    InitialContext,
    object,
-   InitialContext
+   InitialContext,
+   object
 > {
    return createBuilderImpl([])
 }

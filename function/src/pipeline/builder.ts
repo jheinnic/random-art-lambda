@@ -32,62 +32,78 @@ export interface ContextualMethod<
 // =============================================================================
 
 /**
- * Maps each feature property key to its own selector tuple.
- *
- * By providing a per-key mapping rather than a shared union, TypeScript can
- * resolve the exact selector tuple for each property independently, allowing
- * it to check the corresponding method's parameter types against the correct
- * context values — no shared union needed.
+ * Broad union for a feature property value — accepts any form without
+ * parameter checking. Used as the upper bound for `Props` inference.
  */
-export type PropertySelectorsMap<Context extends object, Props> = {
-   [K in keyof Props]?: ReadonlyArray<ContextKeysAndPairs<Context>>
-}
+export type LooseFeatureProp =
+   | string
+   | readonly [string]
+   | {
+        method: (...args: any[]) => any // eslint-disable-line @typescript-eslint/no-explicit-any
+        selectors: ReadonlyArray<string | readonly [string, string]>
+     }
 
 /**
- * Feature properties where every property with a ContextualMethod must have
- * its selector tuple declared in SelectorsMap.
- *
- * For each key K:
- * - If `K ∈ SelectorsMap`: the ContextualMethod is constrained to `SelectorsMap[K]`,
- *   so TypeScript checks the method's parameter types against the resolved context values.
- * - If `K ∉ SelectorsMap`: only `string` or `readonly [string]` (expression forms) are
- *   accepted. A ContextualMethod is not permitted because its selector→parameter
- *   alignment cannot be verified — the framework resolves selector values and passes them
- *   as positional arguments, so an unchecked method would silently receive wrong types.
- *
- * To use a ContextualMethod for property K, add K to the Sel type argument or construct
- * the value with `cm<AllContext>()` — TypeScript can infer Sel from the selectors field.
+ * Validates a single feature property:
+ * - String/readonly-[string] forms pass through unchanged.
+ * - Method-shape: infers the selector tuple S and checks that the method's
+ *   parameter types match CallableParams<Context, S>.  On mismatch, returns
+ *   the expected shape so TypeScript surfaces a precise error at the property.
  */
-export type FeatureProperties<
+export type CheckProp<Context extends object, PropType, Prop> = Prop extends {
+   method: infer M
+   selectors: infer S extends ReadonlyArray<ContextKeysAndPairs<Context>>
+}
+   ? [M] extends [
+        (...args: CallableParams<Context, S>) => PropType | Promise<PropType>,
+     ]
+      ? Prop
+      : {
+           method: (
+              ...args: CallableParams<Context, S>
+           ) => PropType | Promise<PropType>
+           selectors: S
+        }
+   : Prop
+
+/**
+ * Validates all feature properties against ExprOut.
+ * - For each key K in ExprOut, CheckProp validates the method form if present.
+ * - Keys missing from Props default to `string` (expression form is always valid).
+ * - Keys in Props not present in ExprOut are mapped to `never` (rejected).
+ */
+export type CheckFeatureProps<
    Context extends object,
+   ExprOut extends object,
    Props,
-   SelectorsMap extends PropertySelectorsMap<Context, Props>,
 > = {
-   [K in keyof Props]: K extends keyof SelectorsMap
-      ? ContextualMethod<Context, Props[K], NonNullable<SelectorsMap[K]>>
-      :
-           | readonly [string] // two-stage: outer expr (StepContext) → inner (ExprContext sandbox)
-           | string // developer-config expression: full StepContext access
-}
+   [K in keyof ExprOut]: K extends keyof Props
+      ? CheckProp<Context, ExprOut[K], Props[K]>
+      : string
+} & { [K in Exclude<keyof Props, keyof ExprOut>]: never }
 
 /**
- * Conditional properties type for addPublicFeature / addPrivateFeature:
- * - If NameOut names a virtual contract: expression-only, must satisfy that contract
- * - Otherwise: full FeatureProperties with per-key selector map
+ * Virtual-fulfillment guard: if NameOut names a virtual contract, CombinedOut
+ * must bidirectionally satisfy that contract.  Otherwise, all feature property
+ * forms are accepted.
+ *
+ * CombinedOut is the full type of the feature (including private properties for
+ * addFeature).  For addPublicFeature / addPrivateFeature, CombinedOut = ExprOut.
  */
-export type ConditionalFeatureProperties<
+export type ConditionalFeatureProps<
    AllCtx extends object,
    VirtualCtx extends object,
    NameOut extends string,
-   ExprOut,
-   SelectorsMap extends PropertySelectorsMap<AllCtx, ExprOut>,
+   ExprOut extends object,
+   CombinedOut extends ExprOut,
+   Props,
 > = NameOut extends keyof VirtualCtx
-   ? ExprOut extends VirtualCtx[NameOut]
-      ? VirtualCtx[NameOut] extends ExprOut
-         ? FeatureProperties<AllCtx, ExprOut, SelectorsMap>
-         : never // ExprOut does not satisfy the declared virtual contract
-      : never // ExprOut does not satisfy the declared virtual contract
-   : FeatureProperties<AllCtx, ExprOut, SelectorsMap>
+   ? CombinedOut extends VirtualCtx[NameOut]
+      ? VirtualCtx[NameOut] extends CombinedOut
+         ? Props & CheckFeatureProps<AllCtx, ExprOut, Props>
+         : never // CombinedOut does not satisfy the virtual contract
+      : never // CombinedOut does not satisfy the virtual contract
+   : Props & CheckFeatureProps<AllCtx, ExprOut, Props>
 
 // =============================================================================
 // PipelineBuilder Interface
@@ -97,14 +113,14 @@ export type ConditionalFeatureProperties<
  * Fluent builder for a typed execution pipeline.
  *
  * Type parameters accumulate as builder methods are called:
- * @typeParam InitialContext  - Properties provided by the caller at run time
- * @typeParam InjectedContext - Properties provided by DI (injections)
- * @typeParam ExprContext     - Subset visible to expression-language evaluation (public)
- * @typeParam StepContext     - Full concrete context available to programmatic steps
- * @typeParam VirtualContext  - Declared-but-unbound feature contracts (for Worker Pool)
- * @typeParam AllContext      - Mixin<StepContext, VirtualContext>: cached merged context.
- *                             Maintained as a 6th param so every method site reads it
- *                             directly instead of re-evaluating the Mixin at each use.
+ * @typeParam InitialContext     - Properties provided by the caller at run time
+ * @typeParam InjectedContext    - Properties provided by DI (injections)
+ * @typeParam ExprContext        - Subset visible to expression-language evaluation (public)
+ * @typeParam StepContext        - Full concrete context available to programmatic steps
+ * @typeParam VirtualContext     - Declared-but-unbound feature contracts
+ * @typeParam AllContext         - Mixin<StepContext, VirtualContext>: cached merged context
+ * @typeParam StepResultContext  - Outputs produced by addStep calls; isolated from features;
+ *                                 accessible only to buildPipeline result selectors
  */
 export interface PipelineBuilder<
    InitialContext extends object = {},
@@ -113,6 +129,7 @@ export interface PipelineBuilder<
    StepContext extends object = ExprContext,
    VirtualContext extends object = {},
    AllContext extends object = Mixin<StepContext, VirtualContext>,
+   StepResultContext extends object = {},
 > {
    /**
     * Extend the initial seed context with additional properties.
@@ -141,7 +158,8 @@ export interface PipelineBuilder<
            Mixin<ExprContext, ExtraInitial>,
            Mixin<StepContext, ExtraInitial>,
            VirtualContext,
-           Mixin<AllContext, ExtraInitial>
+           Mixin<AllContext, ExtraInitial>,
+           StepResultContext
         >
 
    /**
@@ -168,7 +186,8 @@ export interface PipelineBuilder<
                  ExprContext,
                  StepContext,
                  VirtualContext,
-                 AllContext
+                 AllContext,
+                 StepResultContext
               >
             : never // VirtualType is incompatible with the already-concrete type
          : never // VirtualType is incompatible with the already-concrete type
@@ -178,15 +197,24 @@ export interface PipelineBuilder<
            ExprContext,
            StepContext,
            WithProp<VirtualContext, typeof nameOut, VirtualType>,
-           WithProp<AllContext, typeof nameOut, VirtualType>
+           WithProp<AllContext, typeof nameOut, VirtualType>,
+           StepResultContext
         >
 
    /**
     * Add a step: a programmatic method invoked with typed context selectors.
-    * Steps are always public — their output namespace enters both ExprContext and StepContext.
-    * If any selector references an unfulfilled virtual, the step is pruned at runtime.
     *
-    * nameOut must be absent from AllContext (i.e. from both StepContext and VirtualContext).
+    * Steps are post-processing delegation points. Their outputs accumulate in
+    * StepResultContext, which is isolated from features — features cannot read
+    * step outputs, and steps cannot read other steps' outputs.
+    *
+    * StepResultContext is accessible only to buildPipeline result selectors,
+    * enabling final output construction from both feature context and step results.
+    *
+    * If any selector references an unfulfilled virtual, the step is pruned at
+    * runtime and its output key is absent from the final result.
+    *
+    * nameOut must be absent from AllContext and from StepResultContext.
     */
    addStep: <
       StepOut extends object,
@@ -198,47 +226,40 @@ export interface PipelineBuilder<
    ) => PipelineBuilder<
       InitialContext,
       InjectedContext,
-      [keyof StepOut] extends [never]
-         ? ExprContext
-         : WithProp<ExprContext, typeof nameOut, StepOut>,
-      [keyof StepOut] extends [never]
-         ? StepContext
-         : WithProp<StepContext, typeof nameOut, StepOut>,
+      ExprContext,
+      StepContext,
       VirtualContext,
-      [keyof StepOut] extends [never]
-         ? AllContext
-         : WithProp<AllContext, typeof nameOut, StepOut>
+      AllContext,
+      WithProp<StepResultContext, typeof nameOut, StepOut>
    >
 
    /**
     * Add a feature whose namespace is fully visible to expressions.
     *
     * If nameOut matches a declared virtual, fulfills that contract:
-    * - Properties restricted to `string | [string]`
-    * - ExprOut must structurally satisfy the declared virtual type
-    * - The virtual is removed from VirtualContext on fulfillment
+    * - ExprOut must bidirectionally satisfy the declared virtual type.
+    * - The virtual is removed from VirtualContext on fulfillment.
     *
     * nameOut must be absent from StepContext (may equal a virtual in VirtualContext).
     *
-    * Sel maps each property key to its specific selector tuple, enabling per-property
-    * parameter-type checking on ContextualMethod values. Use `cm<AllContext>()` to
-    * construct individual methods with the correct parameter types.
+    * Props is inferred from the argument. Each method-form property is validated
+    * to ensure its method's parameter types match what the selectors resolve.
     */
    addPublicFeature: <
       ExprOut extends object,
       NameOut extends string,
-      Sel extends PropertySelectorsMap<AllContext, ExprOut> = Record<
-         never,
-         never
-      >,
+      Props extends { [K in keyof ExprOut]: LooseFeatureProp } = {
+         [K in keyof ExprOut]: LooseFeatureProp
+      },
    >(
       nameOut: UnusedKey<StepContext, NameOut>,
-      properties: ConditionalFeatureProperties<
+      properties: ConditionalFeatureProps<
          AllContext,
          VirtualContext,
          NameOut,
          ExprOut,
-         Sel
+         ExprOut,
+         Props
       >,
    ) => PipelineBuilder<
       InitialContext,
@@ -246,33 +267,34 @@ export interface PipelineBuilder<
       WithProp<ExprContext, typeof nameOut, ExprOut>,
       WithProp<StepContext, typeof nameOut, ExprOut>,
       Omit<VirtualContext, NameOut>,
-      WithProp<Omit<AllContext, NameOut>, typeof nameOut, ExprOut>
+      WithProp<Omit<AllContext, NameOut>, typeof nameOut, ExprOut>,
+      StepResultContext
    >
 
    /**
     * Add a feature whose namespace is hidden from expressions.
     *
     * If nameOut matches a declared virtual, fulfills that contract:
-    * - Properties restricted to `string | [string]`
-    * - ExprOut must structurally satisfy the declared virtual type
+    * - ExprOut must bidirectionally satisfy the declared virtual type.
+    * - The virtual is removed from VirtualContext on fulfillment.
     *
     * nameOut must be absent from StepContext (may equal a virtual in VirtualContext).
     */
    addPrivateFeature: <
       ExprOut extends object,
       NameOut extends string,
-      Sel extends PropertySelectorsMap<AllContext, ExprOut> = Record<
-         never,
-         never
-      >,
+      Props extends { [K in keyof ExprOut]: LooseFeatureProp } = {
+         [K in keyof ExprOut]: LooseFeatureProp
+      },
    >(
       nameOut: UnusedKey<StepContext, NameOut>,
-      properties: ConditionalFeatureProperties<
+      properties: ConditionalFeatureProps<
          AllContext,
          VirtualContext,
          NameOut,
          ExprOut,
-         Sel
+         ExprOut,
+         Props
       >,
    ) => PipelineBuilder<
       InitialContext,
@@ -280,7 +302,8 @@ export interface PipelineBuilder<
       ExprContext, // private: ExprContext unchanged
       WithProp<StepContext, typeof nameOut, ExprOut>,
       Omit<VirtualContext, NameOut>,
-      WithProp<Omit<AllContext, NameOut>, typeof nameOut, ExprOut>
+      WithProp<Omit<AllContext, NameOut>, typeof nameOut, ExprOut>,
+      StepResultContext
    >
 
    /**
@@ -288,36 +311,37 @@ export interface PipelineBuilder<
     * StepOut must extend ExprOut — private keys are those in StepOut but not ExprOut.
     * ExprContext receives ExprOut; StepContext receives the full StepOut.
     *
+    * For virtual fulfillment, the full StepOut is checked against the contract —
+    * the virtual declared the full required type, not just the public portion.
+    *
     * nameOut must be absent from StepContext (may equal a virtual in VirtualContext).
-    * PublicSel / PrivateSel are per-key selector maps for the public and private
-    * property groups respectively.
     */
    addFeature: <
       ExprOut extends object,
       NameOut extends string,
       StepOut extends ExprOut = ExprOut,
-      PublicSel extends PropertySelectorsMap<AllContext, ExprOut> = Record<
-         never,
-         never
-      >,
-      PrivateSel extends PropertySelectorsMap<
-         AllContext,
-         Omit<StepOut, keyof ExprOut>
-      > = Record<never, never>,
+      Props extends { [K in keyof ExprOut]: LooseFeatureProp } = {
+         [K in keyof ExprOut]: string
+      },
+      PrivateProps extends {
+         [K in keyof Omit<StepOut, keyof ExprOut>]: LooseFeatureProp
+      } = { [K in keyof Omit<StepOut, keyof ExprOut>]: string },
    >(
       nameOut: UnusedKey<StepContext, NameOut>,
-      publicProperties: ConditionalFeatureProperties<
+      publicProperties: ConditionalFeatureProps<
          AllContext,
          VirtualContext,
          NameOut,
          ExprOut,
-         PublicSel
+         StepOut,
+         Props
       >,
-      privateProperties: FeatureProperties<
-         AllContext,
-         Omit<StepOut, keyof ExprOut>,
-         PrivateSel
-      >,
+      privateProperties: PrivateProps &
+         CheckFeatureProps<
+            AllContext,
+            Omit<StepOut, keyof ExprOut>,
+            PrivateProps
+         >,
    ) => PipelineBuilder<
       InitialContext,
       InjectedContext,
@@ -326,7 +350,8 @@ export interface PipelineBuilder<
          : WithProp<ExprContext, typeof nameOut, ExprOut>,
       WithProp<StepContext, typeof nameOut, StepOut>,
       Omit<VirtualContext, NameOut>,
-      WithProp<Omit<AllContext, NameOut>, typeof nameOut, StepOut>
+      WithProp<Omit<AllContext, NameOut>, typeof nameOut, StepOut>,
+      StepResultContext
    >
 
    /**
@@ -346,7 +371,8 @@ export interface PipelineBuilder<
       WithProp<ExprContext, typeof nameOut, InjectedType>,
       WithProp<StepContext, typeof nameOut, InjectedType>,
       VirtualContext,
-      WithProp<AllContext, typeof nameOut, InjectedType>
+      WithProp<AllContext, typeof nameOut, InjectedType>,
+      StepResultContext
    >
 
    /**
@@ -366,26 +392,32 @@ export interface PipelineBuilder<
       ExprContext, // private: ExprContext unchanged
       WithProp<StepContext, typeof nameOut, InjectedType>,
       VirtualContext,
-      WithProp<AllContext, typeof nameOut, InjectedType>
+      WithProp<AllContext, typeof nameOut, InjectedType>,
+      StepResultContext
    >
 
    /**
     * Finalize the pipeline.
     *
-    * Result selectors address ExprContext (public) or VirtualContext (declared contracts).
-    * Returns an async function because steps may be async.
-    * Returns `Partial<ResultOut>` because:
-    * - A result property is omitted if its selector addresses an unfulfilled virtual.
-    * - A result property is omitted if its selector addresses a pruned step's output.
+    * Returns a curried function: the outer call binds singleton injections (DI
+    * resolved once per pipeline instance); the inner call processes one request.
+    *
+    * Result selectors address ExprContext (public features) or StepResultContext
+    * (step outputs).  A result key is omitted if its selector references an
+    * unfulfilled virtual or a pruned step.
+    *
+    * Returns `Partial<ResultOut>` because pruned steps or unfulfilled virtuals
+    * may leave some result keys absent.
     */
    buildPipeline: <ResultOut extends object>(
       resultSelectors:
          | {
-              [K in keyof ResultOut]: ContextKeysAndPairs<ExprContext>
+              [K in keyof ResultOut]: ContextKeysAndPairs<
+                 Mixin<ExprContext, StepResultContext>
+              >
            }
-         | ((context: ExprContext) => ResultOut),
+         | ((context: Mixin<ExprContext, StepResultContext>) => ResultOut),
    ) => (
-      initial: InitialContext,
       injections: InjectedContext,
-   ) => Promise<Partial<ResultOut>>
+   ) => (initial: InitialContext) => Promise<Partial<ResultOut>>
 }

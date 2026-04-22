@@ -17,27 +17,6 @@
 //
 // All `as any` usage is confined to the factory function implementation;
 // segment developers never write unsafe casts.
-//
-// Usage:
-//
-//   export function createEncodingSegment(configSvc: ConfigService) {
-//     const defaultEncoding =
-//       configSvc.get<BufferEncoding>("encoding.default") ?? "utf8"
-//     return createSegmentBlueprint()
-//       .extendInitial({ originalEncoding: defaultEncoding })
-//       .addVirtualFeature<EncodingOverride, "encodingOverride">("encodingOverride")
-//       .buildHelper()
-//   }
-//
-//   export function createWorkerPoolSegment(_configSvc: ConfigService) {
-//     return createSegmentBlueprint()
-//       .addVirtualDependency<IFileStore, "fileStore">()     // dep — must be concrete in real builder
-//       .addVirtualDependency<Buffer, "canvasBuffer">()      // dep — must be concrete in real builder
-//       .addVirtualFeature<FileStoreSelection, "stagingStrategy">("stagingStrategy")
-//       .addVirtualFeature<PathTargetSelection, "stagedFilePath">("stagedFilePath")
-//       .addStep("stagingResult", { method: ..., selectors: [...] })
-//       .buildHelper()
-//   }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -49,11 +28,10 @@ import type {
    ContextKeysAndPairs,
 } from "./types.js"
 import type {
-   // IBasePipelineBuilder,
    PipelineBuilder,
    ContextualMethod,
-   PropertySelectorsMap,
-   FeatureProperties,
+   LooseFeatureProp,
+   ConditionalFeatureProps,
 } from "./builder.js"
 
 // =============================================================================
@@ -156,7 +134,8 @@ export type BeforeSegment<
       infer EC,
       infer SC,
       any,
-      infer AC
+      infer AC,
+      any
    >
       ? CompatibleAddition<AC, AddedSC> extends true
          ? CompatibleAddition<AC, AddedVC> extends true
@@ -193,6 +172,7 @@ export type AfterSegment<
    AddedSC extends object,
    AddedVC extends object,
    AddedAC extends object,
+   AddedSRC extends object,
 > =
    B extends PipelineBuilder<
       infer IC,
@@ -200,7 +180,8 @@ export type AfterSegment<
       infer EC,
       infer SC,
       infer VC,
-      infer AC
+      infer AC,
+      infer SRC
    >
       ? PipelineBuilder<
            CompatibleMerge<IC, AddedIC>,
@@ -214,7 +195,8 @@ export type AfterSegment<
               Omit<VC, keyof AddedSC>,
               Omit<AddedVC, keyof SC | keyof AddedSC>
            >,
-           CompatibleMerge<AC, AddedAC>
+           CompatibleMerge<AC, AddedAC>,
+           CompatibleMerge<SRC, AddedSRC>
         >
       : never
 
@@ -244,14 +226,6 @@ type Operation =
 /**
  * Blueprint for constructing typed pipeline segment helper functions.
  *
- * Extends IBasePipelineBuilder so the shared operation vocabulary (extendInitial,
- * addVirtualFeature, addPublicFeature, addPrivateFeature, addStep,
- * addPrivateInjection) is declared once on the base and inherited here with
- * SegmentBlueprint-specific return types.
- *
- * Call buildHelper() to produce the typed helper function.  All `as any` usage
- * is encapsulated in the factory function implementation site.
- *
  * Type parameters track the segment's delta:
  * @typeParam AddedIC     Additions to InitialContext
  * @typeParam AddedInjC   Additions to InjectedContext
@@ -261,12 +235,10 @@ type Operation =
  * @typeParam AddedAC     Combined AllContext additions (AddedSC ∪ AddedVC)
  * @typeParam KnownAC     AddedAC ∪ RequiredAC — available for internal type-checking
  * @typeParam RequiredAC  Preconditions: must be present in the target builder's AC
- * @typeParam RequiredIC  Fields the witness sourced from InitialContext; the real
- *                        builder must also supply them as IC (not derive them)
- * @typeParam RequiredInjC Fields the witness sourced from InjectedContext; the real
- *                        builder must inject them, not source them from IC or features
- * @typeParam RequiredEC  Fields the witness exposed to expressions; the real builder
- *                        must not keep them private
+ * @typeParam RequiredIC  Fields the witness sourced from InitialContext
+ * @typeParam RequiredInjC Fields the witness sourced from InjectedContext
+ * @typeParam RequiredEC  Fields the witness exposed to expressions
+ * @typeParam AddedSRC    Additions to StepResultContext from addStep calls
  */
 export interface SegmentBlueprint<
    AddedIC extends object = {},
@@ -280,6 +252,7 @@ export interface SegmentBlueprint<
    RequiredIC extends object = {},
    RequiredInjC extends object = {},
    RequiredEC extends object = {},
+   AddedSRC extends object = {},
 > {
    extendInitial<Extra extends object, HasDefaults extends keyof Extra = never>(
       defaults: Pick<Extra, HasDefaults>,
@@ -296,7 +269,8 @@ export interface SegmentBlueprint<
            RequiredAC,
            RequiredIC,
            RequiredInjC,
-           RequiredEC
+           RequiredEC,
+           AddedSRC
         >
 
    addVirtualFeature<VType extends object, NameOut extends string>(
@@ -312,16 +286,26 @@ export interface SegmentBlueprint<
       RequiredAC,
       RequiredIC,
       RequiredInjC,
-      RequiredEC
+      RequiredEC,
+      AddedSRC
    >
 
    addPublicFeature<
       ExprOut extends object,
       NameOut extends string,
-      Sel extends PropertySelectorsMap<KnownAC, ExprOut> = Record<never, never>,
+      Props extends { [K in keyof ExprOut]: LooseFeatureProp } = {
+         [K in keyof ExprOut]: string
+      },
    >(
       nameOut: UnusedKey<KnownAC, NameOut>,
-      properties: FeatureProperties<KnownAC, ExprOut, Sel>,
+      properties: ConditionalFeatureProps<
+         KnownAC,
+         AddedVC,
+         NameOut,
+         ExprOut,
+         ExprOut,
+         Props
+      >,
    ): SegmentBlueprint<
       AddedIC,
       AddedInjC,
@@ -333,16 +317,26 @@ export interface SegmentBlueprint<
       RequiredAC,
       RequiredIC,
       RequiredInjC,
-      RequiredEC
+      RequiredEC,
+      AddedSRC
    >
 
    addPrivateFeature<
       ExprOut extends object,
       NameOut extends string,
-      Sel extends PropertySelectorsMap<KnownAC, ExprOut> = Record<never, never>,
+      Props extends { [K in keyof ExprOut]: LooseFeatureProp } = {
+         [K in keyof ExprOut]: string
+      },
    >(
       nameOut: UnusedKey<KnownAC, NameOut>,
-      properties: FeatureProperties<KnownAC, ExprOut, Sel>,
+      properties: ConditionalFeatureProps<
+         KnownAC,
+         AddedVC,
+         NameOut,
+         ExprOut,
+         ExprOut,
+         Props
+      >,
    ): SegmentBlueprint<
       AddedIC,
       AddedInjC,
@@ -354,7 +348,8 @@ export interface SegmentBlueprint<
       RequiredAC,
       RequiredIC,
       RequiredInjC,
-      RequiredEC
+      RequiredEC,
+      AddedSRC
    >
 
    addStep<
@@ -367,23 +362,16 @@ export interface SegmentBlueprint<
    ): SegmentBlueprint<
       AddedIC,
       AddedInjC,
-      [keyof StepOut] extends [never]
-         ? AddedEC
-         : WithProp<AddedEC, NameOut, StepOut>,
-      [keyof StepOut] extends [never]
-         ? AddedSC
-         : WithProp<AddedSC, NameOut, StepOut>,
+      AddedEC,
+      AddedSC,
       AddedVC,
-      [keyof StepOut] extends [never]
-         ? AddedAC
-         : WithProp<AddedAC, NameOut, StepOut>,
-      [keyof StepOut] extends [never]
-         ? KnownAC
-         : WithProp<KnownAC, NameOut, StepOut>,
+      AddedAC,
+      KnownAC,
       RequiredAC,
       RequiredIC,
       RequiredInjC,
-      RequiredEC
+      RequiredEC,
+      WithProp<AddedSRC, NameOut, StepOut>
    >
 
    addPrivateInjection<InjectedType, NameOut extends string>(
@@ -399,7 +387,25 @@ export interface SegmentBlueprint<
       RequiredAC,
       RequiredIC,
       RequiredInjC,
-      RequiredEC
+      RequiredEC,
+      AddedSRC
+   >
+
+   addPublicInjection<InjectedType, NameOut extends string>(
+      nameOut: UnusedKey<KnownAC, NameOut>,
+   ): SegmentBlueprint<
+      AddedIC,
+      WithProp<AddedInjC, NameOut, InjectedType>,
+      WithProp<AddedEC, NameOut, InjectedType>,
+      WithProp<AddedSC, NameOut, InjectedType>,
+      AddedVC,
+      WithProp<AddedAC, NameOut, InjectedType>,
+      WithProp<KnownAC, NameOut, InjectedType>,
+      RequiredAC,
+      RequiredIC,
+      RequiredInjC,
+      RequiredEC,
+      AddedSRC
    >
 
    /**
@@ -408,11 +414,10 @@ export interface SegmentBlueprint<
     * The parameter type uses `B & BeforeSegment<B,...>` so TypeScript infers `B`
     * from the argument directly, then collapses to `never` if any precondition
     * fails — surfacing the error at the call site rather than downstream.
-    *
-    * All `as any` usage is encapsulated in the factory function — segment
-    * developers never write unsafe casts.
     */
-   buildHelper: () => <B extends PipelineBuilder<any, any, any, any, any, any>>(
+   buildHelper: () => <
+      B extends PipelineBuilder<any, any, any, any, any, any, any>,
+   >(
       builder: B &
          BeforeSegment<
             B,
@@ -424,21 +429,22 @@ export interface SegmentBlueprint<
             RequiredInjC,
             RequiredEC
          >,
-   ) => AfterSegment<B, AddedIC, AddedInjC, AddedEC, AddedSC, AddedVC, AddedAC>
+   ) => AfterSegment<
+      B,
+      AddedIC,
+      AddedInjC,
+      AddedEC,
+      AddedSC,
+      AddedVC,
+      AddedAC,
+      AddedSRC
+   >
 }
 
 // =============================================================================
 // Implementation
 // =============================================================================
 
-/**
- * Factory function producing SegmentBlueprint runtime objects.
- * Mirrors the createBuilderImpl factory pattern in core.ts.
- *
- * Returns a plain object with all SegmentBlueprint methods attached.
- * Cast to SegmentBlueprint<> happens once at the createSegmentBlueprint()
- * public boundary.
- */
 function createSegmentBlueprintImpl(ops: Operation[]): any {
    return {
       extendInitial(defaults: object) {
@@ -530,23 +536,7 @@ function createSegmentBlueprintImpl(ops: Operation[]): any {
 // Factory
 // =============================================================================
 
-/**
- * Create a fresh SegmentBlueprint for constructing a typed pipeline segment
- * helper function.
- *
- * @example
- * export function createEncodingSegment(configSvc: ConfigService) {
- *   const defaultEncoding =
- *     configSvc.get<BufferEncoding>("encoding.default") ?? "utf8"
- *   return createSegmentBlueprint()
- *     .extendInitial({ originalEncoding: defaultEncoding })
- *     .addVirtualFeature<EncodingOverride, "encodingOverride">("encodingOverride")
- *     .buildHelper()
- * }
- */
 export function createSegmentBlueprint(): SegmentBlueprint {
-   // Single cast: the factory returns a plain object typed as any;
-   // SegmentBlueprint<> is the typed facade visible to segment developers.
    return createSegmentBlueprintImpl([]) as SegmentBlueprint
 }
 
@@ -554,36 +544,9 @@ export function createSegmentBlueprint(): SegmentBlueprint {
  * Create a SegmentBlueprint whose prerequisite context is derived from an
  * existing PipelineBuilder witness.
  *
- * The witness is a PipelineBuilder that has been advanced through the same
- * segment directors this new segment will depend on — it acts purely as a
- * type-level proof that those prerequisites are concrete.  Its runtime value
- * is discarded; only the type parameters are extracted.
- *
- * This separates prerequisite declaration from addition declaration:
- * - Prerequisites: expressed structurally via the witness builder chain
- * - Additions:     expressed via the returned SegmentBlueprint's methods
- *
- * The resulting SegmentBlueprint's BeforeSegment check will require the real
- * builder to have at least the concrete context of the witness's StepContext,
- * and will have access to AllContext (including virtuals) for selector
- * type-checking within the new segment's declarations.
- *
- * @example
- * export function createWorkerPoolSegment(configSvc: ConfigService) {
- *   // Witness chain: advance a minimal builder through prerequisites
- *   const prereqs = createPermutationSegment(configSvc)(
- *     createEncodingSegment(configSvc)(
- *       createPipeline<{ prefix: Uint8ClampedArray; suffix: Uint8ClampedArray; canvasBuffer: Buffer }>()
- *         .addPrivateInjection<IFileStore, "fileStore">("fileStore")
- *     )
- *   )
- *   // Blueprint: declare only the additions this segment contributes
- *   return createSegmentBlueprintFromBuilder(prereqs)
- *     .addVirtualFeature<FileStoreSelection, "stagingStrategy">("stagingStrategy")
- *     .addVirtualFeature<PathTargetSelection, "stagedFilePath">("stagedFilePath")
- *     .addStep("stagingResult", { ... })
- *     .buildHelper()
- * }
+ * The witness captures all 6 source-side PipelineBuilder type parameters
+ * (IC, InjC, EC, SC, VC, AC), ensuring the real builder sources the same
+ * fields via the same mechanism (IC vs injection vs private feature).
  */
 export function createSegmentBlueprintFromBuilder<
    IC extends object,
@@ -592,9 +555,10 @@ export function createSegmentBlueprintFromBuilder<
    SC extends object,
    _VC extends object,
    AC extends object,
+   _SRC extends object,
 >(
-   _witness: PipelineBuilder<IC, InjC, EC, SC, _VC, AC>,
-): SegmentBlueprint<{}, {}, {}, {}, {}, {}, AC, SC, IC, InjC, EC> {
+   _witness: PipelineBuilder<IC, InjC, EC, SC, _VC, AC, _SRC>,
+): SegmentBlueprint<{}, {}, {}, {}, {}, {}, AC, SC, IC, InjC, EC, {}> {
    return createSegmentBlueprintImpl([]) as SegmentBlueprint<
       {},
       {},
@@ -606,6 +570,7 @@ export function createSegmentBlueprintFromBuilder<
       SC,
       IC,
       InjC,
-      EC
+      EC,
+      {}
    >
 }
