@@ -45,7 +45,7 @@ export type CompatibleForMixin<
 export type Mixin<Context extends object, Candidate extends object> = [
    keyof Context & keyof Candidate,
 ] extends [never]
-   ? (Context & Candidate) extends infer Flat
+   ? Context & Candidate extends infer Flat
       ? { [K in keyof Flat]: Flat[K] }
       : never
    : never

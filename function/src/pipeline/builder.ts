@@ -63,10 +63,10 @@ export type FeatureProperties<
    Props,
    SelectorsMap extends PropertySelectorsMap<Context, Props>,
 > = {
-   [K in keyof Props]:
-      (K extends keyof SelectorsMap
-         ? ContextualMethod<Context, Props[K], NonNullable<SelectorsMap[K]>>
-         : readonly [string] // two-stage: outer expr (StepContext) → inner (ExprContext sandbox)
+   [K in keyof Props]: K extends keyof SelectorsMap
+      ? ContextualMethod<Context, Props[K], NonNullable<SelectorsMap[K]>>
+      :
+           | readonly [string] // two-stage: outer expr (StepContext) → inner (ExprContext sandbox)
            | string // developer-config expression: full StepContext access
 }
 
@@ -84,8 +84,8 @@ export type ConditionalFeatureProperties<
 > = NameOut extends keyof VirtualCtx
    ? ExprOut extends VirtualCtx[NameOut]
       ? VirtualCtx[NameOut] extends ExprOut
-        ? FeatureProperties<AllCtx, ExprOut, SelectorsMap>
-        : never // ExprOut does not satisfy the declared virtual contract
+         ? FeatureProperties<AllCtx, ExprOut, SelectorsMap>
+         : never // ExprOut does not satisfy the declared virtual contract
       : never // ExprOut does not satisfy the declared virtual contract
    : FeatureProperties<AllCtx, ExprOut, SelectorsMap>
 
