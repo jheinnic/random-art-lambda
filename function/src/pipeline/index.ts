@@ -8,3 +8,4 @@ export {
    type BeforeSegment,
    type AfterSegment,
 } from "./segment.js"
+export { hash } from "./utils/hash.js"

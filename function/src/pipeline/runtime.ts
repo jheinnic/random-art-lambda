@@ -84,12 +84,25 @@ export interface RuntimeInjection {
    isPublic: boolean
 }
 
+/**
+ * A pure function seeded into the expression context at buildPipeline() time.
+ * Unlike features and injections, pure functions are constant across invocations
+ * and do NOT appear in StepContext — they are expression-language-only utilities.
+ */
+export interface RuntimePureFunction {
+   kind: "pureFunction"
+   name: string
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   fn: (...args: any[]) => unknown
+}
+
 export type RuntimeStage =
    | RuntimeVirtual
    | RuntimeInitialDefaults
    | RuntimeFeature
    | RuntimeStep
    | RuntimeInjection
+   | RuntimePureFunction
 
 // ---------------------------------------------------------------------------
 // buildPipeline()-time types  (produced by one-time pre-processing)
@@ -108,6 +121,10 @@ export interface PreparedFeature {
  * replaced by their fulfilling features (or dropped into the unfulfilled set),
  * and all expression strings compiled to CompiledExpr closures.
  */
-export type PreparedStage = PreparedFeature | RuntimeStep | RuntimeInjection
+export type PreparedStage =
+   | PreparedFeature
+   | RuntimeStep
+   | RuntimeInjection
+   | RuntimePureFunction
 
 /* eslint-enable @typescript-eslint/no-explicit-any */

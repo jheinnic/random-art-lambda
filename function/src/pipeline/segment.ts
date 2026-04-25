@@ -218,6 +218,7 @@ type Operation =
    | { kind: "addStep"; name: string; impl: AnyMethod }
    | { kind: "addPrivateInjection"; name: string }
    | { kind: "addPublicInjection"; name: string }
+   | { kind: "addPureFunction"; name: string; fn: (...args: any[]) => unknown }
 
 // =============================================================================
 // SegmentBlueprint interface
@@ -409,6 +410,36 @@ export interface SegmentBlueprint<
    >
 
    /**
+    * Seed a pure function into the expression context.
+    *
+    * Adds to AddedEC only — pure functions are not selectable by steps and do
+    * not appear in AddedSC, AddedAC, or KnownAC.
+    *
+    * nameOut must be absent from the segment's current AddedEC.
+    */
+   addPureFunction<
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      FnType extends (...args: any[]) => unknown,
+      NameOut extends string,
+   >(
+      nameOut: UnusedKey<AddedEC, NameOut>,
+      fn: FnType,
+   ): SegmentBlueprint<
+      AddedIC,
+      AddedInjC,
+      WithProp<AddedEC, NameOut, FnType>,
+      AddedSC,
+      AddedVC,
+      AddedAC,
+      KnownAC,
+      RequiredAC,
+      RequiredIC,
+      RequiredInjC,
+      RequiredEC,
+      AddedSRC
+   >
+
+   /**
     * Produce the typed segment helper function.
     *
     * The parameter type uses `B & BeforeSegment<B,...>` so TypeScript infers `B`
@@ -496,6 +527,13 @@ function createSegmentBlueprintImpl(ops: Operation[]): any {
          ])
       },
 
+      addPureFunction(name: string, fn: (...args: any[]) => unknown) {
+         return createSegmentBlueprintImpl([
+            ...ops,
+            { kind: "addPureFunction", name, fn },
+         ])
+      },
+
       buildHelper() {
          return function (builder: any): any {
             let b: any = builder
@@ -521,6 +559,9 @@ function createSegmentBlueprintImpl(ops: Operation[]): any {
                      break
                   case "addPublicInjection":
                      b = b.addPublicInjection(op.name)
+                     break
+                  case "addPureFunction":
+                     b = b.addPureFunction(op.name, op.fn)
                      break
                }
             }

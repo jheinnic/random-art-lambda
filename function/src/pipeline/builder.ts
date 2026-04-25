@@ -397,6 +397,33 @@ export interface PipelineBuilder<
    >
 
    /**
+    * Seed a pure function into the expression context.
+    *
+    * Unlike injections, pure functions are constant values captured once at
+    * buildPipeline() time — they do NOT appear in InjectedContext and do NOT vary
+    * per request.  They are seeded into ExprContext only, not StepContext or
+    * AllContext, so they are usable in expression strings but NOT as step selectors.
+    *
+    * nameOut must be absent from ExprContext.
+    */
+   addPureFunction: <
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      FnType extends (...args: any[]) => unknown,
+      NameOut extends string,
+   >(
+      nameOut: UnusedKey<ExprContext, NameOut>,
+      fn: FnType,
+   ) => PipelineBuilder<
+      InitialContext,
+      InjectedContext,
+      WithProp<ExprContext, typeof nameOut, FnType>,
+      StepContext,
+      VirtualContext,
+      AllContext,
+      StepResultContext
+   >
+
+   /**
     * Finalize the pipeline.
     *
     * Returns a curried function: the outer call binds singleton injections (DI

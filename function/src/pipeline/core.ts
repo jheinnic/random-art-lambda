@@ -18,6 +18,7 @@ import type {
    RuntimeFeature,
    PreparedFeature,
    PreparedStage,
+   RuntimeVirtual,
 } from "./runtime.js"
 
 // Register template-literal syntax support once for this module.
@@ -195,6 +196,17 @@ function createBuilderImpl<
          }) as any
       },
 
+      addPureFunction<
+         _FnType extends (...args: any[]) => unknown,
+         NameOut extends string,
+      >(nameOut: UnusedKey<ExprContext, NameOut>, fn: _FnType) {
+         return next({
+            kind: "pureFunction",
+            name: nameOut as string,
+            fn,
+         }) as any
+      },
+
       buildPipeline<ResultOut extends object>(
          resultSelectors:
             | {
@@ -364,20 +376,25 @@ function createBuilderImpl<
                      return !pruned.has(top) && !unfulfilled.has(top)
                   })
 
-               // Seed injections into both contexts before processing other stages.
+               // Seed pure functions and injections into contexts before processing stages.
                for (const stage of executionOrder) {
-                  if (stage.kind !== "injection") continue
-                  const value = (injections as Record<string, unknown>)[
-                     stage.name
-                  ]
-                  stepCtx[stage.name] = value
-                  if (stage.isPublic) exprCtx[stage.name] = value
+                  if (stage.kind === "pureFunction") {
+                     // Pure functions are expression-only; never in stepCtx.
+                     exprCtx[stage.name] = stage.fn
+                  } else if (stage.kind === "injection") {
+                     const value = (injections as Record<string, unknown>)[
+                        stage.name
+                     ]
+                     stepCtx[stage.name] = value
+                     if (stage.isPublic) exprCtx[stage.name] = value
+                  }
                }
 
                for (const stage of executionOrder) {
                   switch (stage.kind) {
+                     case "pureFunction":
                      case "injection": {
-                        // Already seeded above; skip in the main loop.
+                        // Already seeded in the pre-pass above; skip in the main loop.
                         break
                      }
 
