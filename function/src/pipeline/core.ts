@@ -228,18 +228,29 @@ function createBuilderImpl<
          }
 
          // Identify every declared virtual and find its fulfilling feature, if any.
-         const virtualNames = new Set<string>()
-         for (const stage of stages) {
-            if (stage.kind === "virtual") virtualNames.add(stage.name)
-         }
-         const fulfillments = new Map<string, RuntimeFeature>()
-         for (const stage of stages) {
-            if (stage.kind === "feature" && virtualNames.has(stage.name))
-               fulfillments.set(stage.name, stage)
-         }
+         const virtualNameList: string[] = stages
+            .filter(
+               (stage: RuntimeStage): stage is RuntimeVirtual =>
+                  stage.kind === "virtual",
+            )
+            .map((stage: RuntimeVirtual): string => stage.name)
+         const virtualNames = new Set<string>(virtualNameList)
+         const fulfillments = new Map<string, RuntimeFeature>(
+            stages
+               .filter(
+                  (stage: RuntimeStage): stage is RuntimeFeature =>
+                     stage.kind === "feature" && virtualNames.has(stage.name),
+               )
+               .map((stage: RuntimeFeature): [string, RuntimeFeature] => [
+                  stage.name,
+                  stage,
+               ]),
+         )
          // Virtuals with no fulfilling feature will prune any step that depends on them.
          const unfulfilled = new Set<string>(
-            [...virtualNames].filter((n) => !fulfillments.has(n)),
+            virtualNameList.filter(
+               (n: string): boolean => !fulfillments.has(n),
+            ),
          )
 
          // Compile a raw builder property value into a PreparedPropertyDef.
@@ -294,23 +305,40 @@ function createBuilderImpl<
          //   - initialDefaults stages are dropped (already merged into defaults).
          //   - Steps and injections pass through unchanged.
          const movedNames = new Set<string>(fulfillments.keys())
-         const executionOrder: PreparedStage[] = []
-         for (const stage of stages) {
-            if (stage.kind === "virtual") {
-               const f = fulfillments.get(stage.name)
-               if (f !== undefined) executionOrder.push(compileFeature(f))
-               // Unfulfilled virtual: omitted from order, tracked in unfulfilled set.
-            } else if (stage.kind === "initialDefaults") {
-               // Already merged; skip.
-            } else if (stage.kind === "feature" && movedNames.has(stage.name)) {
-               // Already placed at the virtual's position; skip.
-            } else if (stage.kind === "feature") {
-               executionOrder.push(compileFeature(stage))
-            } else {
-               // RuntimeStep | RuntimeInjection — pass through unchanged.
-               executionOrder.push(stage)
-            }
-         }
+         const executionOrder: PreparedStage[] = stages
+            .filter((stage: RuntimeStage): boolean => {
+               switch (stage.kind) {
+                  case "virtual":
+                     return fulfillments.has(stage.name)
+                  case "initialDefaults":
+                     return false
+                  case "feature":
+                     return !fulfillments.has(stage.name)
+                  default:
+                     return true
+               }
+            })
+            .map((stage: RuntimeStage): PreparedStage => {
+               let retVal: RuntimeFeature | undefined
+               switch (stage.kind) {
+                  case "virtual":
+                     retVal = fulfillments.get(stage.name)
+                     if (retVal == null) {
+                        throw new Error(
+                           `Impossible fulfillment of ${stage.name} with undefined feature`,
+                        )
+                     }
+                     return compileFeature(retVal)
+                  case "feature":
+                     return compileFeature(stage)
+                  case "initialDefaults":
+                     throw new Error(
+                        `Impossible compilation of initial defaults`,
+                     )
+                  default:
+                     return stage
+               }
+            })
 
          const compiledResultSelectors = resultSelectors as
             | Record<string, SelectorPath>
