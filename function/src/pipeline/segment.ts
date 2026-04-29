@@ -26,6 +26,7 @@ import type {
    CompatibleForMixin,
    InitialInput,
    ContextKeysAndPairs,
+   CallableParams,
 } from "./types.js"
 import type {
    PipelineBuilder,
@@ -134,8 +135,8 @@ export type BeforeSegment<
       infer EC,
       infer SC,
       any,
-      infer AC,
-      any
+      any,
+      infer AC
    >
       ? CompatibleAddition<AC, AddedSC> extends true
          ? CompatibleAddition<AC, AddedVC> extends true
@@ -180,8 +181,8 @@ export type AfterSegment<
       infer EC,
       infer SC,
       infer VC,
-      infer AC,
-      infer SRC
+      infer SRC,
+      infer AC
    >
       ? PipelineBuilder<
            CompatibleMerge<IC, AddedIC>,
@@ -195,8 +196,8 @@ export type AfterSegment<
               Omit<VC, keyof AddedSC>,
               Omit<AddedVC, keyof SC | keyof AddedSC>
            >,
-           CompatibleMerge<AC, AddedAC>,
-           CompatibleMerge<SRC, AddedSRC>
+           CompatibleMerge<SRC, AddedSRC>,
+           CompatibleMerge<AC, AddedAC>
         >
       : never
 
@@ -255,160 +256,6 @@ export interface SegmentBlueprint<
    RequiredEC extends object = {},
    AddedSRC extends object = {},
 > {
-   extendInitial<Extra extends object, HasDefaults extends keyof Extra = never>(
-      defaults: Pick<Extra, HasDefaults>,
-   ): [CompatibleForMixin<AddedSC, Extra>] extends [never]
-      ? never
-      : SegmentBlueprint<
-           CompatibleMerge<AddedIC, InitialInput<Extra, HasDefaults>>,
-           AddedInjC,
-           CompatibleMerge<AddedEC, Extra>,
-           CompatibleMerge<AddedSC, Extra>,
-           AddedVC,
-           CompatibleMerge<AddedAC, Extra>,
-           CompatibleMerge<KnownAC, Extra>,
-           RequiredAC,
-           RequiredIC,
-           RequiredInjC,
-           RequiredEC,
-           AddedSRC
-        >
-
-   addVirtualFeature<VType extends object, NameOut extends string>(
-      nameOut: UnusedKey<KnownAC, NameOut>,
-   ): SegmentBlueprint<
-      AddedIC,
-      AddedInjC,
-      AddedEC,
-      AddedSC,
-      WithProp<AddedVC, NameOut, VType>,
-      WithProp<AddedAC, NameOut, VType>,
-      WithProp<KnownAC, NameOut, VType>,
-      RequiredAC,
-      RequiredIC,
-      RequiredInjC,
-      RequiredEC,
-      AddedSRC
-   >
-
-   addPublicFeature<
-      ExprOut extends object,
-      NameOut extends string,
-      Props extends { [K in keyof ExprOut]: LooseFeatureProp } = {
-         [K in keyof ExprOut]: string
-      },
-   >(
-      nameOut: UnusedKey<KnownAC, NameOut>,
-      properties: ConditionalFeatureProps<
-         KnownAC,
-         AddedVC,
-         NameOut,
-         ExprOut,
-         ExprOut,
-         Props
-      >,
-   ): SegmentBlueprint<
-      AddedIC,
-      AddedInjC,
-      WithProp<AddedEC, NameOut, ExprOut>,
-      WithProp<AddedSC, NameOut, ExprOut>,
-      AddedVC,
-      WithProp<AddedAC, NameOut, ExprOut>,
-      WithProp<KnownAC, NameOut, ExprOut>,
-      RequiredAC,
-      RequiredIC,
-      RequiredInjC,
-      RequiredEC,
-      AddedSRC
-   >
-
-   addPrivateFeature<
-      ExprOut extends object,
-      NameOut extends string,
-      Props extends { [K in keyof ExprOut]: LooseFeatureProp } = {
-         [K in keyof ExprOut]: string
-      },
-   >(
-      nameOut: UnusedKey<KnownAC, NameOut>,
-      properties: ConditionalFeatureProps<
-         KnownAC,
-         AddedVC,
-         NameOut,
-         ExprOut,
-         ExprOut,
-         Props
-      >,
-   ): SegmentBlueprint<
-      AddedIC,
-      AddedInjC,
-      AddedEC,
-      WithProp<AddedSC, NameOut, ExprOut>,
-      AddedVC,
-      WithProp<AddedAC, NameOut, ExprOut>,
-      WithProp<KnownAC, NameOut, ExprOut>,
-      RequiredAC,
-      RequiredIC,
-      RequiredInjC,
-      RequiredEC,
-      AddedSRC
-   >
-
-   addStep<
-      StepOut extends object,
-      NameOut extends string,
-      NamesIn extends ReadonlyArray<ContextKeysAndPairs<KnownAC>>,
-   >(
-      nameOut: UnusedKey<KnownAC, NameOut>,
-      implementation: ContextualMethod<KnownAC, StepOut, NamesIn>,
-   ): SegmentBlueprint<
-      AddedIC,
-      AddedInjC,
-      AddedEC,
-      AddedSC,
-      AddedVC,
-      AddedAC,
-      KnownAC,
-      RequiredAC,
-      RequiredIC,
-      RequiredInjC,
-      RequiredEC,
-      WithProp<AddedSRC, NameOut, StepOut>
-   >
-
-   addPrivateInjection<InjectedType, NameOut extends string>(
-      nameOut: UnusedKey<KnownAC, NameOut>,
-   ): SegmentBlueprint<
-      AddedIC,
-      WithProp<AddedInjC, NameOut, InjectedType>,
-      AddedEC,
-      WithProp<AddedSC, NameOut, InjectedType>,
-      AddedVC,
-      WithProp<AddedAC, NameOut, InjectedType>,
-      WithProp<KnownAC, NameOut, InjectedType>,
-      RequiredAC,
-      RequiredIC,
-      RequiredInjC,
-      RequiredEC,
-      AddedSRC
-   >
-
-   addPublicInjection<InjectedType, NameOut extends string>(
-      nameOut: UnusedKey<KnownAC, NameOut>,
-   ): SegmentBlueprint<
-      AddedIC,
-      WithProp<AddedInjC, NameOut, InjectedType>,
-      WithProp<AddedEC, NameOut, InjectedType>,
-      WithProp<AddedSC, NameOut, InjectedType>,
-      AddedVC,
-      WithProp<AddedAC, NameOut, InjectedType>,
-      WithProp<KnownAC, NameOut, InjectedType>,
-      RequiredAC,
-      RequiredIC,
-      RequiredInjC,
-      RequiredEC,
-      AddedSRC
-   >
-
    /**
     * Seed a pure function into the expression context.
     *
@@ -428,6 +275,22 @@ export interface SegmentBlueprint<
       AddedIC,
       AddedInjC,
       WithProp<AddedEC, NameOut, FnType>,
+      AddedSC,
+      AddedVC,
+      AddedAC,
+      KnownAC,
+      RequiredAC,
+      RequiredIC,
+      RequiredInjC,
+      RequiredEC,
+      AddedSRC
+   >
+
+   withContextSubject: <SubjectType extends object>() => SegmentContextBuilder<
+      SubjectType,
+      AddedIC,
+      AddedInjC,
+      AddedEC,
       AddedSC,
       AddedVC,
       AddedAC,
@@ -473,65 +336,235 @@ export interface SegmentBlueprint<
 }
 
 // =============================================================================
+// SegmentContextBuilder — returned by SegmentBlueprint.withContextSubject<T>()
+// =============================================================================
+
+interface SegmentContextBuilder<
+   SubjectType extends object,
+   AddedIC extends object,
+   AddedInjC extends object,
+   AddedEC extends object,
+   AddedSC extends object,
+   AddedVC extends object,
+   AddedAC extends object,
+   KnownAC extends object,
+   RequiredAC extends object,
+   RequiredIC extends object,
+   RequiredInjC extends object,
+   RequiredEC extends object,
+   AddedSRC extends object,
+> {
+   extendInitial: <HasDefaults extends keyof SubjectType = never>(
+      defaults: Pick<SubjectType, HasDefaults>,
+   ) => [CompatibleForMixin<KnownAC, SubjectType>] extends [never]
+      ? never
+      : SegmentBlueprint<
+           CompatibleMerge<AddedIC, InitialInput<SubjectType, HasDefaults>>,
+           AddedInjC,
+           CompatibleMerge<AddedEC, SubjectType>,
+           CompatibleMerge<AddedSC, SubjectType>,
+           AddedVC,
+           CompatibleMerge<AddedAC, SubjectType>,
+           CompatibleMerge<KnownAC, SubjectType>,
+           RequiredAC,
+           RequiredIC,
+           RequiredInjC,
+           RequiredEC,
+           AddedSRC
+        >
+
+   addVirtualFeature: <NameOut extends string>(
+      nameOut: UnusedKey<KnownAC, NameOut>,
+   ) => SegmentBlueprint<
+      AddedIC,
+      AddedInjC,
+      AddedEC,
+      AddedSC,
+      WithProp<AddedVC, NameOut, SubjectType>,
+      WithProp<AddedAC, NameOut, SubjectType>,
+      WithProp<KnownAC, NameOut, SubjectType>,
+      RequiredAC,
+      RequiredIC,
+      RequiredInjC,
+      RequiredEC,
+      AddedSRC
+   >
+
+   addPublicFeature: <
+      NameOut extends string,
+      Props extends { [K in keyof SubjectType]: LooseFeatureProp } = {
+         [K in keyof SubjectType]: LooseFeatureProp
+      },
+   >(
+      nameOut: UnusedKey<KnownAC, NameOut>,
+      properties: ConditionalFeatureProps<
+         KnownAC,
+         AddedVC,
+         NameOut,
+         SubjectType,
+         SubjectType,
+         Props
+      >,
+   ) => SegmentBlueprint<
+      AddedIC,
+      AddedInjC,
+      WithProp<AddedEC, NameOut, SubjectType>,
+      WithProp<AddedSC, NameOut, SubjectType>,
+      AddedVC,
+      WithProp<AddedAC, NameOut, SubjectType>,
+      WithProp<KnownAC, NameOut, SubjectType>,
+      RequiredAC,
+      RequiredIC,
+      RequiredInjC,
+      RequiredEC,
+      AddedSRC
+   >
+
+   addPrivateFeature: <
+      NameOut extends string,
+      Props extends { [K in keyof SubjectType]: LooseFeatureProp } = {
+         [K in keyof SubjectType]: LooseFeatureProp
+      },
+   >(
+      nameOut: UnusedKey<KnownAC, NameOut>,
+      properties: ConditionalFeatureProps<
+         KnownAC,
+         AddedVC,
+         NameOut,
+         SubjectType,
+         SubjectType,
+         Props
+      >,
+   ) => SegmentBlueprint<
+      AddedIC,
+      AddedInjC,
+      AddedEC,
+      WithProp<AddedSC, NameOut, SubjectType>,
+      AddedVC,
+      WithProp<AddedAC, NameOut, SubjectType>,
+      WithProp<KnownAC, NameOut, SubjectType>,
+      RequiredAC,
+      RequiredIC,
+      RequiredInjC,
+      RequiredEC,
+      AddedSRC
+   >
+
+   addStep: <
+      NameOut extends string,
+      NamesIn extends ReadonlyArray<ContextKeysAndPairs<KnownAC>>,
+      Params extends CallableParams<KnownAC, NamesIn>,
+   >(
+      nameOut: UnusedKey<KnownAC, NameOut>,
+      implementation: ContextualMethod<KnownAC, SubjectType, NamesIn, Params>,
+   ) => SegmentBlueprint<
+      AddedIC,
+      AddedInjC,
+      AddedEC,
+      AddedSC,
+      AddedVC,
+      AddedAC,
+      KnownAC,
+      RequiredAC,
+      RequiredIC,
+      RequiredInjC,
+      RequiredEC,
+      WithProp<AddedSRC, NameOut, SubjectType>
+   >
+
+   addPublicInjection: <NameOut extends string>(
+      nameOut: UnusedKey<KnownAC, NameOut>,
+   ) => SegmentBlueprint<
+      AddedIC,
+      WithProp<AddedInjC, NameOut, SubjectType>,
+      WithProp<AddedEC, NameOut, SubjectType>,
+      WithProp<AddedSC, NameOut, SubjectType>,
+      AddedVC,
+      WithProp<AddedAC, NameOut, SubjectType>,
+      WithProp<KnownAC, NameOut, SubjectType>,
+      RequiredAC,
+      RequiredIC,
+      RequiredInjC,
+      RequiredEC,
+      AddedSRC
+   >
+
+   addPrivateInjection: <NameOut extends string>(
+      nameOut: UnusedKey<KnownAC, NameOut>,
+   ) => SegmentBlueprint<
+      AddedIC,
+      WithProp<AddedInjC, NameOut, SubjectType>,
+      AddedEC,
+      WithProp<AddedSC, NameOut, SubjectType>,
+      AddedVC,
+      WithProp<AddedAC, NameOut, SubjectType>,
+      WithProp<KnownAC, NameOut, SubjectType>,
+      RequiredAC,
+      RequiredIC,
+      RequiredInjC,
+      RequiredEC,
+      AddedSRC
+   >
+}
+
+// =============================================================================
 // Implementation
 // =============================================================================
 
 function createSegmentBlueprintImpl(ops: Operation[]): any {
    return {
-      extendInitial(defaults: object) {
-         return createSegmentBlueprintImpl([
-            ...ops,
-            { kind: "extendInitial", defaults },
-         ])
-      },
-
-      addVirtualFeature(name: string) {
-         return createSegmentBlueprintImpl([
-            ...ops,
-            { kind: "addVirtualFeature", name },
-         ])
-      },
-
-      addPublicFeature(name: string, properties: AnyProps) {
-         return createSegmentBlueprintImpl([
-            ...ops,
-            { kind: "addPublicFeature", name, properties },
-         ])
-      },
-
-      addPrivateFeature(name: string, properties: AnyProps) {
-         return createSegmentBlueprintImpl([
-            ...ops,
-            { kind: "addPrivateFeature", name, properties },
-         ])
-      },
-
-      addStep(name: string, impl: AnyMethod) {
-         return createSegmentBlueprintImpl([
-            ...ops,
-            { kind: "addStep", name, impl },
-         ])
-      },
-
-      addPrivateInjection(name: string) {
-         return createSegmentBlueprintImpl([
-            ...ops,
-            { kind: "addPrivateInjection", name },
-         ])
-      },
-
-      addPublicInjection(name: string) {
-         return createSegmentBlueprintImpl([
-            ...ops,
-            { kind: "addPublicInjection", name },
-         ])
-      },
-
       addPureFunction(name: string, fn: (...args: any[]) => unknown) {
          return createSegmentBlueprintImpl([
             ...ops,
             { kind: "addPureFunction", name, fn },
          ])
+      },
+
+      withContextSubject() {
+         return {
+            extendInitial(defaults: object) {
+               return createSegmentBlueprintImpl([
+                  ...ops,
+                  { kind: "extendInitial", defaults },
+               ])
+            },
+            addVirtualFeature(name: string) {
+               return createSegmentBlueprintImpl([
+                  ...ops,
+                  { kind: "addVirtualFeature", name },
+               ])
+            },
+            addPublicFeature(name: string, properties: AnyProps) {
+               return createSegmentBlueprintImpl([
+                  ...ops,
+                  { kind: "addPublicFeature", name, properties },
+               ])
+            },
+            addPrivateFeature(name: string, properties: AnyProps) {
+               return createSegmentBlueprintImpl([
+                  ...ops,
+                  { kind: "addPrivateFeature", name, properties },
+               ])
+            },
+            addStep(name: string, impl: AnyMethod) {
+               return createSegmentBlueprintImpl([
+                  ...ops,
+                  { kind: "addStep", name, impl },
+               ])
+            },
+            addPublicInjection(name: string) {
+               return createSegmentBlueprintImpl([
+                  ...ops,
+                  { kind: "addPublicInjection", name },
+               ])
+            },
+            addPrivateInjection(name: string) {
+               return createSegmentBlueprintImpl([
+                  ...ops,
+                  { kind: "addPrivateInjection", name },
+               ])
+            },
+         }
       },
 
       buildHelper() {
@@ -595,10 +628,10 @@ export function createSegmentBlueprintFromBuilder<
    EC extends object,
    SC extends object,
    _VC extends object,
-   AC extends object,
    _SRC extends object,
+   AC extends object,
 >(
-   _witness: PipelineBuilder<IC, InjC, EC, SC, _VC, AC, _SRC>,
+   _witness: PipelineBuilder<IC, InjC, EC, SC, _VC, _SRC, AC>,
 ): SegmentBlueprint<{}, {}, {}, {}, {}, {}, AC, SC, IC, InjC, EC, {}> {
    return createSegmentBlueprintImpl([]) as SegmentBlueprint<
       {},

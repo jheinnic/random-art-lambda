@@ -17,8 +17,9 @@ import { PaintedTask } from "../values/PaintedTask.js"
 
 // Placeholder blueprint built from the witness, used only to derive the
 // exported helper type via ReturnType.
-const artworkEngineBlueprint =
-   createSegmentBlueprint().extendInitial<PaintedTask>({})
+const artworkEngineBlueprint = createSegmentBlueprint()
+   .withContextSubject<PaintedTask>()
+   .extendInitial({})
 
 export type ArtworkEngineSegmentHelper = ReturnType<
    typeof artworkEngineBlueprint.buildHelper

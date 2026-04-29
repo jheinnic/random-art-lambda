@@ -36,8 +36,8 @@ function createBuilderImpl<
    ExprContext extends object,
    StepContext extends object,
    VirtualContext extends object,
-   AllContext extends object = Mixin<StepContext, VirtualContext>,
    StepResultContext extends object = {},
+   AllContext extends object = Mixin<StepContext, VirtualContext>,
 >(
    stages: RuntimeStage[],
 ): PipelineBuilder<
@@ -46,8 +46,8 @@ function createBuilderImpl<
    ExprContext,
    StepContext,
    VirtualContext,
-   AllContext,
-   StepResultContext
+   StepResultContext,
+   AllContext
 > {
    function next(
       stage: RuntimeStage,
@@ -205,6 +205,18 @@ function createBuilderImpl<
             name: nameOut as string,
             fn,
          }) as any
+      },
+
+      // withContextSubject / withSpitContextSubject — return a view of the
+      // same flat methods cast as a PipelineContextBuilder / PipelineSplitContextBuilder.
+      // The flat methods (extendInitial, addVirtualFeature, etc.) remain on this
+      // object so that SegmentBlueprint.buildHelper() can replay them via `b: any`.
+      withContextSubject() {
+         return this
+      },
+
+      withSpitContextSubject() {
+         return this
       },
 
       buildPipeline<ResultOut extends object>(
@@ -540,7 +552,7 @@ function createBuilderImpl<
             }
          }
       },
-   }
+   } as any
 }
 
 /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -567,8 +579,8 @@ export function createPipeline<
    InitialContext,
    InitialContext,
    object,
-   InitialContext,
-   object
+   object,
+   InitialContext
 > {
    return createBuilderImpl([])
 }

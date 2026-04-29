@@ -26,11 +26,9 @@ import {
 import { createPipeline } from "../../../pipeline/index.js"
 import { createArtworkEngineSegment } from "../../../painting/pipeline/components/ArtworkEngineSegment.js"
 import { createEncodingSegment } from "../../../painting/pipeline/components/EncodingSegment.js"
-import {
-   createWorkerPoolSegment,
-   type FileStoreSelection,
-   type PathTargetSelection,
-} from "../../../painting/pipeline/components/WorkerPoolSegment.js"
+import { createWorkerPoolSegment } from "../../../painting/pipeline/components/WorkerPoolSegment.js"
+import { type PathTargetSelection } from "../../../painting/pipeline/values/PathTargetSelection.js"
+import { type FileStoreSelection } from "../../../painting/pipeline/values/FileStoreSelection.js"
 import type { PaintedTask } from "../../../painting/pipeline/values/PaintedTask.js"
 import type { TaskTermEncoding } from "../../../painting/pipeline/values/TaskTermEncoding.js"
 import type { IFileStore } from "../../../storage/interface/IFileStore.js"
@@ -96,10 +94,11 @@ export const TrigramPipelineModule = InjectableModuleClassFactory.create(
 
          // 1. Base: artwork engine (adds PaintedTask to IC), then add the
          //    trigram-specific optional field with a default of undefined.
-         const b0 = createArtworkEngineSegment(createPipeline()).extendInitial<
-            { resolvedFileNameExpression?: string },
-            "resolvedFileNameExpression"
-         >({ resolvedFileNameExpression: undefined })
+         const b0 = createArtworkEngineSegment(createPipeline())
+            .withContextSubject<{ resolvedFileNameExpression?: string }>()
+            .extendInitial<"resolvedFileNameExpression">({
+               resolvedFileNameExpression: undefined,
+            })
 
          // 2. Encoding: declares taskTermEncoding virtual, adds encodedTerms.
          const b1 = createEncodingSegment(b0)
@@ -110,24 +109,23 @@ export const TrigramPipelineModule = InjectableModuleClassFactory.create(
 
          // 4. Fulfill injections and virtuals with application-specific values.
          const pipeline = b2
-            .addPrivateInjection<IFileStore, "fileStore">("fileStore")
-            .addPrivateFeature<TaskTermEncoding, "taskTermEncoding">(
-               "taskTermEncoding",
-               { encoding: `"${appEncoding}"` },
-            )
-            .addPublicFeature<PathTargetSelection, "stagedFilePath">(
-               "stagedFilePath",
-               {
-                  // eslint-disable-next-line no-template-curly-in-string
-                  selected: [
-                     `resolvedFileNameExpression ?? '${defaultPath}'`,
-                  ] as const,
-               },
-            )
-            .addPrivateFeature<FileStoreSelection, "stagingStrategy">(
-               "stagingStrategy",
-               { selected: "fileStore" },
-            )
+            .withContextSubject<IFileStore>()
+            .addPrivateInjection("fileStore")
+            .withContextSubject<TaskTermEncoding>()
+            .addPrivateFeature("taskTermEncoding", {
+               encoding: `"${appEncoding}"`,
+            })
+            .withContextSubject<PathTargetSelection>()
+            .addPublicFeature("stagedFilePath", {
+               // eslint-disable-next-line no-template-curly-in-string
+               selected: [
+                  `resolvedFileNameExpression ?? '${defaultPath}'`,
+               ] as const,
+            })
+            .withContextSubject<FileStoreSelection>()
+            .addPrivateFeature("stagingStrategy", {
+               selected: "fileStore",
+            })
             .buildPipeline({
                status: ["stagingResult", "status"] as const,
                uri: ["stagingResult", "uri"] as const,

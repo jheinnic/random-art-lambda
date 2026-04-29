@@ -2,11 +2,9 @@ import type { IFileStore } from "../../../storage/interface/IFileStore.js"
 import { createPipeline } from "../../../pipeline/index.js"
 import { createEncodingSegment } from "./EncodingSegment.js"
 import { createArtworkEngineSegment } from "./ArtworkEngineSegment.js"
-import {
-   createWorkerPoolSegment,
-   FileStoreSelection,
-   PathTargetSelection,
-} from "./WorkerPoolSegment.js"
+import { createWorkerPoolSegment } from "./WorkerPoolSegment.js"
+import { PathTargetSelection } from "../values/PathTargetSelection.js"
+import { FileStoreSelection } from "../values/FileStoreSelection.js"
 import { TaskTermEncoding } from "../values/TaskTermEncoding.js"
 
 const pipelineBuilder = createWorkerPoolSegment(
@@ -14,17 +12,20 @@ const pipelineBuilder = createWorkerPoolSegment(
 )
 
 const result = pipelineBuilder
-   .addPrivateInjection<IFileStore, "fileStore">("fileStore")
-   .addPrivateFeature<TaskTermEncoding, "taskTermEncoding">(
-      "taskTermEncoding",
-      { encoding: ['"utf-8"'] as const },
-   )
-   .addPublicFeature<FileStoreSelection, "stagingStrategy">("stagingStrategy", {
-      selected: "fileStore",
+   .withContextSubject<IFileStore>()
+   .addPrivateInjection("fileStore")
+   .withContextSubject<TaskTermEncoding>()
+   .addPrivateFeature("taskTermEncoding", {
+      encoding: '"utf-8"' as const,
    })
-   .addPublicFeature<PathTargetSelection, "stagedFilePath">("stagedFilePath", {
+   .withContextSubject<FileStoreSelection>()
+   .addPublicFeature("stagingStrategy", {
+      selected: "fileStore" as const,
+   })
+   .withContextSubject<PathTargetSelection>()
+   .addPublicFeature("stagedFilePath", {
       // eslint-disable-next-line no-template-curly-in-string
-      selected: ["`${appSuffixString}/${appPrefixString}.png`"] as const,
+      selected: "`${appSuffixString}/${appPrefixString}.png`" as const,
    })
 
 /**

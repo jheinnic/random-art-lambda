@@ -20,10 +20,12 @@ export interface ContextualMethod<
    Context extends object,
    ReturnedType,
    ParamSelectors extends ReadonlyArray<ContextKeysAndPairs<Context>>,
+   Params extends CallableParams<Context, ParamSelectors> = CallableParams<
+      Context,
+      ParamSelectors
+   >,
 > {
-   method: (
-      ...args: CallableParams<Context, ParamSelectors>
-   ) => ReturnedType | Promise<ReturnedType>
+   method: (...args: Params) => ReturnedType | Promise<ReturnedType>
    selectors: ParamSelectors
 }
 
@@ -64,7 +66,7 @@ export type CheckProp<Context extends object, PropType, Prop> = Prop extends {
            ) => PropType | Promise<PropType>
            selectors: S
         }
-   : Prop
+   : string | readonly [string]
 
 /**
  * Validates all feature properties against ExprOut.
@@ -128,272 +130,33 @@ export interface PipelineBuilder<
    ExprContext extends object = InitialContext,
    StepContext extends object = ExprContext,
    VirtualContext extends object = {},
-   AllContext extends object = Mixin<StepContext, VirtualContext>,
    StepResultContext extends object = {},
+   AllContext extends object = Mixin<StepContext, VirtualContext>,
 > {
-   /**
-    * Extend the initial seed context with additional properties.
-    *
-    * ExtraInitial is the full shape added to ExprContext and StepContext —
-    * must be supplied explicitly since it is wider than the defaults object.
-    * HasDefaults is inferred from the keys of the defaults argument.
-    *
-    * The resulting InitialContext contribution is InitialInput<ExtraInitial, HasDefaults>:
-    *   Partial<Pick<ExtraInitial, HasDefaults>> & Omit<ExtraInitial, HasDefaults>
-    * — defaulted fields are optional in the call signature; fields absent from
-    * the defaults object remain required.
-    *
-    * Returns never if ExtraInitial conflicts with the existing StepContext.
-    */
-   extendInitial: <
-      ExtraInitial extends object,
-      HasDefaults extends keyof ExtraInitial = never,
-   >(
-      defaults: Pick<ExtraInitial, HasDefaults>,
-   ) => [CompatibleForMixin<StepContext, ExtraInitial>] extends [never]
-      ? never
-      : PipelineBuilder<
-           Mixin<InitialContext, InitialInput<ExtraInitial, HasDefaults>>,
-           InjectedContext,
-           Mixin<ExprContext, ExtraInitial>,
-           Mixin<StepContext, ExtraInitial>,
-           VirtualContext,
-           Mixin<AllContext, ExtraInitial>,
-           StepResultContext
-        >
-
-   /**
-    * Declare a virtual feature contract.
-    *
-    * Reserves a namespace name and records the required type shape.
-    * Does NOT add to StepContext — concrete fulfillment does that.
-    * Steps may reference the virtual in their selectors; they are pruned at
-    * runtime if the virtual is never fulfilled.
-    *
-    * nameOut must be absent from VirtualContext (duplicate virtual declaration is rejected).
-    * If nameOut is already in StepContext (already concrete):
-    *   - VirtualType must be assignable to the concrete type, otherwise never.
-    *   - If assignable, this is a no-op (the concrete value already satisfies the contract).
-    */
-   addVirtualFeature: <VirtualType extends object, NameOut extends string>(
-      nameOut: UnusedKey<VirtualContext, NameOut>,
-   ) => NameOut extends keyof StepContext
-      ? StepContext[NameOut] extends VirtualType
-         ? VirtualType extends StepContext[NameOut]
-            ? PipelineBuilder<
-                 InitialContext,
-                 InjectedContext,
-                 ExprContext,
-                 StepContext,
-                 VirtualContext,
-                 AllContext,
-                 StepResultContext
-              >
-            : never // VirtualType is incompatible with the already-concrete type
-         : never // VirtualType is incompatible with the already-concrete type
-      : PipelineBuilder<
-           InitialContext,
-           InjectedContext,
-           ExprContext,
-           StepContext,
-           WithProp<VirtualContext, typeof nameOut, VirtualType>,
-           WithProp<AllContext, typeof nameOut, VirtualType>,
-           StepResultContext
-        >
-
-   /**
-    * Add a step: a programmatic method invoked with typed context selectors.
-    *
-    * Steps are post-processing delegation points. Their outputs accumulate in
-    * StepResultContext, which is isolated from features — features cannot read
-    * step outputs, and steps cannot read other steps' outputs.
-    *
-    * StepResultContext is accessible only to buildPipeline result selectors,
-    * enabling final output construction from both feature context and step results.
-    *
-    * If any selector references an unfulfilled virtual, the step is pruned at
-    * runtime and its output key is absent from the final result.
-    *
-    * nameOut must be absent from AllContext and from StepResultContext.
-    */
-   addStep: <
-      StepOut extends object,
-      NameOut extends string,
-      NamesIn extends ReadonlyArray<ContextKeysAndPairs<AllContext>>,
-   >(
-      nameOut: UnusedKey<AllContext, NameOut>,
-      implementation: ContextualMethod<AllContext, StepOut, NamesIn>,
-   ) => PipelineBuilder<
+   withContextSubject: <SubjectType extends object>() => PipelineContextBuilder<
+      SubjectType,
       InitialContext,
       InjectedContext,
       ExprContext,
       StepContext,
       VirtualContext,
-      AllContext,
-      WithProp<StepResultContext, typeof nameOut, StepOut>
+      StepResultContext,
+      AllContext
    >
 
-   /**
-    * Add a feature whose namespace is fully visible to expressions.
-    *
-    * If nameOut matches a declared virtual, fulfills that contract:
-    * - ExprOut must bidirectionally satisfy the declared virtual type.
-    * - The virtual is removed from VirtualContext on fulfillment.
-    *
-    * nameOut must be absent from StepContext (may equal a virtual in VirtualContext).
-    *
-    * Props is inferred from the argument. Each method-form property is validated
-    * to ensure its method's parameter types match what the selectors resolve.
-    */
-   addPublicFeature: <
-      ExprOut extends object,
-      NameOut extends string,
-      Props extends { [K in keyof ExprOut]: LooseFeatureProp } = {
-         [K in keyof ExprOut]: LooseFeatureProp
-      },
-   >(
-      nameOut: UnusedKey<StepContext, NameOut>,
-      properties: ConditionalFeatureProps<
-         AllContext,
-         VirtualContext,
-         NameOut,
-         ExprOut,
-         ExprOut,
-         Props
-      >,
-   ) => PipelineBuilder<
+   withSpitContextSubject: <
+      PublicSubjectType extends object,
+      PrivateSubjectType extends PublicSubjectType,
+   >() => PipelineSplitContextBuilder<
+      PublicSubjectType,
+      PrivateSubjectType,
       InitialContext,
       InjectedContext,
-      WithProp<ExprContext, typeof nameOut, ExprOut>,
-      WithProp<StepContext, typeof nameOut, ExprOut>,
-      Omit<VirtualContext, NameOut>,
-      WithProp<Omit<AllContext, NameOut>, typeof nameOut, ExprOut>,
-      StepResultContext
-   >
-
-   /**
-    * Add a feature whose namespace is hidden from expressions.
-    *
-    * If nameOut matches a declared virtual, fulfills that contract:
-    * - ExprOut must bidirectionally satisfy the declared virtual type.
-    * - The virtual is removed from VirtualContext on fulfillment.
-    *
-    * nameOut must be absent from StepContext (may equal a virtual in VirtualContext).
-    */
-   addPrivateFeature: <
-      ExprOut extends object,
-      NameOut extends string,
-      Props extends { [K in keyof ExprOut]: LooseFeatureProp } = {
-         [K in keyof ExprOut]: LooseFeatureProp
-      },
-   >(
-      nameOut: UnusedKey<StepContext, NameOut>,
-      properties: ConditionalFeatureProps<
-         AllContext,
-         VirtualContext,
-         NameOut,
-         ExprOut,
-         ExprOut,
-         Props
-      >,
-   ) => PipelineBuilder<
-      InitialContext,
-      InjectedContext,
-      ExprContext, // private: ExprContext unchanged
-      WithProp<StepContext, typeof nameOut, ExprOut>,
-      Omit<VirtualContext, NameOut>,
-      WithProp<Omit<AllContext, NameOut>, typeof nameOut, ExprOut>,
-      StepResultContext
-   >
-
-   /**
-    * Add a feature with a public subset (ExprOut) and a private extension (StepOut).
-    * StepOut must extend ExprOut — private keys are those in StepOut but not ExprOut.
-    * ExprContext receives ExprOut; StepContext receives the full StepOut.
-    *
-    * For virtual fulfillment, the full StepOut is checked against the contract —
-    * the virtual declared the full required type, not just the public portion.
-    *
-    * nameOut must be absent from StepContext (may equal a virtual in VirtualContext).
-    */
-   addFeature: <
-      ExprOut extends object,
-      NameOut extends string,
-      StepOut extends ExprOut = ExprOut,
-      Props extends { [K in keyof ExprOut]: LooseFeatureProp } = {
-         [K in keyof ExprOut]: string
-      },
-      PrivateProps extends {
-         [K in keyof Omit<StepOut, keyof ExprOut>]: LooseFeatureProp
-      } = { [K in keyof Omit<StepOut, keyof ExprOut>]: string },
-   >(
-      nameOut: UnusedKey<StepContext, NameOut>,
-      publicProperties: ConditionalFeatureProps<
-         AllContext,
-         VirtualContext,
-         NameOut,
-         ExprOut,
-         StepOut,
-         Props
-      >,
-      privateProperties: PrivateProps &
-         CheckFeatureProps<
-            AllContext,
-            Omit<StepOut, keyof ExprOut>,
-            PrivateProps
-         >,
-   ) => PipelineBuilder<
-      InitialContext,
-      InjectedContext,
-      [keyof ExprOut] extends [never]
-         ? ExprContext
-         : WithProp<ExprContext, typeof nameOut, ExprOut>,
-      WithProp<StepContext, typeof nameOut, StepOut>,
-      Omit<VirtualContext, NameOut>,
-      WithProp<Omit<AllContext, NameOut>, typeof nameOut, StepOut>,
-      StepResultContext
-   >
-
-   /**
-    * Declare an injection slot visible to expressions.
-    *
-    * The slot is typed as InjectedType and added to InjectedContext, shaping the
-    * `injections` argument of the compiled pipeline function.  The actual value is
-    * supplied at call time — nothing is captured in the builder.
-    *
-    * nameOut must be absent from AllContext (i.e. from both StepContext and VirtualContext).
-    */
-   addPublicInjection: <InjectedType, NameOut extends string>(
-      nameOut: UnusedKey<AllContext, NameOut>,
-   ) => PipelineBuilder<
-      InitialContext,
-      WithProp<InjectedContext, typeof nameOut, InjectedType>,
-      WithProp<ExprContext, typeof nameOut, InjectedType>,
-      WithProp<StepContext, typeof nameOut, InjectedType>,
+      ExprContext,
+      StepContext,
       VirtualContext,
-      WithProp<AllContext, typeof nameOut, InjectedType>,
-      StepResultContext
-   >
-
-   /**
-    * Declare an injection slot hidden from expressions.
-    *
-    * The slot is typed as InjectedType and added to InjectedContext, shaping the
-    * `injections` argument of the compiled pipeline function.  The actual value is
-    * supplied at call time — nothing is captured in the builder.
-    *
-    * nameOut must be absent from AllContext (i.e. from both StepContext and VirtualContext).
-    */
-   addPrivateInjection: <InjectedType, NameOut extends string>(
-      nameOut: UnusedKey<AllContext, NameOut>,
-   ) => PipelineBuilder<
-      InitialContext,
-      WithProp<InjectedContext, typeof nameOut, InjectedType>,
-      ExprContext, // private: ExprContext unchanged
-      WithProp<StepContext, typeof nameOut, InjectedType>,
-      VirtualContext,
-      WithProp<AllContext, typeof nameOut, InjectedType>,
-      StepResultContext
+      StepResultContext,
+      AllContext
    >
 
    /**
@@ -422,7 +185,6 @@ export interface PipelineBuilder<
       AllContext,
       StepResultContext
    >
-
    /**
     * Finalize the pipeline.
     *
@@ -447,4 +209,298 @@ export interface PipelineBuilder<
    ) => (
       injections: InjectedContext,
    ) => (initial: InitialContext) => Promise<Partial<ResultOut>>
+}
+
+interface PipelineContextBuilder<
+   SubjectType extends object,
+   InitialContext extends object,
+   InjectedContext extends object,
+   ExprContext extends object,
+   StepContext extends object,
+   VirtualContext extends object,
+   StepResultContext extends object,
+   AllContext extends object,
+> {
+   /**
+    * Extend the initial seed context with additional properties.
+    *
+    * ExtraInitial is the full shape added to ExprContext and StepContext —
+    * must be supplied explicitly since it is wider than the defaults object.
+    * HasDefaults is inferred from the keys of the defaults argument.
+    *
+    * The resulting InitialContext contribution is InitialInput<ExtraInitial, HasDefaults>:
+    *   Partial<Pick<ExtraInitial, HasDefaults>> & Omit<ExtraInitial, HasDefaults>
+    * — defaulted fields are optional in the call signature; fields absent from
+    * the defaults object remain required.
+    *
+    * Returns never if ExtraInitial conflicts with the existing StepContext.
+    */
+   extendInitial: <HasDefaults extends keyof SubjectType = never>(
+      defaults: Pick<SubjectType, HasDefaults>,
+   ) => [CompatibleForMixin<AllContext, SubjectType>] extends [never]
+      ? never
+      : PipelineBuilder<
+           Mixin<InitialContext, InitialInput<SubjectType, HasDefaults>>,
+           InjectedContext,
+           Mixin<ExprContext, SubjectType>,
+           Mixin<StepContext, SubjectType>,
+           VirtualContext,
+           StepResultContext,
+           Mixin<AllContext, SubjectType>
+        >
+
+   /**
+    * Declare a virtual feature contract.
+    *
+    * Reserves a namespace name and records the required type shape.
+    * Does NOT add to StepContext — concrete fulfillment does that.
+    * Steps may reference the virtual in their selectors; they are pruned at
+    * runtime if the virtual is never fulfilled.
+    *
+    * nameOut must be absent from VirtualContext (duplicate virtual declaration is rejected).
+    * If nameOut is already in StepContext (already concrete):
+    *   - VirtualType must be assignable to the concrete type, otherwise never.
+    *   - If assignable, this is a no-op (the concrete value already satisfies the contract).
+    */
+   addVirtualFeature: <NameOut extends string>(
+      nameOut: UnusedKey<VirtualContext, NameOut>,
+   ) => NameOut extends keyof StepContext
+      ? StepContext[NameOut] extends SubjectType
+         ? SubjectType extends StepContext[NameOut]
+            ? PipelineBuilder<
+                 InitialContext,
+                 InjectedContext,
+                 ExprContext,
+                 StepContext,
+                 VirtualContext,
+                 StepResultContext,
+                 AllContext
+              >
+            : never // VirtualType is incompatible with the already-concrete type
+         : never // VirtualType is incompatible with the already-concrete type
+      : PipelineBuilder<
+           InitialContext,
+           InjectedContext,
+           ExprContext,
+           StepContext,
+           WithProp<VirtualContext, typeof nameOut, SubjectType>,
+           StepResultContext,
+           WithProp<AllContext, typeof nameOut, SubjectType>
+        >
+
+   /**
+    * Add a step: a programmatic method invoked with typed context selectors.
+    *
+    * Steps are post-processing delegation points. Their outputs accumulate in
+    * StepResultContext, which is isolated from features — features cannot read
+    * step outputs, and steps cannot read other steps' outputs.
+    *
+    * StepResultContext is accessible only to buildPipeline result selectors,
+    * enabling final output construction from both feature context and step results.
+    *
+    * If any selector references an unfulfilled virtual, the step is pruned at
+    * runtime and its output key is absent from the final result.
+    *
+    * nameOut must be absent from AllContext and from StepResultContext.
+    */
+   addStep: <
+      NameOut extends string,
+      NamesIn extends ReadonlyArray<ContextKeysAndPairs<AllContext>>,
+      Params extends CallableParams<AllContext, NamesIn>,
+   >(
+      nameOut: UnusedKey<AllContext, NameOut>,
+      implementation: ContextualMethod<
+         AllContext,
+         SubjectType,
+         NamesIn,
+         Params
+      >,
+   ) => PipelineBuilder<
+      InitialContext,
+      InjectedContext,
+      ExprContext,
+      StepContext,
+      VirtualContext,
+      WithProp<StepResultContext, typeof nameOut, SubjectType>,
+      AllContext
+   >
+
+   /**
+    * Add a feature whose namespace is fully visible to expressions.
+    *
+    * If nameOut matches a declared virtual, fulfills that contract:
+    * - SubjectType must bidirectionally satisfy the declared virtual type.
+    * - The virtual is removed from VirtualContext on fulfillment.
+    *
+    * nameOut must be absent from StepContext (may equal a virtual in VirtualContext).
+    *
+    * Props is inferred from the argument. Each method-form property is validated
+    * to ensure its method's parameter types match what the selectors resolve.
+    */
+   addPublicFeature: <
+      NameOut extends string,
+      Props extends { [K in keyof SubjectType]: LooseFeatureProp } = {
+         [K in keyof SubjectType]: LooseFeatureProp
+      },
+   >(
+      nameOut: UnusedKey<StepContext, NameOut>,
+      properties: ConditionalFeatureProps<
+         AllContext,
+         VirtualContext,
+         NameOut,
+         SubjectType,
+         SubjectType,
+         Props
+      >,
+   ) => PipelineBuilder<
+      InitialContext,
+      InjectedContext,
+      WithProp<ExprContext, typeof nameOut, SubjectType>,
+      WithProp<StepContext, typeof nameOut, SubjectType>,
+      Omit<VirtualContext, NameOut>,
+      StepResultContext,
+      WithProp<Omit<AllContext, NameOut>, typeof nameOut, SubjectType>
+   >
+
+   /**
+    * Add a feature whose namespace is hidden from expressions.
+    *
+    * If nameOut matches a declared virtual, fulfills that contract:
+    * - ExprOut must bidirectionally satisfy the declared virtual type.
+    * - The virtual is removed from VirtualContext on fulfillment.
+    *
+    * nameOut must be absent from StepContext (may equal a virtual in VirtualContext).
+    */
+   addPrivateFeature: <
+      NameOut extends string,
+      Props extends { [K in keyof SubjectType]: LooseFeatureProp } = {
+         [K in keyof SubjectType]: LooseFeatureProp
+      },
+   >(
+      nameOut: UnusedKey<StepContext, NameOut>,
+      properties: ConditionalFeatureProps<
+         AllContext,
+         VirtualContext,
+         NameOut,
+         SubjectType,
+         SubjectType,
+         Props
+      >,
+   ) => PipelineBuilder<
+      InitialContext,
+      InjectedContext,
+      ExprContext, // private: ExprContext unchanged
+      WithProp<StepContext, typeof nameOut, SubjectType>,
+      Omit<VirtualContext, NameOut>,
+      StepResultContext,
+      WithProp<Omit<AllContext, NameOut>, typeof nameOut, SubjectType>
+   >
+
+   /**
+    * Declare an injection slot visible to expressions.
+    *
+    * The slot is typed as SubjectType and added to InjectedContext, shaping the
+    * `injections` argument of the compiled pipeline function.  The actual value is
+    * supplied at call time — nothing is captured in the builder.
+    *
+    * nameOut must be absent from AllContext (i.e. from both StepContext and VirtualContext).
+    */
+   addPublicInjection: <NameOut extends string>(
+      nameOut: UnusedKey<AllContext, NameOut>,
+   ) => PipelineBuilder<
+      InitialContext,
+      WithProp<InjectedContext, typeof nameOut, SubjectType>,
+      WithProp<ExprContext, typeof nameOut, SubjectType>,
+      WithProp<StepContext, typeof nameOut, SubjectType>,
+      VirtualContext,
+      StepResultContext,
+      WithProp<AllContext, typeof nameOut, SubjectType>
+   >
+
+   /**
+    * Declare an injection slot hidden from expressions.
+    *
+    * The slot is typed as SubjectType and added to InjectedContext, shaping the
+    * `injections` argument of the compiled pipeline function.  The actual value is
+    * supplied at call time — nothing is captured in the builder.
+    *
+    * nameOut must be absent from AllContext (i.e. from both StepContext and VirtualContext).
+    */
+   addPrivateInjection: <NameOut extends string>(
+      nameOut: UnusedKey<AllContext, NameOut>,
+   ) => PipelineBuilder<
+      InitialContext,
+      WithProp<InjectedContext, typeof nameOut, SubjectType>,
+      ExprContext, // private: ExprContext unchanged
+      WithProp<StepContext, typeof nameOut, SubjectType>,
+      VirtualContext,
+      StepResultContext,
+      WithProp<AllContext, typeof nameOut, SubjectType>
+   >
+}
+
+interface PipelineSplitContextBuilder<
+   PublicSubjectType extends object,
+   PrivateSubjectType extends PublicSubjectType,
+   InitialContext extends object,
+   InjectedContext extends object,
+   ExprContext extends object,
+   StepContext extends object,
+   VirtualContext extends object,
+   StepResultContext extends object,
+   AllContext extends object,
+> {
+   /**
+    * Add a feature with a public subset (ExprOut) and a private extension (StepOut).
+    * StepOut must extend ExprOut — private keys are those in StepOut but not ExprOut.
+    * ExprContext receives ExprOut; StepContext receives the full StepOut.
+    *
+    * For virtual fulfillment, the full StepOut is checked against the contract —
+    * the virtual declared the full required type, not just the public portion.
+    *
+    * nameOut must be absent from StepContext (may equal a virtual in VirtualContext).
+    */
+   addFeature: <
+      NameOut extends string,
+      Props extends { [K in keyof PublicSubjectType]: LooseFeatureProp } = {
+         [K in keyof PublicSubjectType]: LooseFeatureProp
+      },
+      PrivateProps extends {
+         [K in keyof Omit<
+            PrivateSubjectType,
+            keyof PublicSubjectType
+         >]: LooseFeatureProp
+      } = {
+         [K in keyof Omit<
+            PrivateSubjectType,
+            keyof PublicSubjectType
+         >]: LooseFeatureProp
+      },
+   >(
+      nameOut: UnusedKey<StepContext, NameOut>,
+      publicProperties: ConditionalFeatureProps<
+         AllContext,
+         VirtualContext,
+         NameOut,
+         PublicSubjectType,
+         PrivateSubjectType,
+         Props
+      >,
+      privateProperties: PrivateProps &
+         CheckFeatureProps<
+            AllContext,
+            Omit<PrivateSubjectType, keyof PublicSubjectType>,
+            PrivateProps
+         >,
+   ) => PipelineBuilder<
+      InitialContext,
+      InjectedContext,
+      [keyof PublicSubjectType] extends [never]
+         ? ExprContext
+         : WithProp<ExprContext, typeof nameOut, PublicSubjectType>,
+      WithProp<StepContext, typeof nameOut, PrivateSubjectType>,
+      Omit<VirtualContext, NameOut>,
+      WithProp<Omit<AllContext, NameOut>, typeof nameOut, PrivateSubjectType>,
+      StepResultContext
+   >
 }

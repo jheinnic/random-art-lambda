@@ -51,25 +51,23 @@ const termProperties = {
          ["taskTermEncoding", "encoding"] as const,
       ] as const,
    },
-}
-
-export const SELECT_TOKENS_MAP = {
-   systemPrefixString: ["seedPrefix"],
-   systemSuffixString: ["seedSuffix"],
-   appPrefixString: ["seedPrefix", ["taskTermEncoding", "encoding"]],
-   appSuffixString: ["seedSuffix", ["taskTermEncoding", "encoding"]],
 } as const
+
+// export const SELECT_TOKENS_MAP = {
+//    systemPrefixString: ["seedPrefix"],
+//    systemSuffixString: ["seedSuffix"],
+//    appPrefixString: ["seedPrefix", ["taskTermEncoding", "encoding"]],
+//    appSuffixString: ["seedSuffix", ["taskTermEncoding", "encoding"]],
+// } as const
 
 const witness = createArtworkEngineSegment(createPipeline())
 
 // Placeholder blueprint used only to derive the helper's return type.
 const _encodingBlueprint = createSegmentBlueprintFromBuilder(witness)
-   .addVirtualFeature<TaskTermEncoding, "taskTermEncoding">("taskTermEncoding")
-   .addPublicFeature<
-      EncodedTerms,
-      "encodedTerms",
-      typeof termProperties
-   >("encodedTerms", termProperties)
+   .withContextSubject<TaskTermEncoding>()
+   .addVirtualFeature("taskTermEncoding")
+   .withContextSubject<EncodedTerms>()
+   .addPublicFeature("encodedTerms", termProperties)
 
 export type EncodingSegmentHelper = ReturnType<
    typeof _encodingBlueprint.buildHelper
