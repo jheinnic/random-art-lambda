@@ -2,7 +2,8 @@
 /**
  * CLI Tool: Expand Trigram Project
  *
- * Reads a TrigramProjectSpec JSON file and expands it into PaintingTask objects
+ * Reads a TrigramProjectSpec JSON file, expands it into a PermutationsProjectSpec, and lists
+ * the painting tasks it implies (one per term pair × region map in each group)
  *
  * Usage:
  *   tsx src/app/trigram-permutation/cli/expand-project.ts <spec-file.json>
@@ -14,8 +15,7 @@
 import { readFileSync } from "fs"
 import { resolve } from "path"
 import type { TrigramProjectSpec } from "../models/spec/index.js"
-import { expandToMultiTaskRequest } from "../logic/PermutationExpander.js"
-import type { TrigramPaintTask } from "../models/paint/TrigramPaintTask.js"
+import { expandToPermutationsSpec } from "../logic/PermutationExpander.js"
 
 function main(): void {
    const args = process.argv.slice(2)
@@ -60,32 +60,35 @@ function main(): void {
          )
       }
 
-      // Expand to MultiTaskRequest
-      const request = expandToMultiTaskRequest(spec)
+      // Expand to PermutationsProjectSpec
+      const permutations = expandToPermutationsSpec(spec)
 
-      console.log(`\n✅ Expanded to ${request.taskUnits.length} tasks:\n`)
+      // The Permutations layer will produce one painting task per (term pair × region map)
+      const tasks = permutations.termGroups.flatMap((group) =>
+         group.termPairs.flatMap((pair) =>
+            group.regionMapNames.map((regionMapName) => ({ pair, regionMapName })),
+         ),
+      )
+
+      console.log(`\n✅ Expanded to ${tasks.length} tasks:\n`)
 
       // Display tasks
-      request.taskUnits.forEach((task, index) => {
-         const ext: TrigramPaintTask = task.domainExtension
-         const seedPhrase = `${ext.prefixTrigram} ${ext.suffixTrigram}`
-         const regionMapName = task.plotDataRef.regionMapName ?? "?"
+      tasks.forEach(({ pair, regionMapName }, index) => {
+         const seedPhrase = `${pair.prefix} ${pair.suffix}`
          console.log(
             `${(index + 1).toString().padStart(3)}. ${seedPhrase.padEnd(6)} @ ${regionMapName}`,
          )
       })
 
       console.log(`\n📊 Summary:`)
-      console.log(`   Total tasks: ${request.taskUnits.length}`)
+      console.log(`   Total tasks: ${tasks.length}`)
       console.log(`   Project ID: ${spec.projectId}`)
-      console.log(
-         `   Project Domain: ${request.projectDomain.termPairSourceCount} sources, ${request.projectDomain.taskCount} tasks`,
-      )
+      console.log(`   Term groups: ${permutations.termGroups.length}`)
 
       // Output JSON for piping to other tools
       if (args.includes("--json")) {
          console.log("\n--- JSON Output ---")
-         console.log(JSON.stringify(request, null, 2))
+         console.log(JSON.stringify(permutations, null, 2))
       }
    } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {

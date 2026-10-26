@@ -1,49 +1,29 @@
-import type { PermutationProjectSpec } from "./PermutationInputSpec.js"
-import { PermutationSpec } from "./PermutationSpec.js"
-import { RegionMapCatalog } from "./RegionMapCatalog.js"
+import type { PermutationSpec } from "./PermutationSpec.js"
+import type { RegionMapCatalog } from "./RegionMapCatalog.js"
 
 /**
- * Complete project specification
- * Combines a shared RegionMap catalog with permutation expansion logic
+ * Top-level user-facing project spec for the Trigram Permutation app.
  *
- * Extends PermutationProjectSpec to inherit projectId and fileNameExpression
- * from the mid-tier permutation framework.
+ * Describes a set of trigram term pairs to render against a catalog of region
+ * maps. The PermutationExpander converts this into a PermutationsProjectSpec
+ * for the Permutations middleware layer, which handles encoding, index
+ * assignment, and BullMQ job production.
  *
- * Example:
- * {
- *   "projectId": "bagua-gallery-001",
- *   "name": "Bagua Multi-Resolution Gallery",
- *   "regionMapCatalog": {
- *     "thumbnail": { "cid": "Qm...", "description": "240x240 preview" },
- *     "detail": { "cid": "Qm...", "description": "1024x1024 full size" },
- *     "zoomed": { "cid": "Qm...", "description": "Zoomed to center region" }
- *   },
- *   "permutationSpecs": [
- *     {
- *       "expandType": "permuteAllPairs",
- *       "regionMapNames": ["thumbnail", "detail"],
- *       "sourceTrigrams": ["☰", "☱", "☲", "☳", "☴", "☵", "☶", "☷"],
- *       "includeIdentity": true
- *     }
- *   ],
- *   "fileNameExpression": "${_methods.prefixTerm()}_${_methods.suffixTerm()}.png"
- * }
+ * Input encoding is always UTF-8 for Trigram — not a user-controlled field.
  */
-export interface TrigramProjectSpec extends PermutationProjectSpec {
-   /**
-    * Catalog of RegionMap names to CIDs, shared across all permutations.
-    * Each entry maps a friendly name to an IPFS CID and optional description.
-    */
-   regionMapCatalog: RegionMapCatalog
+export interface TrigramProjectSpec {
+   /** Caller-assigned identifier for this project. */
+   readonly projectId: string
 
    /**
-    * Permutation specification for task expansion.
-    * References regionMapNames from the catalog above.
+    * Catalog of RegionMap friendly names to IPFS CIDs.
+    * Shared across all permutation specs; each spec references names from here.
     */
-   permutationSpecs: PermutationSpec[]
+   readonly regionMapCatalog: RegionMapCatalog
 
-   /**
-    * Timestamp when project was created
-    */
-   createdAt?: number
+   /** Permutation groups to expand into painting tasks. */
+   readonly permutationSpecs: PermutationSpec[]
+
+   /** Optional timestamp when this spec was authored. */
+   readonly createdAt?: number
 }

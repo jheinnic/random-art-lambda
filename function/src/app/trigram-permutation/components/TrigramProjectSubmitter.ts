@@ -3,8 +3,20 @@ import { PermutationExpander } from "../logic/PermutationExpander.js"
 import { RandomArtFlowProducer } from "../../../painting/queue/components/RandomArtFlowProducer.js"
 import { TrigramModuleTypes } from "../di/Types.js"
 import type { TrigramProjectSpec } from "../models/spec/index.js"
-import type { TrigramPaintProject } from "../models/paint/TrigramPaintProject.js"
-import type { TrigramPaintTask } from "../models/paint/TrigramPaintTask.js"
+import type { PermutationsProjectSpec } from "../../../painting/permutations/spec/index.js"
+import type {
+   PermutationTaskPaint,
+   PermutationProjectPaint,
+} from "../../../painting/permutations/paint/index.js"
+
+/** One painting task per (term pair × region map) in each group. */
+function countPaintingTasks(spec: PermutationsProjectSpec): number {
+   return spec.termGroups.reduce(
+      (total, group) =>
+         total + group.termPairs.length * group.regionMapNames.length,
+      0,
+   )
+}
 
 /**
  * Result of submitting a project
@@ -24,6 +36,10 @@ export interface ProjectSubmissionResult {
  * 2. Submits them to the BullMQ flow via RandomArtFlowProducer
  * 3. Returns the assigned task IDs for tracking
  *
+ * Submission is currently disabled: the Permutations-layer PermutationsExpander that turns a
+ * PermutationsProjectSpec into a request the RandomArtFlowProducer accepts is not written yet.
+ * submitProject() rejects with an explanatory error; validateProject() still works.
+ *
  * @example
  * const result = await submitter.submitProject(spec)
  * console.log(`Submitted ${result.taskCount} tasks for project ${result.projectId}`)
@@ -36,9 +52,10 @@ export class TrigramProjectSubmitter {
       @Inject(TrigramModuleTypes.PermutationExpander)
       private readonly expander: PermutationExpander,
       @Inject(TrigramModuleTypes.RandomArtFlowProducer)
+      // Kept injected (unused while submission is disabled) so re-enabling is a local change.
       private readonly flowProducer: RandomArtFlowProducer<
-         TrigramPaintTask,
-         TrigramPaintProject
+         PermutationTaskPaint,
+         PermutationProjectPaint
       >,
    ) {}
 
@@ -53,25 +70,20 @@ export class TrigramProjectSubmitter {
    ): Promise<ProjectSubmissionResult> {
       this.logger.log(`Submitting project: ${spec.projectId}`)
 
-      // Step 1: Expand spec to multi-task request
-      const request = this.expander.expandToMultiTaskRequest(spec)
+      // Step 1: Expand spec to the Permutations layer's input
+      const permutations = this.expander.expandToPermutationsSpec(spec)
 
       this.logger.log(
-         `Expanded to ${request.taskUnits.length} tasks across ${request.projectDomain.termPairSourceCount} term pair sources`,
+         `Expanded to ${countPaintingTasks(permutations)} tasks across ${permutations.termGroups.length} term groups`,
       )
 
-      // Step 2: Submit to the flow producer
-      const reply = await this.flowProducer.submitProject(request)
-
-      this.logger.log(
-         `Project ${reply.projectId} submitted with ${reply.taskIds.length} tasks`,
+      // Step 2 (disabled): PermutationsProjectSpec → flow producer request needs the
+      // Permutations-layer PermutationsExpander, which does not exist yet.
+      throw new Error(
+         `Project submission is not implemented yet for "${spec.projectId}": ` +
+            "the Permutations-layer PermutationsExpander that feeds RandomArtFlowProducer " +
+            "has not been written. Use validateProject() for dry runs.",
       )
-
-      return {
-         projectId: reply.projectId,
-         taskCount: reply.taskIds.length,
-         taskIds: reply.taskIds,
-      }
    }
 
    /**
@@ -89,10 +101,10 @@ export class TrigramProjectSubmitter {
       const errors: string[] = []
 
       try {
-         const request = this.expander.expandToMultiTaskRequest(spec)
+         const permutations = this.expander.expandToPermutationsSpec(spec)
          return {
             valid: true,
-            taskCount: request.taskUnits.length,
+            taskCount: countPaintingTasks(permutations),
             errors: [],
          }
       } catch (error) {

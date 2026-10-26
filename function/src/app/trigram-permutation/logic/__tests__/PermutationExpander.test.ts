@@ -4,21 +4,26 @@
 
 import { describe, it, expect } from "@jest/globals"
 import {
-   pairPrefixSuffixSource,
-   pairAllPairsSource,
-   expandTermPairs,
-   expandToMultiTaskRequest,
+   expandPrefixSuffixPairs,
+   expandAllPairTerms,
+   expandTermGroup,
+   expandToPermutationsSpec,
 } from "../PermutationExpander.js"
 import {
    PermutationSpecType,
    type PrefixSuffixSpec,
    type AllPairsSpec,
+   type RegionMapCatalog,
    type TrigramProjectSpec,
 } from "../../models/spec/index.js"
 import type { LiteCIDString } from "../../../../messages/interface/NamedValues.js"
 
+const testCatalog: RegionMapCatalog = {
+   "test-region": { cid: "QmTest" as LiteCIDString },
+}
+
 describe("PermutationExpander", () => {
-   describe("pairPrefixSuffixSource", () => {
+   describe("expandPrefixSuffixPairs", () => {
       it("should generate Cartesian product of prefixes and suffixes", () => {
          const spec: PrefixSuffixSpec = {
             expandType: PermutationSpecType.PrefixSuffix,
@@ -27,12 +32,9 @@ describe("PermutationExpander", () => {
             suffixTrigrams: ["☰", "☱", "☲"],
          }
 
-         const result = pairPrefixSuffixSource(spec)
+         const result = expandPrefixSuffixPairs(spec)
 
-         // Returns TermPairing[], extract trigram pairs for testing
-         const trigrams = result.map(
-            (tp) => `${tp.prefixTrigram}${tp.suffixTrigram}`,
-         )
+         const trigrams = result.map((tp) => `${tp.prefix}${tp.suffix}`)
          expect(trigrams).toEqual([
             "☰☰",
             "☰☱",
@@ -49,13 +51,10 @@ describe("PermutationExpander", () => {
             regionMapNames: ["test-region"],
             prefixTrigrams: ["☰", "☱"],
             suffixTrigrams: ["☰", "☱"],
-            fileNameExpression: undefined,
          }
 
-         const result = pairPrefixSuffixSource(spec)
-         const trigrams = result.map(
-            (tp) => `${tp.prefixTrigram}${tp.suffixTrigram}`,
-         )
+         const result = expandPrefixSuffixPairs(spec)
+         const trigrams = result.map((tp) => `${tp.prefix}${tp.suffix}`)
 
          // Full Cartesian product includes identity pairs
          expect(trigrams).toEqual(["☰☰", "☰☱", "☱☰", "☱☱"])
@@ -69,31 +68,25 @@ describe("PermutationExpander", () => {
             regionMapNames: ["test-region"],
             prefixTrigrams: ["☰"],
             suffixTrigrams: ["☰"],
-            fileNameExpression: undefined,
          }
 
-         const result = pairPrefixSuffixSource(spec)
-         const trigrams = result.map(
-            (tp) => `${tp.prefixTrigram}${tp.suffixTrigram}`,
-         )
+         const result = expandPrefixSuffixPairs(spec)
+         const trigrams = result.map((tp) => `${tp.prefix}${tp.suffix}`)
 
          expect(trigrams).toEqual(["☰☰"])
       })
    })
 
-   describe("pairAllPairsSource", () => {
+   describe("expandAllPairTerms", () => {
       it("should generate all ordered pairs without identity by default", () => {
          const spec: AllPairsSpec = {
             expandType: PermutationSpecType.AllPairs,
             regionMapNames: ["test-region"],
             sourceTrigrams: ["☰", "☱", "☲"],
-            fileNameExpression: undefined,
          }
 
-         const result = pairAllPairsSource(spec)
-         const trigrams = result.map(
-            (tp) => `${tp.prefixTrigram}${tp.suffixTrigram}`,
-         )
+         const result = expandAllPairTerms(spec)
+         const trigrams = result.map((tp) => `${tp.prefix}${tp.suffix}`)
 
          // Default: no identity, but includes both directions
          expect(trigrams).toEqual([
@@ -115,13 +108,10 @@ describe("PermutationExpander", () => {
             regionMapNames: ["test-region"],
             sourceTrigrams: ["☰", "☱", "☲"],
             includeIdentity: true,
-            fileNameExpression: undefined,
          }
 
-         const result = pairAllPairsSource(spec)
-         const trigrams = result.map(
-            (tp) => `${tp.prefixTrigram}${tp.suffixTrigram}`,
-         )
+         const result = expandAllPairTerms(spec)
+         const trigrams = result.map((tp) => `${tp.prefix}${tp.suffix}`)
 
          // All 9 pairs (3 × 3)
          expect(trigrams).toEqual([
@@ -143,34 +133,29 @@ describe("PermutationExpander", () => {
             regionMapNames: ["test-region"],
             sourceTrigrams: ["☰", "☱"],
             includeIdentity: true,
-            fileNameExpression: undefined,
          }
 
-         const result = pairAllPairsSource(spec)
-         const trigrams = result.map(
-            (tp) => `${tp.prefixTrigram}${tp.suffixTrigram}`,
-         )
+         const result = expandAllPairTerms(spec)
+         const trigrams = result.map((tp) => `${tp.prefix}${tp.suffix}`)
 
          expect(trigrams).toEqual(["☰☰", "☰☱", "☱☰", "☱☱"])
       })
    })
 
-   describe("expandTermPairs", () => {
+   describe("expandTermGroup", () => {
       it("should dispatch to correct expander for PrefixSuffix", () => {
          const spec: PrefixSuffixSpec = {
             expandType: PermutationSpecType.PrefixSuffix,
             regionMapNames: ["test-region"],
             prefixTrigrams: ["A"],
             suffixTrigrams: ["B"],
-            fileNameExpression: undefined,
          }
 
-         const result = expandTermPairs(spec)
-         const trigrams = result.map(
-            (tp) => `${tp.prefixTrigram}${tp.suffixTrigram}`,
-         )
+         const result = expandTermGroup(spec, testCatalog)
+         const trigrams = result.termPairs.map((tp) => `${tp.prefix}${tp.suffix}`)
 
          expect(trigrams).toEqual(["AB"])
+         expect(result.regionMapNames).toEqual(["test-region"])
       })
 
       it("should dispatch to correct expander for AllPairs", () => {
@@ -178,21 +163,18 @@ describe("PermutationExpander", () => {
             expandType: PermutationSpecType.AllPairs,
             regionMapNames: ["test-region"],
             sourceTrigrams: ["A", "B"],
-            fileNameExpression: undefined,
          }
 
-         const result = expandTermPairs(spec)
-         const trigrams = result.map(
-            (tp) => `${tp.prefixTrigram}${tp.suffixTrigram}`,
-         )
+         const result = expandTermGroup(spec, testCatalog)
+         const trigrams = result.termPairs.map((tp) => `${tp.prefix}${tp.suffix}`)
 
          // All ordered pairs without identity
          expect(trigrams).toEqual(["AB", "BA"])
       })
    })
 
-   describe("expandToMultiTaskRequest", () => {
-      it("should generate task units with correct structure", () => {
+   describe("expandToPermutationsSpec", () => {
+      it("should produce one term group per permutation spec", () => {
          const projectSpec: TrigramProjectSpec = {
             projectId: "project-123",
             regionMapCatalog: {
@@ -211,30 +193,21 @@ describe("PermutationExpander", () => {
             ],
          }
 
-         const result = expandToMultiTaskRequest(projectSpec)
+         const result = expandToPermutationsSpec(projectSpec)
 
-         expect(result.taskUnits).toHaveLength(2)
-
-         // Validate first task structure
-         expect(result.taskUnits[0].plotDataRef.regionMapName).toBe(
-            "bagua-region",
-         )
-         // CID is stored at project level in regionMapNames, not in each task
+         expect(result.termGroups).toHaveLength(1)
+         expect(result.termGroups[0].regionMapNames).toEqual(["bagua-region"])
+         expect(result.termGroups[0].termPairs).toEqual([
+            { prefix: "☰", suffix: "☱" },
+            { prefix: "☰", suffix: "☲" },
+         ])
+         // CIDs are carried at project level in regionMapNames, not in each group
          expect(result.regionMapNames["bagua-region"]).toBe(
             "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",
          )
-         expect(result.taskUnits[0].domainExtension.prefixTrigram).toBe("☰")
-         expect(result.taskUnits[0].domainExtension.suffixTrigram).toBe("☱")
-         expect(result.taskUnits[0].genSeed).toBeDefined()
-         expect(result.taskUnits[0].genSeed.seedPrefix).toBeDefined()
-         expect(result.taskUnits[0].genSeed.seedSuffix).toBeDefined()
-
-         // Validate second task
-         expect(result.taskUnits[1].domainExtension.prefixTrigram).toBe("☰")
-         expect(result.taskUnits[1].domainExtension.suffixTrigram).toBe("☲")
       })
 
-      it("should multiply tasks by regionMap count", () => {
+      it("should carry every region map name on the group", () => {
          const projectSpec: TrigramProjectSpec = {
             projectId: "multi-region-project",
             regionMapCatalog: {
@@ -252,35 +225,21 @@ describe("PermutationExpander", () => {
             ],
          }
 
-         const result = expandToMultiTaskRequest(projectSpec)
+         const result = expandToPermutationsSpec(projectSpec)
+         const [group] = result.termGroups
 
-         // 2 prefixes × 2 suffixes = 4 trigrams
-         // 4 trigrams × 3 regionMaps = 12 tasks
-         expect(result.taskUnits).toHaveLength(12)
-
-         // Verify each trigram appears 3 times (once per regionMap)
-         const trigramCounts: Record<string, number> = {}
-         for (const t of result.taskUnits) {
-            const trigram = `${t.domainExtension.prefixTrigram}${t.domainExtension.suffixTrigram}`
-            trigramCounts[trigram] = (trigramCounts[trigram] ?? 0) + 1
-         }
-         expect(trigramCounts["☰☰"]).toBe(3)
-         expect(trigramCounts["☰☱"]).toBe(3)
-         expect(trigramCounts["☱☰"]).toBe(3)
-         expect(trigramCounts["☱☱"]).toBe(3)
-
-         // Verify each regionMap appears 4 times (once per trigram)
-         const regionCounts: Record<string, number> = {}
-         for (const t of result.taskUnits) {
-            const regionName = t.plotDataRef.regionMapName ?? "unknown"
-            regionCounts[regionName] = (regionCounts[regionName] ?? 0) + 1
-         }
-         expect(regionCounts.thumbnail).toBe(4)
-         expect(regionCounts.detail).toBe(4)
-         expect(regionCounts.zoomed).toBe(4)
+         // 2 prefixes × 2 suffixes = 4 term pairs, rendered against 3 region maps
+         // (the Permutations layer turns this into 4 × 3 = 12 painting tasks)
+         expect(group.termPairs).toHaveLength(4)
+         expect(group.regionMapNames).toEqual(["thumbnail", "detail", "zoomed"])
+         expect(Object.keys(result.regionMapNames)).toEqual([
+            "thumbnail",
+            "detail",
+            "zoomed",
+         ])
       })
 
-      it("should handle large expansions efficiently", () => {
+      it("should handle large expansions", () => {
          const sources = Array.from({ length: 8 }, (_, i) =>
             String.fromCharCode(0x2630 + i),
          )
@@ -300,18 +259,10 @@ describe("PermutationExpander", () => {
             ],
          }
 
-         const result = expandToMultiTaskRequest(projectSpec)
+         const result = expandToPermutationsSpec(projectSpec)
 
-         // 8 sources with identity = 8 * 8 = 64 tasks × 1 regionMap = 64 tasks
-         expect(result.taskUnits).toHaveLength(64)
-
-         // All task indices should be unique
-         const taskIndices = new Set(
-            result.taskUnits.map(
-               (t) => t.domainExtension.paintProjectTaskIndex,
-            ),
-         )
-         expect(taskIndices.size).toBe(64)
+         // 8 sources with identity = 8 × 8 = 64 term pairs
+         expect(result.termGroups[0].termPairs).toHaveLength(64)
       })
 
       it("should throw error for missing regionMap name", () => {
@@ -330,68 +281,18 @@ describe("PermutationExpander", () => {
             ],
          }
 
-         expect(() => expandToMultiTaskRequest(projectSpec)).toThrow(
+         expect(() => expandToPermutationsSpec(projectSpec)).toThrow(
             /RegionMap name "missing-region" not found in project catalog/,
          )
       })
+   })
 
-      it("should produce valid MultiTaskRequestModel", () => {
-         const projectSpec: TrigramProjectSpec = {
-            projectId: "dto-test-project",
-            regionMapCatalog: {
-               "bagua-region": {
-                  cid: "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco" as LiteCIDString,
-               },
-            },
-            permutationSpecs: [
-               {
-                  expandType: PermutationSpecType.AllPairs,
-                  regionMapNames: ["bagua-region"],
-                  sourceTrigrams: ["☰", "☱"],
-                  includeIdentity: false,
-               },
-            ],
-         }
-
-         const result = expandToMultiTaskRequest(projectSpec)
-
-         expect(result.projectDomain.termPairSourceCount).toBe(1)
-         expect(result.projectDomain.taskCount).toBe(2) // ☰☱, ☱☰
-         expect(result.projectDomain.regionMapCount).toBe(1)
-         expect(result.regionMapNames["bagua-region"]).toBe(
-            "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",
-         )
-         expect(result.taskUnits).toHaveLength(2)
-      })
-
-      it("should include regionMapName in task plotDataRef", () => {
-         const projectSpec: TrigramProjectSpec = {
-            projectId: "domain-test",
-            regionMapCatalog: {
-               thumbnail: { cid: "QmThumb" as LiteCIDString },
-               detail: { cid: "QmDetail" as LiteCIDString },
-            },
-            permutationSpecs: [
-               {
-                  expandType: PermutationSpecType.PrefixSuffix,
-                  regionMapNames: ["thumbnail", "detail"],
-                  prefixTrigrams: ["A"],
-                  suffixTrigrams: ["B"],
-               },
-            ],
-         }
-
-         const result = expandToMultiTaskRequest(projectSpec)
-
-         // 1 trigram × 2 regionMaps = 2 tasks
-         expect(result.taskUnits).toHaveLength(2)
-
-         // Each task should have the correct regionMapName in its plotDataRef
-         const regionNames = result.taskUnits.map(
-            (t) => t.plotDataRef.regionMapName,
-         )
-         expect(regionNames).toContain("thumbnail")
-         expect(regionNames).toContain("detail")
-      })
+   // Behaviour the old expandToMultiTaskRequest covered that now belongs to the
+   // Permutations-layer PermutationsExpander (not written yet).
+   describe("moved to the Permutations-layer PermutationsExpander", () => {
+      it.todo("multiplies term pairs by region maps into task units with plotDataRef.regionMapName")
+      it.todo("assigns a genSeed with base64url seedPrefix/seedSuffix to every task")
+      it.todo("assigns a unique task index to every task")
+      it.todo("reports project-level counts (term groups, tasks, region maps)")
    })
 })
