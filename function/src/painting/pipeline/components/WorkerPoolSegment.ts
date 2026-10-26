@@ -53,7 +53,7 @@ const workerPoolBlueprint = createSegmentBlueprintFromBuilder(witness)
          // Used only for type extraction — runtime value is discarded.
          ["stagingStrategy", "selected"] as const,
          ["stagedFilePath", "selected"] as const,
-         "pngData",
+         ["task", "pngData"] as const,
       ] as const,
    })
 

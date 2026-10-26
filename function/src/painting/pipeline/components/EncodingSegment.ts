@@ -28,18 +28,18 @@ const termProperties = {
    systemPrefixString: {
       method: (bin: Uint8ClampedArray) =>
          Buffer.from(bin.buffer).toString("base64url"),
-      selectors: ["seedPrefix"] as const,
+      selectors: [["task", "seedPrefix"]] as const,
    },
    systemSuffixString: {
       method: (bin: Uint8ClampedArray) =>
          Buffer.from(bin.buffer).toString("base64url"),
-      selectors: ["seedSuffix"] as const,
+      selectors: [["task", "seedSuffix"]] as const,
    },
    appPrefixString: {
       method: (bin: Uint8ClampedArray, enc: BufferEncoding) =>
          Buffer.from(bin.buffer).toString(enc),
       selectors: [
-         "seedPrefix",
+         ["task", "seedPrefix"] as const,
          ["taskTermEncoding", "encoding"] as const,
       ] as const,
    },
@@ -47,7 +47,7 @@ const termProperties = {
       method: (bin: Uint8ClampedArray, enc: BufferEncoding) =>
          Buffer.from(bin.buffer).toString(enc),
       selectors: [
-         "seedSuffix",
+         ["task", "seedSuffix"] as const,
          ["taskTermEncoding", "encoding"] as const,
       ] as const,
    },

@@ -4,6 +4,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import type { ExpressionBasedFeature } from "./types.js"
+
 export type SelectorPath = string | readonly [string, string]
 
 /** Compiled expression function produced by jse-eval compile(). Synchronous. */
@@ -16,8 +18,7 @@ export type CompiledExpr = (ctx: Record<string, unknown>) => unknown
  * and wraps it in a PreparedPropertyDef discriminant.
  */
 export type BuilderPropertyDef =
-   | string
-   | readonly [string]
+   | ExpressionBasedFeature
    | {
         method: (...args: any[]) => unknown | Promise<unknown>
         selectors: readonly SelectorPath[]
@@ -60,6 +61,7 @@ export interface RuntimeVirtual {
 
 export interface RuntimeInitialDefaults {
    kind: "initialDefaults"
+   name: string
    defaults: Record<string, unknown>
 }
 

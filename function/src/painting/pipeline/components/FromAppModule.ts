@@ -6,18 +6,22 @@ import { createWorkerPoolSegment } from "./WorkerPoolSegment.js"
 import { PathTargetSelection } from "../values/PathTargetSelection.js"
 import { FileStoreSelection } from "../values/FileStoreSelection.js"
 import { TaskTermEncoding } from "../values/TaskTermEncoding.js"
+import { createFixedEncodingBinding } from "./SetFixedEncodingSegment.js"
 
 const pipelineBuilder = createWorkerPoolSegment(
    createEncodingSegment(createArtworkEngineSegment(createPipeline())),
 )
 
-const result = pipelineBuilder
-   .withContextSubject<IFileStore>()
-   .addPrivateInjection("fileStore")
-   .withContextSubject<TaskTermEncoding>()
-   .addPrivateFeature("taskTermEncoding", {
-      encoding: '"utf-8"' as const,
-   })
+const result = createFixedEncodingBinding(
+   "utf-8",
+   pipelineBuilder
+      .withContextSubject<IFileStore>()
+      .addPrivateInjection("fileStore"),
+)
+   // .withContextSubject<TaskTermEncoding>()
+   // .addPrivateFeature("taskTermEncoding", {
+   //    encoding: '"utf-8"' as const,
+   // })
    .withContextSubject<FileStoreSelection>()
    .addPublicFeature("stagingStrategy", {
       selected: "fileStore" as const,

@@ -23,10 +23,10 @@
 import type {
    UnusedKey,
    WithProp,
-   CompatibleForMixin,
    InitialInput,
    ContextKeysAndPairs,
    CallableParams,
+   ExpressionBasedFeature,
 } from "./types.js"
 import type {
    PipelineBuilder,
@@ -120,7 +120,7 @@ type RequiredPresent<AC extends object, Required extends object> = [
  * so violations surface as type errors at the call site.
  */
 export type BeforeSegment<
-   B extends PipelineBuilder,
+   B extends PipelineBuilder<any, any, any, any, any, any, any>,
    AddedSC extends object,
    AddedVC extends object,
    RequiredAC extends object = {},
@@ -166,7 +166,7 @@ export type BeforeSegment<
  * remain concrete rather than be re-declared as a virtual.
  */
 export type AfterSegment<
-   B extends PipelineBuilder,
+   B extends PipelineBuilder<any, any, any, any, any, any, any>,
    AddedIC extends object,
    AddedInjC extends object,
    AddedEC extends object,
@@ -209,10 +209,10 @@ interface AnyMethod {
    method: (...args: any[]) => any
    selectors: ReadonlyArray<string | readonly [string, string]>
 }
-type AnyProps = Record<string, string | readonly [string] | AnyMethod>
+type AnyProps = Record<string, ExpressionBasedFeature | AnyMethod>
 
 type Operation =
-   | { kind: "extendInitial"; defaults: object }
+   | { kind: "extendInitial"; name: string; defaults: object }
    | { kind: "addVirtualFeature"; name: string }
    | { kind: "addPublicFeature"; name: string; properties: AnyProps }
    | { kind: "addPrivateFeature"; name: string; properties: AnyProps }
@@ -354,24 +354,26 @@ interface SegmentContextBuilder<
    RequiredEC extends object,
    AddedSRC extends object,
 > {
-   extendInitial: <HasDefaults extends keyof SubjectType = never>(
+   extendInitial: <
+      NameOut extends string,
+      HasDefaults extends keyof SubjectType = never,
+   >(
+      nameOut: UnusedKey<KnownAC, NameOut>,
       defaults: Pick<SubjectType, HasDefaults>,
-   ) => [CompatibleForMixin<KnownAC, SubjectType>] extends [never]
-      ? never
-      : SegmentBlueprint<
-           CompatibleMerge<AddedIC, InitialInput<SubjectType, HasDefaults>>,
-           AddedInjC,
-           CompatibleMerge<AddedEC, SubjectType>,
-           CompatibleMerge<AddedSC, SubjectType>,
-           AddedVC,
-           CompatibleMerge<AddedAC, SubjectType>,
-           CompatibleMerge<KnownAC, SubjectType>,
-           RequiredAC,
-           RequiredIC,
-           RequiredInjC,
-           RequiredEC,
-           AddedSRC
-        >
+   ) => SegmentBlueprint<
+      WithProp<AddedIC, NameOut, InitialInput<SubjectType, HasDefaults>>,
+      AddedInjC,
+      WithProp<AddedEC, NameOut, SubjectType>,
+      WithProp<AddedSC, NameOut, SubjectType>,
+      AddedVC,
+      WithProp<AddedAC, NameOut, SubjectType>,
+      WithProp<KnownAC, NameOut, SubjectType>,
+      RequiredAC,
+      RequiredIC,
+      RequiredInjC,
+      RequiredEC,
+      AddedSRC
+   >
 
    addVirtualFeature: <NameOut extends string>(
       nameOut: UnusedKey<KnownAC, NameOut>,
@@ -396,7 +398,7 @@ interface SegmentContextBuilder<
          [K in keyof SubjectType]: LooseFeatureProp
       },
    >(
-      nameOut: UnusedKey<KnownAC, NameOut>,
+      nameOut: UnusedKey<AddedSC, NameOut>,
       properties: ConditionalFeatureProps<
          KnownAC,
          AddedVC,
@@ -426,7 +428,7 @@ interface SegmentContextBuilder<
          [K in keyof SubjectType]: LooseFeatureProp
       },
    >(
-      nameOut: UnusedKey<KnownAC, NameOut>,
+      nameOut: UnusedKey<AddedSC, NameOut>,
       properties: ConditionalFeatureProps<
          KnownAC,
          AddedVC,
@@ -522,10 +524,10 @@ function createSegmentBlueprintImpl(ops: Operation[]): any {
 
       withContextSubject() {
          return {
-            extendInitial(defaults: object) {
+            extendInitial(name: string, defaults: object) {
                return createSegmentBlueprintImpl([
                   ...ops,
-                  { kind: "extendInitial", defaults },
+                  { kind: "extendInitial", name, defaults },
                ])
             },
             addVirtualFeature(name: string) {
@@ -573,7 +575,7 @@ function createSegmentBlueprintImpl(ops: Operation[]): any {
             for (const op of ops) {
                switch (op.kind) {
                   case "extendInitial":
-                     b = b.extendInitial(op.defaults)
+                     b = b.extendInitial(op.name, op.defaults)
                      break
                   case "addVirtualFeature":
                      b = b.addVirtualFeature(op.name)

@@ -1,11 +1,11 @@
 import type {
    UnusedKey,
-   CompatibleForMixin,
    InitialInput,
    Mixin,
    WithProp,
    ContextKeysAndPairs,
    CallableParams,
+   ExpressionBasedFeature,
 } from "./types.js"
 
 // =============================================================================
@@ -38,8 +38,7 @@ export interface ContextualMethod<
  * parameter checking. Used as the upper bound for `Props` inference.
  */
 export type LooseFeatureProp =
-   | string
-   | readonly [string]
+   | ExpressionBasedFeature
    | {
         method: (...args: any[]) => any // eslint-disable-line @typescript-eslint/no-explicit-any
         selectors: ReadonlyArray<string | readonly [string, string]>
@@ -66,12 +65,12 @@ export type CheckProp<Context extends object, PropType, Prop> = Prop extends {
            ) => PropType | Promise<PropType>
            selectors: S
         }
-   : string | readonly [string]
+   : ExpressionBasedFeature
 
 /**
  * Validates all feature properties against ExprOut.
  * - For each key K in ExprOut, CheckProp validates the method form if present.
- * - Keys missing from Props default to `string` (expression form is always valid).
+ * - Keys missing from Props default to `ExpressionBasedFeature` (expression form is always valid).
  * - Keys in Props not present in ExprOut are mapped to `never` (rejected).
  */
 export type CheckFeatureProps<
@@ -81,8 +80,58 @@ export type CheckFeatureProps<
 > = {
    [K in keyof ExprOut]: K extends keyof Props
       ? CheckProp<Context, ExprOut[K], Props[K]>
-      : string
+      : ExpressionBasedFeature
 } & { [K in Exclude<keyof Props, keyof ExprOut>]: never }
+
+export type WithPublicFeature<
+   Builder extends PipelineBuilder,
+   FeatureName extends string,
+   SubjectType extends object,
+> =
+   Builder extends PipelineBuilder<
+      infer InitialContext,
+      infer InjectedContext,
+      infer ExprContext,
+      infer StepContext,
+      infer VirtualContext,
+      infer StepResultContext,
+      infer AllContext
+   >
+      ? PipelineBuilder<
+           InitialContext,
+           InjectedContext,
+           WithProp<ExprContext, FeatureName, SubjectType>,
+           WithProp<StepContext, FeatureName, SubjectType>,
+           Omit<VirtualContext, FeatureName>,
+           StepResultContext,
+           WithProp<Omit<AllContext, FeatureName>, FeatureName, SubjectType>
+        >
+      : never
+
+export type WithPrivateFeature<
+   Builder extends PipelineBuilder,
+   FeatureName extends string,
+   SubjectType extends object,
+> =
+   Builder extends PipelineBuilder<
+      infer InitialContext,
+      infer InjectedContext,
+      infer ExprContext,
+      infer StepContext,
+      infer VirtualContext,
+      infer StepResultContext,
+      infer AllContext
+   >
+      ? PipelineBuilder<
+           InitialContext,
+           InjectedContext,
+           ExprContext,
+           WithProp<StepContext, FeatureName, SubjectType>,
+           Omit<VirtualContext, FeatureName>,
+           StepResultContext,
+           WithProp<Omit<AllContext, FeatureName>, FeatureName, SubjectType>
+        >
+      : never
 
 /**
  * Virtual-fulfillment guard: if NameOut names a virtual contract, CombinedOut
@@ -131,7 +180,7 @@ export interface PipelineBuilder<
    StepContext extends object = ExprContext,
    VirtualContext extends object = {},
    StepResultContext extends object = {},
-   AllContext extends object = Mixin<StepContext, VirtualContext>,
+   AllContext extends object = {}, // Mixin<StepContext, VirtualContext>,
 > {
    withContextSubject: <SubjectType extends object>() => PipelineContextBuilder<
       SubjectType,
@@ -144,7 +193,7 @@ export interface PipelineBuilder<
       AllContext
    >
 
-   withSpitContextSubject: <
+   withSplitContextSubject: <
       PublicSubjectType extends object,
       PrivateSubjectType extends PublicSubjectType,
    >() => PipelineSplitContextBuilder<
@@ -235,19 +284,25 @@ interface PipelineContextBuilder<
     *
     * Returns never if ExtraInitial conflicts with the existing StepContext.
     */
-   extendInitial: <HasDefaults extends keyof SubjectType = never>(
+   extendInitial: <
+      NameOut extends string,
+      HasDefaults extends keyof SubjectType = never,
+   >(
+      nameOut: UnusedKey<AllContext, NameOut>,
       defaults: Pick<SubjectType, HasDefaults>,
-   ) => [CompatibleForMixin<AllContext, SubjectType>] extends [never]
-      ? never
-      : PipelineBuilder<
-           Mixin<InitialContext, InitialInput<SubjectType, HasDefaults>>,
-           InjectedContext,
-           Mixin<ExprContext, SubjectType>,
-           Mixin<StepContext, SubjectType>,
-           VirtualContext,
-           StepResultContext,
-           Mixin<AllContext, SubjectType>
-        >
+   ) => PipelineBuilder<
+      WithProp<
+         InitialContext,
+         typeof nameOut,
+         InitialInput<SubjectType, HasDefaults>
+      >,
+      InjectedContext,
+      WithProp<ExprContext, typeof nameOut, SubjectType>,
+      WithProp<StepContext, typeof nameOut, SubjectType>,
+      VirtualContext,
+      StepResultContext,
+      WithProp<AllContext, typeof nameOut, SubjectType>
+   >
 
    /**
     * Declare a virtual feature contract.

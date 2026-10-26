@@ -19,7 +19,7 @@ import { PaintedTask } from "../values/PaintedTask.js"
 // exported helper type via ReturnType.
 const artworkEngineBlueprint = createSegmentBlueprint()
    .withContextSubject<PaintedTask>()
-   .extendInitial({})
+   .extendInitial("task", {})
 
 export type ArtworkEngineSegmentHelper = ReturnType<
    typeof artworkEngineBlueprint.buildHelper

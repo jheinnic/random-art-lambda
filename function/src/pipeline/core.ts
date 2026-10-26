@@ -56,9 +56,10 @@ function createBuilderImpl<
    }
 
    return {
-      extendInitial(defaults: object) {
+      extendInitial(name: string, defaults: object) {
          return next({
             kind: "initialDefaults",
+            name,
             defaults: defaults as Record<string, unknown>,
          }) as any
       },
@@ -215,7 +216,7 @@ function createBuilderImpl<
          return this
       },
 
-      withSpitContextSubject() {
+      withSplitContextSubject() {
          return this
       },
 
@@ -232,11 +233,15 @@ function createBuilderImpl<
       ) => (initial: InitialContext) => Promise<Partial<ResultOut>> {
          // ── one-time pre-processing (runs once when buildPipeline() is called) ──
 
-         // Merge all initialDefaults stages into a single baseline object.
-         const defaults: Record<string, unknown> = {}
+         // Collect per-namespace default objects from all initialDefaults stages.
+         const namespaceDefaults: Record<string, Record<string, unknown>> = {}
          for (const stage of stages) {
-            if (stage.kind === "initialDefaults")
-               Object.assign(defaults, stage.defaults)
+            if (stage.kind === "initialDefaults") {
+               namespaceDefaults[stage.name] = {
+                  ...namespaceDefaults[stage.name],
+                  ...stage.defaults,
+               }
+            }
          }
 
          // Identify every declared virtual and find its fulfilling feature, if any.
@@ -316,7 +321,7 @@ function createBuilderImpl<
          //   - Fulfilling features are skipped at their original builder position.
          //   - initialDefaults stages are dropped (already merged into defaults).
          //   - Steps and injections pass through unchanged.
-         const movedNames = new Set<string>(fulfillments.keys())
+         const _movedNames = new Set<string>(fulfillments.keys())
          const executionOrder: PreparedStage[] = stages
             .filter((stage: RuntimeStage): boolean => {
                switch (stage.kind) {
@@ -360,16 +365,28 @@ function createBuilderImpl<
          return (injections) => {
             // ── inner: per-request invocation ──────────────────────────────────
             return async (initial) => {
-               // Full context: initial + defaults; grows as features are computed.
-               const stepCtx: Record<string, unknown> = {
-                  ...defaults,
-                  ...(initial as Record<string, unknown>),
+               // Merge caller-supplied initial with per-namespace defaults.
+               // Each extendInitial namespace is shallow-merged: defaults fill in
+               // any fields the caller omitted; caller values take precedence.
+               const initialInput = initial as Record<string, unknown>
+               const mergedInitial: Record<string, unknown> = {
+                  ...initialInput,
                }
+               for (const [name, nsDefaults] of Object.entries(
+                  namespaceDefaults,
+               )) {
+                  mergedInitial[name] = {
+                     ...nsDefaults,
+                     ...(initialInput[name] as
+                        | Record<string, unknown>
+                        | undefined),
+                  }
+               }
+
+               // Full context: merged initial; grows as features are computed.
+               const stepCtx: Record<string, unknown> = { ...mergedInitial }
                // Expression-visible subset (public features + public injections).
-               const exprCtx: Record<string, unknown> = {
-                  ...defaults,
-                  ...(initial as Record<string, unknown>),
-               }
+               const exprCtx: Record<string, unknown> = { ...mergedInitial }
                // Step result context: isolated from features, visible only to
                // buildPipeline result selectors.
                const stepResultCtx: Record<string, unknown> = {}

@@ -96,6 +96,15 @@ export type CallableParams<
         : never
 }
 
+/**
+ * When a feature is defined by an expression, it may use either a direct or an indirect
+ * form.  The direct form is indicated by a raw string and is used at runtime by evaluating
+ * the expression for a returned value.   The indirect form is a tuple with a single expression
+ * string and is used at runtime by evaluating the given expression to yield another expression,
+ * which is then evaluated as well for the returned value.
+ */
+export type ExpressionBasedFeature = string | readonly [string]
+
 // =============================================================================
 // Codec-compliance helper
 // =============================================================================

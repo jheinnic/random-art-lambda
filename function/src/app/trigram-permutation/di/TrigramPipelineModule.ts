@@ -45,8 +45,9 @@ import { TrigramModuleTypes } from "./Types.js"
  * extendInitial). resolvedFileNameExpression is trigram-specific and optional —
  * the stagedFilePath expression falls back to the config default when absent.
  */
-export interface TrigramPipelineInput extends PaintedTask {
-   resolvedFileNameExpression?: string
+export interface TrigramPipelineInput {
+   task: PaintedTask
+   trigram?: { resolvedFileNameExpression?: string }
 }
 
 // ---------------------------------------------------------------------------
@@ -96,7 +97,7 @@ export const TrigramPipelineModule = InjectableModuleClassFactory.create(
          //    trigram-specific optional field with a default of undefined.
          const b0 = createArtworkEngineSegment(createPipeline())
             .withContextSubject<{ resolvedFileNameExpression?: string }>()
-            .extendInitial<"resolvedFileNameExpression">({
+            .extendInitial("trigram", {
                resolvedFileNameExpression: undefined,
             })
 
@@ -119,7 +120,7 @@ export const TrigramPipelineModule = InjectableModuleClassFactory.create(
             .addPublicFeature("stagedFilePath", {
                // eslint-disable-next-line no-template-curly-in-string
                selected: [
-                  `resolvedFileNameExpression ?? '${defaultPath}'`,
+                  `trigram.resolvedFileNameExpression ?? '${defaultPath}'`,
                ] as const,
             })
             .withContextSubject<FileStoreSelection>()
