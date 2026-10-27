@@ -38,6 +38,8 @@ Found while stabilizing (these predate this work and are not fixed):
 Still open: the two design-drift questions under Thread A, the Thread B review items, and the
 Permutations expander itself. `stash@{0}` is untouched.
 
+**All open items are now tracked, with priorities, in [TECH_DEBT.md](TECH_DEBT.md).**
+
 ## Summary
 
 - The committed state builds. `tsc --noEmit` on `HEAD` reports one error, which predates this work:
