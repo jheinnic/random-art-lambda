@@ -5,9 +5,12 @@
 /**
  * Compute the InitialContext contribution from an extendInitial call.
  *
- * Fields covered by ExtraDefaults are Optional in the pipeline call signature
- * (the defaults argument supplies them); fields in ExtraInitial but absent from
- * ExtraDefaults are Mandatory (the caller must supply them).
+ * extendInitial places this contribution under its own namespace key, so the
+ * rule applies inside that namespace: fields covered by ExtraDefaults are
+ * Optional in the pipeline call signature (the defaults argument supplies them);
+ * fields in ExtraInitial but absent from ExtraDefaults are Mandatory (the caller
+ * must supply them).  When a namespace has no Mandatory fields, the namespace
+ * key itself is Optional (see OptionalWithProp).
  *
  * This lets a single extendInitial call declare both defaulted and mandatory
  * fields; the separation is expressed by what is or is not included in the
@@ -59,6 +62,24 @@ export type WithProp<Context extends object, NewKey extends string, NewValue> =
               : NewValue
         }
       : never
+
+/**
+ * Add a single new property to an object type, Optional when NewValue has no
+ * required fields; never if the key is taken.
+ *
+ * Used for InitialContext by extendInitial: a namespace whose fields all have
+ * defaults may be omitted by the caller, since the runtime always rebuilds each
+ * namespace from its defaults.  Built on Mixin rather than WithProp so the `?`
+ * survives later additions; WithProp's non-homomorphic mapping would strip it.
+ * Callers also guard the name with UnusedKey.
+ */
+export type OptionalWithProp<
+   Context extends object,
+   NewKey extends string,
+   NewValue,
+> = {} extends NewValue
+   ? Mixin<Context, { [K in NewKey]?: NewValue }>
+   : Mixin<Context, { [K in NewKey]: NewValue }>
 
 /** Union of all [K, P] two-level path tuples reachable from Context. */
 export type ContextKeyPairs<Context extends object> = {

@@ -39,11 +39,13 @@ import { TrigramModuleTypes } from "./Types.js"
 // ---------------------------------------------------------------------------
 
 /**
- * Fields that the gathering worker provides when calling the compiled pipeline.
+ * Input the gathering worker provides when calling the compiled pipeline.
  *
- * All PaintedTask fields are required (provided by ArtworkEngineSegment's
- * extendInitial). resolvedFileNameExpression is trigram-specific and optional —
- * the stagedFilePath expression falls back to the config default when absent.
+ * - `task`: the PaintedTask, under the namespace declared by ArtworkEngineSegment's
+ *   extendInitial. Every field is required.
+ * - `trigram`: trigram-specific input. Its only field, resolvedFileNameExpression,
+ *   has a default, so the whole namespace may be omitted; the stagedFilePath
+ *   expression then falls back to the config default.
  */
 export interface TrigramPipelineInput {
    task: PaintedTask
@@ -93,8 +95,8 @@ export const TrigramPipelineModule = InjectableModuleClassFactory.create(
          const appEncoding =
             configSvc.get<BufferEncoding>("trigram.encoding") ?? "utf-8"
 
-         // 1. Base: artwork engine (adds PaintedTask to IC), then add the
-         //    trigram-specific optional field with a default of undefined.
+         // 1. Base: artwork engine (adds the `task` namespace to IC), then add the
+         //    optional `trigram` namespace, whose only field defaults to undefined.
          const b0 = createArtworkEngineSegment(createPipeline())
             .withContextSubject<{ resolvedFileNameExpression?: string }>()
             .extendInitial("trigram", {

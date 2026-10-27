@@ -3,6 +3,7 @@ import type {
    InitialInput,
    Mixin,
    WithProp,
+   OptionalWithProp,
    ContextKeysAndPairs,
    CallableParams,
    ExpressionBasedFeature,
@@ -135,7 +136,7 @@ export type WithPrivateFeature<
 
 /**
  * Virtual-fulfillment guard: if NameOut names a virtual contract, CombinedOut
- * must bidirectionally satisfy that contract.  Otherwise, all feature property
+ * must identically match that contract.  Otherwise, all feature property
  * forms are accepted.
  *
  * CombinedOut is the full type of the feature (including private properties for
@@ -271,18 +272,20 @@ interface PipelineContextBuilder<
    AllContext extends object,
 > {
    /**
-    * Extend the initial seed context with additional properties.
+    * Extend the initial seed context with a namespace of caller-supplied input.
     *
-    * ExtraInitial is the full shape added to ExprContext and StepContext —
-    * must be supplied explicitly since it is wider than the defaults object.
-    * HasDefaults is inferred from the keys of the defaults argument.
+    * SubjectType is the namespace's full shape; it is added under nameOut to
+    * ExprContext, StepContext and AllContext.  HasDefaults is inferred from the
+    * keys of the defaults argument.
     *
-    * The resulting InitialContext contribution is InitialInput<ExtraInitial, HasDefaults>:
-    *   Partial<Pick<ExtraInitial, HasDefaults>> & Omit<ExtraInitial, HasDefaults>
+    * The caller supplies InitialInput<SubjectType, HasDefaults> under nameOut:
+    *   Partial<Pick<SubjectType, HasDefaults>> & Omit<SubjectType, HasDefaults>
     * — defaulted fields are optional in the call signature; fields absent from
-    * the defaults object remain required.
+    * the defaults object remain required.  When no field is required, the
+    * namespace key itself is optional (OptionalWithProp); at run time the
+    * namespace is always rebuilt from its defaults.
     *
-    * Returns never if ExtraInitial conflicts with the existing StepContext.
+    * nameOut must be absent from AllContext.
     */
    extendInitial: <
       NameOut extends string,
@@ -291,7 +294,7 @@ interface PipelineContextBuilder<
       nameOut: UnusedKey<AllContext, NameOut>,
       defaults: Pick<SubjectType, HasDefaults>,
    ) => PipelineBuilder<
-      WithProp<
+      OptionalWithProp<
          InitialContext,
          typeof nameOut,
          InitialInput<SubjectType, HasDefaults>

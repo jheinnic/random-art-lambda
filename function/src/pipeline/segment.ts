@@ -23,6 +23,7 @@
 import type {
    UnusedKey,
    WithProp,
+   OptionalWithProp,
    InitialInput,
    ContextKeysAndPairs,
    CallableParams,
@@ -361,7 +362,7 @@ interface SegmentContextBuilder<
       nameOut: UnusedKey<KnownAC, NameOut>,
       defaults: Pick<SubjectType, HasDefaults>,
    ) => SegmentBlueprint<
-      WithProp<AddedIC, NameOut, InitialInput<SubjectType, HasDefaults>>,
+      OptionalWithProp<AddedIC, NameOut, InitialInput<SubjectType, HasDefaults>>,
       AddedInjC,
       WithProp<AddedEC, NameOut, SubjectType>,
       WithProp<AddedSC, NameOut, SubjectType>,
