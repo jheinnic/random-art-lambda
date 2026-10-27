@@ -1,7 +1,7 @@
 # /epics — Structured Epic Brainstorming Session
 
 You are facilitating a focused design session whose terminal output is one or more
-new epic files written to `docs/jira/` and an updated `docs/jira/README.md`.
+new epic files written to `function/docs/jira/` and an updated `function/docs/jira/README.md`.
 
 The user has provided a starting topic: **$ARGUMENTS**
 
@@ -17,7 +17,7 @@ first produces better stories.
 - What problem does this solve, or what capability does it add?
 - What is the strategic motivation (from the project's migration/optimization goals)?
 - What is explicitly out of scope?
-- Are there dependencies on existing epics or open tickets? Read `docs/jira/README.md`
+- Are there dependencies on existing epics or open tickets? Read `function/docs/jira/README.md`
   and relevant epic files as needed to establish context.
 
 ### 2. Boundary decisions
@@ -33,7 +33,7 @@ first produces better stories.
 ### 4. Story decomposition
 For each epic, identify the minimal set of stories that delivers the epic's outcome.
 For each story:
-- One-line summary (becomes the `## BSIM-N — Title` heading)
+- One-line summary (becomes the `## RART-N — Title` heading)
 - Type: Task | Bug | Spike
 - Priority: Highest | High | Medium | Low
 - Dependencies on other stories in this session or existing tickets
@@ -41,7 +41,7 @@ For each story:
 - Acceptance Criteria: concrete, testable, 3–6 bullets
 
 ### 5. Number assignment
-Before writing files, read `docs/jira/README.md` to find the current highest BSIM
+Before writing files, read `function/docs/jira/README.md` to find the current highest RART
 ticket number. Assign sequential numbers starting from N+1.
 
 ---
@@ -51,10 +51,10 @@ ticket number. Assign sequential numbers starting from N+1.
 When the brainstorm reaches a stable point and the user confirms they are ready to
 commit the output:
 
-1. **Write one epic file per epic** to `docs/jira/epic_E{N}_{slug}.md`, following
-   the format of existing files (epic header, then `## BSIM-N — Title` sections).
+1. **Write one epic file per epic** to `function/docs/jira/epic_E{N}_{slug}.md`, following
+   the format of existing files (epic header, then `## RART-N — Title` sections).
 
-2. **Update `docs/jira/README.md`**:
+2. **Update `function/docs/jira/README.md`**:
    - Add a row to the Epic Structure table
    - Add a link entry under Files
 
